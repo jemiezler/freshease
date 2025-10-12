@@ -1,0 +1,60 @@
+services:
+  postgres-db:
+    image: docker.io/library/postgres:18.0-bookworm
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: user1234
+      POSTGRES_DB: freshease_db
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d freshease_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  pgadmin:
+    image: docker.io/dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.dev
+      PGADMIN_DEFAULT_PASSWORD: user1234
+      PGADMIN_LISTEN_PORT: 5050
+    ports:
+      - "5050:5050"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - backend
+
+  adminer:
+    image: docker.io/library/adminer:latest
+    container_name: adminer
+    restart: always
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres-db
+    ports:
+      - "5051:8080"
+    depends_on:
+      - postgres-db
+    networks:
+      - backend
+
+  
+
+volumes:
+  pgdata:
+  pgadmin_data:
+
+networks:
+  backend:
+    driver: bridge
