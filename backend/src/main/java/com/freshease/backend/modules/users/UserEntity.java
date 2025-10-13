@@ -8,7 +8,10 @@ package com.freshease.backend.modules.users;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.freshease.backend.cores.types.PersonName;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -38,6 +41,9 @@ public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Embedded
+    private PersonName name;
 
     @Column(nullable = false, unique = true, length = 254)
     private String email;

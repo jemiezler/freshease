@@ -5,14 +5,18 @@
 
 package com.freshease.backend.modules.roles;
 
+import java.util.UUID;
+
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
+import com.freshease.backend.modules.rolePermissions.RolePermissionService;
 
+import lombok.RequiredArgsConstructor;
 
 /**
  *
@@ -23,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RoleController {
     private final RoleService roleService;
+    private final RolePermissionService rolePermissionService;
 
     @PostMapping()
     public RoleEntity createRole(@RequestParam String name, @RequestParam(required = false) String description) {
@@ -39,5 +44,10 @@ public class RoleController {
     public String findAll() {
         return roleService.findAll().toString();
     }
-    
+
+    @PostMapping("/roles/{roleId}/grant/{permId}")
+    public void grant(@PathVariable UUID roleId, @PathVariable UUID permId) {
+        rolePermissionService.grantPermissionToRole(roleId, permId);
+    }
+
 }
