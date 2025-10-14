@@ -25,12 +25,20 @@ final _router = GoRouter(
               );
             },
             destinations: const [
-              NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
               NavigationDestination(
-                icon: Icon(Icons.favorite),
-                label: 'Favorites',
+                icon: Icon(Icons.storefront),
+                label: 'Shop',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.shopping_cart),
+                label: 'Cart',
               ),
               NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+              NavigationDestination(icon: Icon(Icons.list), label: 'Plans'),
+              NavigationDestination(
+                icon: Icon(Icons.show_chart),
+                label: 'Progress',
+              ),
             ],
           ),
         );
@@ -44,9 +52,9 @@ final _router = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/favorites',
+              path: '/carts',
               builder: (_, _) =>
-                  const Scaffold(body: Center(child: Text('Favorites Page'))),
+                  const Scaffold(body: Center(child: Text('Carts Page'))),
             ),
           ],
         ),
@@ -57,6 +65,24 @@ final _router = GoRouter(
               path: '/profile',
               builder: (_, _) =>
                   const Scaffold(body: Center(child: Text('Profile Page'))),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/plans',
+              builder: (_, _) =>
+                  const Scaffold(body: Center(child: Text('Plans Page'))),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/progress',
+              builder: (_, _) =>
+                  const Scaffold(body: Center(child: Text('Progress Page'))),
             ),
           ],
         ),
