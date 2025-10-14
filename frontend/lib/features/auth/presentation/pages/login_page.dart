@@ -34,15 +34,16 @@ class _LoginPageState extends State<LoginPage> {
                 builder: (context, state) {
                   return Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Text(
                         "Welcome to FreshEase",
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 30,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 36),
                       TextField(
                         controller: email,
                         decoration: const InputDecoration(labelText: 'Email'),
@@ -62,6 +63,7 @@ class _LoginPageState extends State<LoginPage> {
                           style: const TextStyle(color: Colors.red),
                         ),
                       PrimaryButton(
+                        color: Colors.black,
                         onPressed: state.loading
                             ? null
                             : () => context.read<LoginCubit>().submit(
@@ -74,6 +76,7 @@ class _LoginPageState extends State<LoginPage> {
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
+                                  color: Colors.black,
                                 ),
                               )
                             : const Text('Login'),
