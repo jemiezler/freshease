@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../features/shop/domain/product.dart';
+import 'package:frontend/features/shop/domain/product.dart';
 
 class CartLine {
   final Product product;
