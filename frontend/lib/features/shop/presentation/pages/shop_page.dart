@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:frontend/core/constants/app_colors.dart';
 import 'package:frontend/core/state/cart_controller.dart';
 import 'package:frontend/core/widgets/global_appbar.dart';
 import 'package:frontend/features/shop/widgets/product_card.dart';
@@ -22,7 +21,12 @@ class _ShopPageState extends State<ShopPage> {
   Timer? _debounce;
   List<Product> _items = [];
 
-  List<String> get _chips => const ['All', 'Fruits', 'Veggies', 'Herbs'];
+  List<String> get _chips => const [
+    'All',
+    'Prepared Food',
+    'Veggies',
+    'Fruits',
+  ];
 
   Future<void> _load() async {
     final list = await _repo.list(

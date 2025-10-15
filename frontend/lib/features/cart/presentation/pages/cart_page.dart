@@ -1,6 +1,5 @@
 // lib/features/cart/presentation/pages/cart_page.dart
 import 'package:flutter/material.dart';
-import 'package:frontend/core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/state/cart_controller.dart';
 

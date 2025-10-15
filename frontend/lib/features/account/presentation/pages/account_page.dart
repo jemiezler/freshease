@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/state/checkout_controller.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/state/checkout_controller.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
