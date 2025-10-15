@@ -3,31 +3,24 @@ import 'package:flutter/material.dart';
 class PrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Widget child;
-  final double borderRadius;
-  final Color? color;
-
+  final bool expanded;
   const PrimaryButton({
     super.key,
     required this.onPressed,
     required this.child,
-    this.borderRadius = 12,
-    this.color,
+    this.expanded = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          backgroundColor: color,
-        ),
-        child: child,
+    final btn = FilledButton(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       ),
+      child: child,
     );
+    return expanded ? SizedBox(width: double.infinity, child: btn) : btn;
   }
 }
