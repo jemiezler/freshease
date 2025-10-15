@@ -32,7 +32,7 @@ class _ProgressPageState extends State<ProgressPage> {
     _Activity('Order delivered', 'Veggies bundle', 'Fri, 12:05'),
   ];
 
-  int _tabIndex = 0;
+  final int _tabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +207,7 @@ class _OrdersTab extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: activities.length,
-      separatorBuilder: (_, __) => const Divider(),
+      separatorBuilder: (_, _) => const Divider(),
       itemBuilder: (_, i) {
         final a = activities[i];
         return ListTile(
@@ -237,7 +237,7 @@ class _SubscriptionsTab extends StatelessWidget {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.teal.withOpacity(0.1),
+                    color: Colors.teal.withValues(alpha: .1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   padding: const EdgeInsets.all(10),

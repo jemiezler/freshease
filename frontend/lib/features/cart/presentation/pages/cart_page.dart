@@ -11,7 +11,7 @@ class CartPage extends StatelessWidget {
     final cart = CartScope.of(context);
     return AnimatedBuilder(
       animation: cart,
-      builder: (_, __) {
+      builder: (_, _) {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Your Cart'),

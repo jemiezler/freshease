@@ -22,7 +22,7 @@ import '../core/state/cart_controller.dart';
 GoRouter buildRouter() {
   return GoRouter(
     routes: [
-      GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+      GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, nav) {
           final cart = CartScope.of(context);
@@ -86,7 +86,7 @@ GoRouter buildRouter() {
             routes: [
               GoRoute(
                 path: '/',
-                builder: (_, __) => const ShopPage(),
+                builder: (_, _) => const ShopPage(),
                 routes: [
                   GoRoute(
                     path: 'shop/product/:id',
