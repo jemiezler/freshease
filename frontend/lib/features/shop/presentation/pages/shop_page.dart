@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:frontend/core/constants/app_colors.dart';
 import 'package:frontend/core/state/cart_controller.dart';
+import 'package:frontend/core/widgets/global_appbar.dart';
 import 'package:frontend/features/shop/widgets/product_card.dart';
 import '../../../shop/data/product_repository.dart';
 import '../../../shop/domain/product.dart';
@@ -54,8 +56,9 @@ class _ShopPageState extends State<ShopPage> {
     final cart = CartScope.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('FreshEase Market'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: GlobalAppBar(
+        title: 'FreshEase Market',
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined),
@@ -73,11 +76,11 @@ class _ShopPageState extends State<ShopPage> {
           ),
         ),
       ),
+
       body: RefreshIndicator(
         onRefresh: _load,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // responsive breakpoint handling
             final width = constraints.maxWidth;
             int crossAxisCount = 2;
             double aspectRatio = 0.72;
@@ -94,7 +97,6 @@ class _ShopPageState extends State<ShopPage> {
 
             return CustomScrollView(
               slivers: [
-                // category chips
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: 50,
@@ -131,7 +133,6 @@ class _ShopPageState extends State<ShopPage> {
                   ),
                 ),
 
-                // responsive product grid
                 SliverPadding(
                   padding: const EdgeInsets.all(16),
                   sliver: SliverGrid(
@@ -154,8 +155,8 @@ class _ShopPageState extends State<ShopPage> {
                     }, childCount: _items.length),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: crossAxisCount,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 0,
+                      crossAxisSpacing: 0,
                       childAspectRatio: aspectRatio,
                     ),
                   ),
@@ -259,7 +260,7 @@ class _SearchPill extends StatelessWidget {
         color: Theme.of(
           context,
         ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             blurRadius: 12,

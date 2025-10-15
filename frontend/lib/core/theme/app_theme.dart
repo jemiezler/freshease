@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/constants/app_colors.dart';
 
 class AppTheme {
   static ThemeData light() {
     return ThemeData(
       useMaterial3: true,
-      colorSchemeSeed: Colors.teal,
-      scaffoldBackgroundColor: const Color(0xFFF9FAFB),
+      colorSchemeSeed: AppColors.primary,
+      scaffoldBackgroundColor: AppColors.background,
+      appBarTheme: AppBarThemeData(
+        backgroundColor: AppColors.background,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: IconThemeData(color: Colors.black),
+      ),
       visualDensity: VisualDensity.adaptivePlatformDensity,
     );
   }

@@ -19,6 +19,7 @@ class App extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           routerConfig: buildRouter(),
           theme: AppTheme.light(),
+          themeMode: ThemeMode.light,
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/global_appbar.dart';
 import '../../../../core/state/cart_controller.dart';
 import '../../domain/product.dart';
 
@@ -11,7 +12,7 @@ class ProductDetailPage extends StatelessWidget {
     final cart = CartScope.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(product.name)),
+      appBar: GlobalAppBar(title: product.name),
       body: LayoutBuilder(
         builder: (context, c) {
           final isWide = c.maxWidth > 700;
