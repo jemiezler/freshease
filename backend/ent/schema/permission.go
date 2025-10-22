@@ -5,12 +5,14 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 type Permission struct{ ent.Schema }
 
 func (Permission) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique(),
 		field.String("name").Unique(),
 		field.String("description"),
 	}
