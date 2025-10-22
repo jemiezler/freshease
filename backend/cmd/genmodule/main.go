@@ -17,12 +17,12 @@ const ModulePath = "freshease/backend" // your go module path (from go.mod)
 // -------- helpers --------
 
 type Data struct {
-	Name        string // plural module name (e.g., "users")
-	Route       string // "/users"
-	CapPlural   string // "Users"
-	Singular    string // "user"
-	CapSing     string // "User"
-	SingularPkg string // ent entity import pkg (lowercase singular) e.g., "user"
+	Name        string // plural module name (e.g., "roles")
+	Route       string // "/roles"
+	CapPlural   string // "Roles"
+	Singular    string // "role"
+	CapSing     string // "Role"
+	SingularPkg string // ent entity import pkg (lowercase singular) e.g., "role"
 	Backtick    string // "`"
 	ModulePath  string // module import path
 }
@@ -54,11 +54,11 @@ func main() {
 	createAll(modDir, map[string]string{
 		"controller.go": controllerTmpl,
 		"service.go":    serviceTmpl,
-		"repository.go": repoIfaceTmpl, // interface only (UUID)
-		"repo_ent.go":   repoEntTmpl,   // Ent implementation (UUID)
+		"repository.go": repoIfaceTmpl,
+		"repo_ent.go":   repoEntTmpl,
 		"dto.go":        dtoTmpl,
 		"routes.go":     routesTmpl,
-		"module.go":     moduleTmpl, // RegisterModuleWithEnt(...)
+		"module.go":     moduleTmpl,
 	}, d)
 
 	// 2) ent scaffolding (schema + generate.go) if missing
@@ -66,10 +66,10 @@ func main() {
 	createIfMissing(filepath.Join("ent", "generate.go"), entGenerateTmpl, d)
 	createIfMissing(filepath.Join("ent", "schema", d.Singular+".go"), entSchemaTmpl, d)
 
-	fmt.Println("✅ Module scaffolded at:", modDir)
+	fmt.Println("Module scaffolded at:", modDir)
 	fmt.Println("ℹ️  Next steps:")
 	fmt.Println("   1) go generate ./ent")
-	fmt.Println("   2) wire in internal/common/router:", d.Name+".RegisterModuleWithEnt(api, entClient)")
+	fmt.Println("   2) app.RegisterRoutes(...):", d.Name+".RegisterModuleWithEnt(api, entClient)")
 }
 
 func naiveSingular(plural string) string {
@@ -129,9 +129,9 @@ func must(err error) {
 const controllerTmpl = `package {{.Name}}
 
 import (
+	"{{.ModulePath}}/internal/common/middleware"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"{{.ModulePath}}/internal/common/middleware"
 )
 
 type Controller struct{ svc Service }
@@ -139,55 +139,73 @@ type Controller struct{ svc Service }
 func NewController(s Service) *Controller { return &Controller{svc: s} }
 
 func (ctl *Controller) Register(r fiber.Router) {
-	r.Get("/", ctl.List{{.CapPlural}})
+	r.Get("/",   ctl.List{{.CapPlural}})
 	r.Get("/:id", ctl.Get{{.CapSing}})
-	r.Post("/", ctl.Create{{.CapSing}})
-	r.Put("/:id", ctl.Update{{.CapSing}})
+	r.Post("/",  ctl.Create{{.CapSing}})
+	r.Patch("/:id", ctl.Update{{.CapSing}})
 	r.Delete("/:id", ctl.Delete{{.CapSing}})
 }
 
 func (ctl *Controller) List{{.CapPlural}}(c *fiber.Ctx) error {
 	items, err := ctl.svc.List(c.Context())
-	if err != nil { return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()}) }
-	return c.JSON(items)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": items, "message": "{{.CapPlural}} Retrieved Successfully"})
 }
 
 func (ctl *Controller) Get{{.CapSing}}(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
-	if err != nil { return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"}) }
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
+	}
 	item, err := ctl.svc.Get(c.Context(), id)
-	if err != nil { return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "not found"}) }
-	return c.JSON(item)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "not found"})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": item, "message": "{{.CapSing}} Retrieved Successfully"})
 }
 
 func (ctl *Controller) Create{{.CapSing}}(c *fiber.Ctx) error {
 	var dto Create{{.CapSing}}DTO
-	if err := middleware.BindAndValidate(c, &dto); err != nil { return err }
+	if err := middleware.BindAndValidate(c, &dto); err != nil {
+		return err
+	}
 	item, err := ctl.svc.Create(c.Context(), dto)
-	if err != nil { return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()}) }
-	return c.Status(fiber.StatusCreated).JSON(item)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+	}
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": item, "message": "{{.CapSing}} Created Successfully"})
 }
 
 func (ctl *Controller) Update{{.CapSing}}(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
-	if err != nil { return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"}) }
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
+	}
 	var dto Update{{.CapSing}}DTO
-	if err := middleware.BindAndValidate(c, &dto); err != nil { return err }
+	if err := middleware.BindAndValidate(c, &dto); err != nil {
+		return err
+	}
 	item, err := ctl.svc.Update(c.Context(), id, dto)
-	if err != nil { return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()}) }
-	return c.JSON(item)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+	}
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": item, "message": "{{.CapSing}} Updated Successfully"})
 }
 
 func (ctl *Controller) Delete{{.CapSing}}(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
-	if err != nil { return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"}) }
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
+	}
 	if err := ctl.svc.Delete(c.Context(), id); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
 	}
-	return c.SendStatus(fiber.StatusNoContent)
+	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{"message": "{{.CapSing}} Deleted Successfully"})
 }
 `
 
@@ -200,45 +218,34 @@ import (
 )
 
 type Service interface {
-	List(ctx context.Context) ([]*{{.CapSing}}, error)
-	Get(ctx context.Context, id uuid.UUID) (*{{.CapSing}}, error)
-	Create(ctx context.Context, dto Create{{.CapSing}}DTO) (*{{.CapSing}}, error)
-	Update(ctx context.Context, id uuid.UUID, dto Update{{.CapSing}}DTO) (*{{.CapSing}}, error)
+	List(ctx context.Context) ([]*Get{{.CapSing}}DTO, error)
+	Get(ctx context.Context, id uuid.UUID) (*Get{{.CapSing}}DTO, error)
+	Create(ctx context.Context, dto Create{{.CapSing}}DTO) (*Get{{.CapSing}}DTO, error)
+	Update(ctx context.Context, id uuid.UUID, dto Update{{.CapSing}}DTO) (*Get{{.CapSing}}DTO, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-type service struct{ repo Repository }
+type service struct {
+	repo Repository
+}
 
 func NewService(r Repository) Service { return &service{repo: r} }
 
-func (s *service) List(ctx context.Context) ([]*{{.CapSing}}, error) {
+func (s *service) List(ctx context.Context) ([]*Get{{.CapSing}}DTO, error) {
 	return s.repo.List(ctx)
 }
 
-func (s *service) Get(ctx context.Context, id uuid.UUID) (*{{.CapSing}}, error) {
+func (s *service) Get(ctx context.Context, id uuid.UUID) (*Get{{.CapSing}}DTO, error) {
 	return s.repo.FindByID(ctx, id)
 }
 
-func (s *service) Create(ctx context.Context, dto Create{{.CapSing}}DTO) (*{{.CapSing}}, error) {
-	entity := &{{.CapSing}}{
-		Email: dto.Email,
-		Name:  dto.Name,
-	}
-	if err := s.repo.Create(ctx, entity); err != nil {
-		return nil, err
-	}
-	return entity, nil
+func (s *service) Create(ctx context.Context, dto Create{{.CapSing}}DTO) (*Get{{.CapSing}}DTO, error) {
+	return s.repo.Create(ctx, &dto)
 }
 
-func (s *service) Update(ctx context.Context, id uuid.UUID, dto Update{{.CapSing}}DTO) (*{{.CapSing}}, error) {
-	entity, err := s.repo.FindByID(ctx, id)
-	if err != nil { return nil, err }
-	if dto.Email != nil { entity.Email = *dto.Email }
-	if dto.Name  != nil { entity.Name  = *dto.Name  }
-	if err := s.repo.Update(ctx, entity); err != nil {
-		return nil, err
-	}
-	return entity, nil
+func (s *service) Update(ctx context.Context, id uuid.UUID, dto Update{{.CapSing}}DTO) (*Get{{.CapSing}}DTO, error) {
+	dto.ID = id
+	return s.repo.Update(ctx, &dto)
 }
 
 func (s *service) Delete(ctx context.Context, id uuid.UUID) error {
@@ -246,7 +253,6 @@ func (s *service) Delete(ctx context.Context, id uuid.UUID) error {
 }
 `
 
-// Repository interface only. Implementation lives in repo_ent.go
 const repoIfaceTmpl = `package {{.Name}}
 
 import (
@@ -255,70 +261,100 @@ import (
 	"github.com/google/uuid"
 )
 
-type {{.CapSing}} struct {
-	ID    uuid.UUID {{.Backtick}}json:"id"{{.Backtick}}
-	Email string     {{.Backtick}}json:"email"{{.Backtick}}
-	Name  string     {{.Backtick}}json:"name"{{.Backtick}}
-}
-
 type Repository interface {
-	List(ctx context.Context) ([]*{{.CapSing}}, error)
-	FindByID(ctx context.Context, id uuid.UUID) (*{{.CapSing}}, error)
-	Create(ctx context.Context, u *{{.CapSing}}) error
-	Update(ctx context.Context, u *{{.CapSing}}) error
+	List(ctx context.Context) ([]*Get{{.CapSing}}DTO, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*Get{{.CapSing}}DTO, error)
+	Create(ctx context.Context, u *Create{{.CapSing}}DTO) (*Get{{.CapSing}}DTO, error)
+	Update(ctx context.Context, u *Update{{.CapSing}}DTO) (*Get{{.CapSing}}DTO, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 `
 
-// Ent-backed repository
 const repoEntTmpl = `package {{.Name}}
 
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"{{.ModulePath}}/ent"
 	"{{.ModulePath}}/ent/{{.SingularPkg}}"
+	"{{.ModulePath}}/internal/common/errs"
+	"github.com/google/uuid"
 )
 
 type EntRepo struct{ c *ent.Client }
 
 func NewEntRepo(client *ent.Client) Repository { return &EntRepo{c: client} }
 
-func (r *EntRepo) List(ctx context.Context) ([]*{{.CapSing}}, error) {
+func (r *EntRepo) List(ctx context.Context) ([]*Get{{.CapSing}}DTO, error) {
 	rows, err := r.c.{{.CapSing}}.Query().Order(ent.Asc({{.SingularPkg}}.FieldID)).All(ctx)
-	if err != nil { return nil, err }
-	out := make([]*{{.CapSing}}, 0, len(rows))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*Get{{.CapSing}}DTO, 0, len(rows))
 	for _, v := range rows {
-		out = append(out, &{{.CapSing}}{ID: v.ID, Email: v.Email, Name: v.Name})
+		out = append(out, &Get{{.CapSing}}DTO{
+			ID:          v.ID,
+			Name:        v.Name,
+			Description: v.Description,
+		})
 	}
 	return out, nil
 }
 
-func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*{{.CapSing}}, error) {
+func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*Get{{.CapSing}}DTO, error) {
 	v, err := r.c.{{.CapSing}}.Get(ctx, id)
-	if err != nil { return nil, err }
-	return &{{.CapSing}}{ID: v.ID, Email: v.Email, Name: v.Name}, nil
+	if err != nil {
+		return nil, err
+	}
+	return &Get{{.CapSing}}DTO{
+		ID:          v.ID,
+		Name:        v.Name,
+		Description: v.Description,
+	}, nil
 }
 
-func (r *EntRepo) Create(ctx context.Context, u *{{.CapSing}}) error {
-	newRow, err := r.c.{{.CapSing}}.
+func (r *EntRepo) Create(ctx context.Context, dto *Create{{.CapSing}}DTO) (*Get{{.CapSing}}DTO, error) {
+	q := r.c.{{.CapSing}}.
 		Create().
-		SetEmail(u.Email).
-		SetName(u.Name).
-		Save(ctx)
-	if err != nil { return err }
-	u.ID = newRow.ID
-	return nil
+		SetName(dto.Name).
+		SetDescription(dto.Description)
+
+	row, err := q.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Get{{.CapSing}}DTO{
+		ID:          row.ID,
+		Name:        row.Name,
+		Description: row.Description,
+	}, nil
 }
 
-func (r *EntRepo) Update(ctx context.Context, u *{{.CapSing}}) error {
-	_, err := r.c.{{.CapSing}}.
-		UpdateOneID(u.ID).
-		SetEmail(u.Email).
-		SetName(u.Name).
-		Save(ctx)
-	return err
+func (r *EntRepo) Update(ctx context.Context, dto *Update{{.CapSing}}DTO) (*Get{{.CapSing}}DTO, error) {
+	q := r.c.{{.CapSing}}.UpdateOneID(dto.ID)
+
+	if dto.Name != nil {
+		q.SetName(*dto.Name)
+	}
+	if dto.Description != nil {
+		q.SetDescription(*dto.Description)
+	}
+
+	if len(q.Mutation().Fields()) == 0 {
+		return nil, errs.NoFieldsToUpdate
+	}
+
+	row, err := q.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Get{{.CapSing}}DTO{
+		ID:          row.ID,
+		Name:        row.Name,
+		Description: row.Description,
+	}, nil
 }
 
 func (r *EntRepo) Delete(ctx context.Context, id uuid.UUID) error {
@@ -328,14 +364,24 @@ func (r *EntRepo) Delete(ctx context.Context, id uuid.UUID) error {
 
 const dtoTmpl = `package {{.Name}}
 
+import "github.com/google/uuid"
+
 type Create{{.CapSing}}DTO struct {
-	Email string {{.Backtick}}json:"email" validate:"required,email"{{.Backtick}}
-	Name  string {{.Backtick}}json:"name"  validate:"required,min=2,max=60"{{.Backtick}}
+	ID          uuid.UUID {{.Backtick}}json:"id" validate:"required"{{.Backtick}}
+	Name        string    {{.Backtick}}json:"name" validate:"required,min=2,max=60"{{.Backtick}}
+	Description string    {{.Backtick}}json:"description" validate:"required"{{.Backtick}}
 }
 
 type Update{{.CapSing}}DTO struct {
-	Email *string {{.Backtick}}json:"email" validate:"omitempty,email"{{.Backtick}}
-	Name  *string {{.Backtick}}json:"name"  validate:"omitempty,min=2,max=60"{{.Backtick}}
+	ID          uuid.UUID {{.Backtick}}json:"id" validate:"required"{{.Backtick}}
+	Name        *string   {{.Backtick}}json:"name" validate:"omitempty,min=2,max=60"{{.Backtick}}
+	Description *string   {{.Backtick}}json:"description" validate:"omitempty"{{.Backtick}}
+}
+
+type Get{{.CapSing}}DTO struct {
+	ID          uuid.UUID {{.Backtick}}json:"id" validate:"required"{{.Backtick}}
+	Name        string    {{.Backtick}}json:"name" validate:"required,min=2,max=60"{{.Backtick}}
+	Description string    {{.Backtick}}json:"description" validate:"required"{{.Backtick}}
 }
 `
 
@@ -350,7 +396,6 @@ func Routes(app fiber.Router, ctl *Controller) {
 }
 `
 
-// RegisterModuleWithEnt expects an ent.Client to be provided by your app bootstrap.
 const moduleTmpl = `package {{.Name}}
 
 import (
@@ -387,8 +432,8 @@ type {{.CapSing}} struct{ ent.Schema }
 func ({{.CapSing}}) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable(),
-		field.String("email").NotEmpty().Unique(),
 		field.String("name").NotEmpty(),
+		field.String("description").NotEmpty(),
 	}
 }
 `
