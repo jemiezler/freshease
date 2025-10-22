@@ -1,0 +1,5 @@
+# How to Init New Database Table
+go run entgo.io/ent/cmd/ent new User
+
+AFTER DECLARED SCHEMA
+go run entgo.io/ent/cmd/ent generate ./ent/schema
