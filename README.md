@@ -1,12 +1,12 @@
-# 🥬 FreshEase  
-**Farm-to-Door Grocery & Nutrition Coach**  
+# 🥬 FreshEase
+**Farm-to-Door Grocery & Nutrition Coach**
 _A project by Group 17, Mae Fah Luang University_
 
 ---
 
 ## 📖 Overview
 
-**FreshEase** is a **farm-to-door grocery delivery platform** combined with a **personal eating coach** that helps users buy local farm products, receive personalized meal plans, and track their wellness goals — all in one place.  
+**FreshEase** is a **farm-to-door grocery delivery platform** combined with a **personal eating coach** that helps users buy local farm products, receive personalized meal plans, and track their wellness goals — all in one place.
 
 ---
 
@@ -26,15 +26,15 @@ _A project by Group 17, Mae Fah Luang University_
 ## 🧭 System Overview
 
 **User Roles**
-- `Customer` — Orders products, follows AI meal coach suggestions  
-- `Admin` — Manages products, users, and order statuses  
+- `Customer` — Orders products, follows AI meal coach suggestions
+- `Admin` — Manages products, users, and order statuses
 
 **Workflow**
-1. User registers and logs in  
-2. Customer browses products  
-3. Adds items to cart  
-4. Proceeds to checkout and confirms order  
-5. Admin processes and updates order status  
+1. User registers and logs in
+2. Customer browses products
+3. Adds items to cart
+4. Proceeds to checkout and confirms order
+5. Admin processes and updates order status
 
 ---
 
@@ -60,3 +60,9 @@ _A project by Group 17, Mae Fah Luang University_
 | Ramed Naochomphoo | 6531503120 |
 | Setsawat Donchai | 6531503137 |
 | Nattawat Nattachanasit | 6531503201 |
+
+## 🎨 Design (UI/UX)
+
+The UI/UX design, mockups, and prototypes for this project (FreshEase) are available on Figma.
+
+[View FreshEase Design on Figma](https://www.figma.com/design/KhLyavB5V4m8ZMJ2mv3Biy/FreshEase?node-id=43-5&t=mAWMoN3VnpWkIpOR-1)
