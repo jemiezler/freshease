@@ -2,16 +2,15 @@ package main
 
 import (
 	"context"
-	"freshease/backend/internal/common/config"
-	"freshease/backend/internal/common/http"
-	"freshease/backend/internal/common/middleware"
 	"os/signal"
 	"syscall"
 	"time"
 
-	_ "freshease/backend/internal/docs"
+	"freshease/backend/internal/common/config"
+	"freshease/backend/internal/common/db"
+	httpserver "freshease/backend/internal/common/http"
 
-	fiberSwagger "github.com/swaggo/fiber-swagger"
+	_ "freshease/backend/internal/docs" // swagger (if generated)
 
 	"github.com/gofiber/fiber/v2/log"
 )
@@ -23,23 +22,43 @@ import (
 // @host localhost:8080
 func main() {
 	cfg := config.Load()
-	app := http.New()
-	app.Use(middleware.RequestLogger())
-	app.Get("/swagger/*", fiberSwagger.WrapHandler)
-	// api := app.Group("/api")
 
+	// Build HTTP app (no routes yet)
+	app := httpserver.New()
+
+	// DB connect + ping with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, closeDB, err := db.NewEntClientPGX(ctx, cfg.DatabaseURL, cfg.Ent.Debug)
+	if err != nil {
+		log.Fatal("[Fatal] ent client: ", err)
+	}
+	defer func() { _ = closeDB(context.Background()) }()
+
+	// Migrate
+	if err := client.Schema.Create(ctx); err != nil {
+		log.Fatal("[Fatal] ent schema: ", err)
+	}
+
+	// Register routes, grouped under /api
+	httpserver.RegisterRoutes(app, client)
+
+	// Start server
 	go func() {
-		log.Info("listening on", cfg.HTTPAddr)
-		if err := app.Listen(cfg.HTTPAddr); err != nil {
+		log.Infof("[HTTP] listening on %s", cfg.HTTPPort)
+		if err := app.Listen(cfg.HTTPPort); err != nil {
 			log.Fatal(err)
 		}
 	}()
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	<-ctx.Done()
+	// Wait for signal
+	sigCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	<-sigCtx.Done()
 	stop()
 
-	shCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+	// Graceful shutdown
+	shCtx, shCancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer shCancel()
 	_ = app.ShutdownWithContext(shCtx)
 }

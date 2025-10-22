@@ -6,16 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
-type Role struct {
-	ID    uuid.UUID `json:"id"`
-	Email string     `json:"email"`
-	Name  string     `json:"name"`
-}
-
 type Repository interface {
-	List(ctx context.Context) ([]*Role, error)
-	FindByID(ctx context.Context, id uuid.UUID) (*Role, error)
-	Create(ctx context.Context, u *Role) error
-	Update(ctx context.Context, u *Role) error
+	List(ctx context.Context) ([]*GetRoleDTO, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*GetRoleDTO, error)
+	Create(ctx context.Context, u *CreateRoleDTO) (*GetRoleDTO, error)
+	Update(ctx context.Context, u *UpdateRoleDTO) (*GetRoleDTO, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
