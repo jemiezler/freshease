@@ -58,7 +58,7 @@ _A project by Group 17, Mae Fah Luang University_
 | Satarassami Bunprajam | 6531503075 |
 | Sonthaya Phureesawat | 6531503078 |
 | Ramed Naochomphoo | 6531503120 |
-| Setsawat Donchai | 6531503137 |
+| Chit Min Thu | 6531503137 |
 | Nattawat Nattachanasit | 6531503201 |
 
 ## 🎨 Design (UI/UX)
