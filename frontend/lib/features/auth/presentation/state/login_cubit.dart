@@ -1,3 +1,4 @@
+// presentation/login/login_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -20,10 +21,10 @@ class LoginCubit extends Cubit<LoginState> {
   final AuthRepository repo;
   LoginCubit(this.repo) : super(const LoginState());
 
-  Future<void> submit(String email, String password) async {
+  Future<void> googleLogin() async {
     emit(state.copyWith(loading: true, error: null));
     try {
-      final u = await repo.login(email: email, password: password);
+      final u = await repo.signInWithGoogle();
       emit(LoginState(user: u));
     } catch (e) {
       emit(LoginState(error: e.toString()));

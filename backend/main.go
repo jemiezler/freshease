@@ -13,6 +13,7 @@ import (
 	_ "freshease/backend/internal/docs" // swagger (if generated)
 
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 // @title Freshease API
@@ -25,7 +26,13 @@ func main() {
 
 	// Build HTTP app (no routes yet)
 	app := httpserver.New()
-
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "*",
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		ExposeHeaders:    "Content-Length",
+		AllowCredentials: false,
+	}))
 	// DB connect + ping with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
