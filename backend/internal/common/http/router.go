@@ -2,6 +2,8 @@ package http
 
 import (
 	"freshease/backend/ent"
+	"freshease/backend/internal/common/middleware"
+	"freshease/backend/modules/auth/authoidc"
 	"freshease/backend/modules/permissions"
 	"freshease/backend/modules/roles"
 	"freshease/backend/modules/users"
@@ -18,9 +20,21 @@ func RegisterRoutes(app *fiber.App, client *ent.Client) {
 
 	log.Debug("[router] registering modules...")
 
-	users.RegisterModuleWithEnt(api, client)
-	roles.RegisterModuleWithEnt(api, client)
-	permissions.RegisterModuleWithEnt(api, client)
+	// 1) Public: OIDC auth (Google/LINE callbacks)
+	if err := authoidc.RegisterModule(api, client); err != nil {
+		panic(err)
+	}
+
+	// 2) Secured area (everything below requires Authorization: Bearer <JWT>)
+	secured := api.Group("", middleware.RequireAuth())
+
+	// mount protected modules on the secured router
+	users.RegisterModuleWithEnt(secured, client)
+	roles.RegisterModuleWithEnt(secured, client)
+	permissions.RegisterModuleWithEnt(secured, client)
+	secured.Get("/whoami", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{"ok": true})
+	})
 
 	logRegisteredModules(app, "/api")
 }

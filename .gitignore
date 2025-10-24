@@ -116,6 +116,7 @@ backend/ent/*
 !backend/ent/schema/
 !backend/ent/schema/**
 
+
 # Editor/IDE
 # .idea/
 # .vscode/

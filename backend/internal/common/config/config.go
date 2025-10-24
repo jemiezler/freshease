@@ -8,10 +8,14 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string
-	HTTPPort    string
-	JWTSecret   string
-	Ent         EntConfig
+	DatabaseURL               string
+	HTTPPort                  string
+	JWTSecret                 string
+	Ent                       EntConfig
+	OIDC_GOOGLE_ISSUER        string
+	OIDC_GOOGLE_CLIENT_ID     string
+	OIDC_GOOGLE_CLIENT_SECRET string
+	OIDC_GOOGLE_REDIRECT_URI  string
 }
 
 type EntConfig struct {
@@ -30,6 +34,10 @@ func Load() Config {
 		Ent: EntConfig{
 			Debug: getEnv("ENT_DEBUG", "false") == "true",
 		},
+		OIDC_GOOGLE_ISSUER:        getEnv("OIDC_GOOGLE_ISSUER", ""),
+		OIDC_GOOGLE_CLIENT_ID:     getEnv("OIDC_GOOGLE_CLIENT_ID", ""),
+		OIDC_GOOGLE_CLIENT_SECRET: getEnv("OIDC_GOOGLE_CLIENT_SECRET", ""),
+		OIDC_GOOGLE_REDIRECT_URI:  getEnv("OIDC_GOOGLE_REDIRECT_URI", ""),
 	}
 
 	log.Printf("[config] Loaded config: DB=%s HTTP=%s EntDebug=%v", cfg.DatabaseURL, cfg.HTTPPort, cfg.Ent.Debug)
