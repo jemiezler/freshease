@@ -18,7 +18,7 @@ type Role struct {
 // Fields of the Role.
 func (Role) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique(),
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique().Immutable(),
 		field.String("name").NotEmpty().Unique(),
 		field.String("description").NotEmpty(),
 		field.Time("created_at").Default(time.Now),

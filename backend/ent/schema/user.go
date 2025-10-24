@@ -18,11 +18,11 @@ type User struct {
 // Fields of the User.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique(),
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique().Immutable(),
 		field.String("email").Unique(),
-		field.String("password").MinLen(8).MaxLen(100),
+		field.String("password").Optional().Nillable().Sensitive(),
 		field.String("name").MinLen(2).MaxLen(100),
-		field.String("phone").MinLen(10).MaxLen(20),
+		field.String("phone").MinLen(10).MaxLen(20).Nillable().Optional(),
 		field.String("bio").MinLen(10).MaxLen(500).Nillable().Optional(),
 		field.String("avatar").MinLen(10).MaxLen(200).Nillable().Optional(),
 		field.String("cover").MinLen(10).MaxLen(200).Nillable().Optional(),
@@ -48,5 +48,6 @@ func (User) Edges() []ent.Edge {
 		edge.From("role", Role.Type).Ref("users").Unique(),
 		edge.To("address", Address.Type),
 		edge.To("role_permission", Role_Permission.Type),
+		edge.To("identities", Identity.Type),
 	}
 }

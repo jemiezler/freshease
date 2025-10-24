@@ -6,8 +6,10 @@ import (
 	"freshease/backend/ent"
 	"freshease/backend/ent/user"
 	"freshease/backend/internal/common/errs"
+	"freshease/backend/internal/common/helpers"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type EntRepo struct{ c *ent.Client }
@@ -29,9 +31,9 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetUserDTO, error) {
 			Email:  v.Email,
 			Name:   v.Name,
 			Phone:  v.Phone,
-			Bio:    ptrIfNotNil(v.Bio),
-			Avatar: ptrIfNotNil(v.Avatar),
-			Cover:  ptrIfNotNil(v.Cover),
+			Bio:    helpers.PtrIfNotNil(v.Bio),
+			Avatar: helpers.PtrIfNotNil(v.Avatar),
+			Cover:  helpers.PtrIfNotNil(v.Cover),
 			Status: v.Status,
 		})
 	}
@@ -48,9 +50,9 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetUserDTO, erro
 		Email:  v.Email,
 		Name:   v.Name,
 		Phone:  v.Phone,
-		Bio:    ptrIfNotNil(v.Bio),
-		Avatar: ptrIfNotNil(v.Avatar),
-		Cover:  ptrIfNotNil(v.Cover),
+		Bio:    helpers.PtrIfNotNil(v.Bio),
+		Avatar: helpers.PtrIfNotNil(v.Avatar),
+		Cover:  helpers.PtrIfNotNil(v.Cover),
 		Status: v.Status,
 	}, nil
 }
@@ -58,9 +60,8 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetUserDTO, erro
 func (r *EntRepo) Create(ctx context.Context, dto *CreateUserDTO) (*GetUserDTO, error) {
 	q := r.c.User.Create().
 		SetEmail(dto.Email).
-		SetPassword(dto.Password). // TODO: hash before storing!
 		SetName(dto.Name).
-		SetPhone(dto.Phone)
+		SetNillablePhone(dto.Phone)
 
 	// Optional/nillable fields
 	if dto.Bio != nil {
@@ -76,6 +77,12 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateUserDTO) (*GetUserDTO, 
 		q.SetStatus(*dto.Status)
 	}
 
+	hashed, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	q.SetPassword(string(hashed))
+
 	row, err := q.Save(ctx)
 	if err != nil {
 		return nil, err
@@ -86,9 +93,9 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateUserDTO) (*GetUserDTO, 
 		Email:  row.Email,
 		Name:   row.Name,
 		Phone:  row.Phone,
-		Bio:    ptrIfNotNil(row.Bio),
-		Avatar: ptrIfNotNil(row.Avatar),
-		Cover:  ptrIfNotNil(row.Cover),
+		Bio:    helpers.PtrIfNotNil(row.Bio),
+		Avatar: helpers.PtrIfNotNil(row.Avatar),
+		Cover:  helpers.PtrIfNotNil(row.Cover),
 		Status: row.Status,
 	}, nil
 }
@@ -96,14 +103,18 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateUserDTO) (*GetUserDTO, 
 func (r *EntRepo) Update(ctx context.Context, dto *UpdateUserDTO) (*GetUserDTO, error) {
 	q := r.c.User.UpdateOneID(dto.ID)
 
-	// Set only provided fields
 	if dto.Email != nil {
 		q.SetEmail(*dto.Email)
 	}
+
 	if dto.Password != nil {
-		// TODO: hash before storing
-		q.SetPassword(*dto.Password)
+		hashed, err := bcrypt.GenerateFromPassword([]byte(*dto.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		q.SetPassword(string(hashed))
 	}
+
 	if dto.Name != nil {
 		q.SetName(*dto.Name)
 	}
@@ -137,9 +148,9 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateUserDTO) (*GetUserDTO, 
 		Email:  row.Email,
 		Name:   row.Name,
 		Phone:  row.Phone,
-		Bio:    ptrIfNotNil(row.Bio),
-		Avatar: ptrIfNotNil(row.Avatar),
-		Cover:  ptrIfNotNil(row.Cover),
+		Bio:    helpers.PtrIfNotNil(row.Bio),
+		Avatar: helpers.PtrIfNotNil(row.Avatar),
+		Cover:  helpers.PtrIfNotNil(row.Cover),
 		Status: row.Status,
 	}, nil
 }
@@ -147,6 +158,3 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateUserDTO) (*GetUserDTO, 
 func (r *EntRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.c.User.DeleteOneID(id).Exec(ctx)
 }
-
-// helper: turn sql-nullable string into *string for DTO
-func ptrIfNotNil(s *string) *string { return s }
