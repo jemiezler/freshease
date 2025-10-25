@@ -18,7 +18,8 @@ class MockProductRepository implements ProductRepository {
       id: 1,
       name: 'Fresh Kale Bundle',
       price: 59,
-      image: 'https://picsum.photos/400/300?1',
+      image:
+          'https://i.pinimg.com/1200x/cb/b7/19/cbb719ec3451b7e94f64ebc591c3fa2a.jpg',
       category: 'Veggies',
       brand: 'Kazi Farmas',
     ),
@@ -26,7 +27,8 @@ class MockProductRepository implements ProductRepository {
       id: 2,
       name: 'Organic Mango Pack',
       price: 99,
-      image: 'https://picsum.photos/400/300?2',
+      image:
+          'https://i.pinimg.com/736x/d6/d0/85/d6d085ab76d5b69e8f3d4e8baa07150d.jpg',
       category: 'Fruits',
       brand: 'Malee',
     ),
@@ -34,7 +36,8 @@ class MockProductRepository implements ProductRepository {
       id: 3,
       name: 'Cherry Tomatoes',
       price: 49,
-      image: 'https://picsum.photos/400/300?3',
+      image:
+          'https://i.pinimg.com/736x/99/2c/22/992c22f91ce2bc1070d05744680aca40.jpg',
       category: 'Veggies',
       brand: 'Individual Collection',
     ),
@@ -42,14 +45,16 @@ class MockProductRepository implements ProductRepository {
       id: 4,
       name: 'Thai Basil Leaves',
       price: 25,
-      image: 'https://picsum.photos/400/300?4',
+      image:
+          'https://i.pinimg.com/736x/15/7b/31/157b31079d0a41445cdd88774423a9e6.jpg',
       category: 'Herbs',
     ),
     Product(
       id: 5,
       name: 'Avocado Set',
       price: 120,
-      image: 'https://picsum.photos/400/300?5',
+      image:
+          'https://i.pinimg.com/736x/55/76/7c/55767cd8be626988eb85d81d58a02010.jpg',
       category: 'Fruits',
       brand: 'Ifod',
     ),
@@ -57,7 +62,8 @@ class MockProductRepository implements ProductRepository {
       id: 10,
       name: 'Egg Chicken Red',
       price: 1.99,
-      image: 'https://picsum.photos/400/300?10',
+      image:
+          'https://i.pinimg.com/736x/46/b8/7d/46b87dc1b5990413635bd9822e447240.jpg',
       category: 'Dairy',
       brand: 'Kazi Farmas',
     ),
@@ -65,7 +71,8 @@ class MockProductRepository implements ProductRepository {
       id: 11,
       name: 'Egg Chicken White',
       price: 1.50,
-      image: 'https://picsum.photos/400/300?11',
+      image:
+          'https://i.pinimg.com/736x/78/ef/a4/78efa4deccca25ea4be54556c2e7c6fa.jpg',
       category: 'Dairy',
       brand: 'Individual Collection',
     ),
@@ -73,7 +80,8 @@ class MockProductRepository implements ProductRepository {
       id: 12,
       name: 'Malee Tangerine Orange Juice',
       price: 65,
-      image: 'https://picsum.photos/400/300?12',
+      image:
+          'https://www.shopping-d.com/cdn/shop/products/MaleeTangerineOrangeJuicewithOrangePulpSize1L_8853333001815_17000.png?v=1594787116',
       category: 'Beverages',
       brand: 'Malee',
     ),
@@ -81,7 +89,8 @@ class MockProductRepository implements ProductRepository {
       id: 13,
       name: 'Malee Peach Juice',
       price: 65,
-      image: 'https://picsum.photos/400/300?13',
+      image:
+          'https://media-stark.gourmetmarketthailand.com/products/cover/8853333013597-1.webp',
       category: 'Beverages',
       brand: 'Malee',
     ),

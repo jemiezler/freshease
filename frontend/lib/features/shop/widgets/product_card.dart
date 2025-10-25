@@ -1,10 +1,11 @@
 // ไฟล์: product_card.dart
 
 import 'package:flutter/material.dart';
-import 'package:frontend/features/shop/domain/product.dart';
+import 'package:frontend/features/shop/domain/product.dart'; // ตรวจสอบ import นี้
 
-// ‼️ ดึงสีหลักมาจาก shoppage
-const Color _primaryColor = Color(0xFF90B56D);
+// ‼️ ดึงสีหลัก (อาจต้อง import จาก shoppage หรือประกาศใหม่)
+// const Color _primaryColor = Color(0xFF53B175); // ใช้สีเขียวใหม่จาก shoppage
+const Color _primaryColor = Color(0xFF90B56D); // หรือใช้สีเขียวเดิมที่คุณมี
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -22,15 +23,26 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ‼️ 1. ตรวจสอบว่า image เป็น URL หรือ Asset Path
+    final bool isNetworkImage = product.image.startsWith('http');
+
+    // ‼️ 2. สร้าง ImageProvider ที่ถูกต้อง
+    final ImageProvider imageProvider;
+    if (isNetworkImage) {
+      imageProvider = NetworkImage(product.image); // 👈 ถ้าเป็น URL
+    } else {
+      // 👈 ถ้าเป็น Asset Path
+      // (ต้องแน่ใจว่าประกาศ Assets ใน pubspec.yaml ถูกต้อง)
+      imageProvider = AssetImage(product.image);
+    }
+
     return InkWell(
-      // ทำให้ทั้งการ์ดกดได้
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          // ‼️ เพิ่มเส้นขอบสีเทาอ่อนตามภาพ
           border: Border.all(color: Colors.grey.shade200, width: 1.5),
         ),
         child: Column(
@@ -40,15 +52,39 @@ class ProductCard extends StatelessWidget {
             Expanded(
               flex: 3,
               child: Center(
-                // ‼️ ตรวจสอบว่า product.image เป็น Asset Path ที่ถูกต้อง
-                child: Image.asset(
-                  product.image,
-                  fit: BoxFit.contain,
-                  errorBuilder: (ctx, err, stack) => const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: Colors.grey,
-                    size: 40,
-                  ),
+                // ‼️ 3. ใช้ Image.provider แทน Image.asset
+                child: Image(
+                  image: imageProvider, // 👈 ใช้ Provider ที่สร้างไว้
+                  fit: BoxFit.contain, // หรือ BoxFit.cover ตามต้องการ
+                  // ‼️ 4. เพิ่ม Loading Builder (สำคัญสำหรับ NetworkImage)
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child; // โหลดเสร็จ
+                    return Center(
+                      // กำลังโหลด...
+                      child: CircularProgressIndicator(
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          _primaryColor,
+                        ),
+                        strokeWidth: 2,
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    );
+                  },
+
+                  // ‼️ 5. errorBuilder (สำคัญมาก)
+                  errorBuilder: (ctx, err, stack) {
+                    debugPrint(
+                      '!!! ProductCard image error: ${product.image}\nError: $err',
+                    );
+                    return const Icon(
+                      Icons.broken_image_outlined, // Icon รูปเสีย
+                      color: Colors.grey,
+                      size: 40,
+                    );
+                  },
                 ),
               ),
             ),
@@ -63,38 +99,34 @@ class ProductCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
 
-            // --- รายละเอียด (เช่น "7pcs, Priceg") ---
+            // --- รายละเอียด ---
             Text(
-              productDetail ?? '${product.category} item', // Fallback
+              productDetail ?? '${product.category} item',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const Spacer(),
-
+            const Spacer(), // ดันราคา/ปุ่มไปล่างสุด
             // --- ราคา และ ปุ่มบวก ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  // ‼️ แสดงราคา (สมมติว่าเป็น $ ตามภาพ)
                   '\$${product.price.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
                 ),
-
-                // ‼️ นี่คือ "ปุ่ม" ที่แก้ไขแล้ว
                 GestureDetector(
                   onTap: onAdd,
                   child: Container(
                     width: 45,
                     height: 45,
                     decoration: const BoxDecoration(
-                      color: _primaryColor, // 👈 สีเขียว
-                      shape: BoxShape.circle, // 👈 ทรงกลม
+                      color: _primaryColor, // สีเขียว
+                      shape: BoxShape.circle, // ทรงกลม
                     ),
                     child: const Icon(Icons.add, color: Colors.white, size: 28),
                   ),
