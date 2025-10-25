@@ -1,25 +1,26 @@
+// ไฟล์: product_repository.dart
 import '../domain/product.dart';
 
 abstract class ProductRepository {
   Future<List<Product>> list({
     String q = '',
-    String category = 'All',
+    // ‼️ 1. ลบ 'category' ออกจาก interface
     double min = 0,
     double max = 99999,
+    Map<String, List<String>> filters = const {},
   });
 }
 
 /// Mock repo – replace with HTTP later
 class MockProductRepository implements ProductRepository {
   final _data = <Product>[
-    // --- สินค้าที่มีอยู่เดิม ---
     Product(
       id: 1,
       name: 'Fresh Kale Bundle',
       price: 59,
       image: 'https://picsum.photos/400/300?1',
       category: 'Veggies',
-      description: 'A bundle of fresh, locally sourced Kale.',
+      brand: 'Kazi Farmas',
     ),
     Product(
       id: 2,
@@ -27,7 +28,7 @@ class MockProductRepository implements ProductRepository {
       price: 99,
       image: 'https://picsum.photos/400/300?2',
       category: 'Fruits',
-      description: 'A pack of sweet and ripe organic mangoes.',
+      brand: 'Malee',
     ),
     Product(
       id: 3,
@@ -35,7 +36,7 @@ class MockProductRepository implements ProductRepository {
       price: 49,
       image: 'https://picsum.photos/400/300?3',
       category: 'Veggies',
-      description: 'Perfect for salads and snacking.',
+      brand: 'Individual Collection',
     ),
     Product(
       id: 4,
@@ -43,7 +44,6 @@ class MockProductRepository implements ProductRepository {
       price: 25,
       image: 'https://picsum.photos/400/300?4',
       category: 'Herbs',
-      description: 'Fragrant and fresh Thai Basil leaves for cooking.',
     ),
     Product(
       id: 5,
@@ -51,51 +51,82 @@ class MockProductRepository implements ProductRepository {
       price: 120,
       image: 'https://picsum.photos/400/300?5',
       category: 'Fruits',
-      description: 'A set of 3 creamy Hass avocados.',
-    ),
-
-    // --- เพิ่มสินค้า Exclusive Offer ตามรูปภาพ UI ---
-    Product(
-      id: 6,
-      name: 'Organic Bananas',
-      price: 4.99,
-      image: 'https://picsum.photos/400/300?6',
-      category: 'Fruits',
-      description: '7pcs, Priceg', // <--- เพิ่ม description
+      brand: 'Ifod',
     ),
     Product(
-      id: 7,
-      name: 'Red Apple',
-      price: 4.99,
-      image: 'https://picsum.photos/400/300?7',
-      category: 'Fruits',
-      description: '1kg, Priceg', // <--- เพิ่ม description
+      id: 10,
+      name: 'Egg Chicken Red',
+      price: 1.99,
+      image: 'https://picsum.photos/400/300?10',
+      category: 'Dairy',
+      brand: 'Kazi Farmas',
     ),
-
-    // --- เพิ่มสินค้า Best Selling ตามรูปภาพ UI ---
     Product(
-      id: 8,
-      name: 'Red Bell Pepper',
-      price: 3.50,
-      image: 'https://picsum.photos/400/300?8',
-      category: 'Veggies',
-      description: '3pcs, Priceg', // <--- เพิ่ม description
+      id: 11,
+      name: 'Egg Chicken White',
+      price: 1.50,
+      image: 'https://picsum.photos/400/300?11',
+      category: 'Dairy',
+      brand: 'Individual Collection',
+    ),
+    Product(
+      id: 12,
+      name: 'Malee Tangerine Orange Juice',
+      price: 65,
+      image: 'https://picsum.photos/400/300?12',
+      category: 'Beverages',
+      brand: 'Malee',
+    ),
+    Product(
+      id: 13,
+      name: 'Malee Peach Juice',
+      price: 65,
+      image: 'https://picsum.photos/400/300?13',
+      category: 'Beverages',
+      brand: 'Malee',
     ),
   ];
 
   @override
   Future<List<Product>> list({
     String q = '',
-    String category = 'All',
+    // ‼️ 2. ลบ 'category' ออกจาก parameter
     double min = 0,
     double max = 99999,
+    Map<String, List<String>> filters = const {},
   }) async {
     await Future.delayed(const Duration(milliseconds: 120));
+
+    // 3. ดึงค่าฟิลเตอร์ที่เลือก
+    final filterCategories = filters['categories'] ?? [];
+    final filterBrands = filters['brands'] ?? [];
+
     return _data.where((p) {
-      final byQ = q.isEmpty || p.name.toLowerCase().contains(q.toLowerCase());
-      final byC = category == 'All' || p.category == category;
+      // ‼️ 4. FIX: ค้นหาจาก Search Bar (q)
+      // ให้ค้นหาทั้ง p.name และ p.category
+      final byQ =
+          q.isEmpty ||
+          p.name.toLowerCase().contains(q.toLowerCase()) ||
+          p.category.toLowerCase().contains(q.toLowerCase());
+
+      // ‼️ 5. FIX: ลบ byC (ตัวปัญหา) ทิ้ง
+      // final byC = category == 'All' || p.category == category; // 👈 ลบทิ้ง
+
+      // 6. ฟิลเตอร์จาก Price Range (ถ้ามี)
       final byP = p.price >= min && p.price <= max;
-      return byQ && byC && byP;
+
+      // ‼️ 7. FIX: ฟิลเตอร์จากหน้า FilterPage (Categories Checkbox)
+      // แก้ไขให้เช็ค p.category ตรงๆ (จาก 'Fruits', 'Dairy' ฯลฯ)
+      final byFilterCategory =
+          filterCategories.isEmpty || filterCategories.contains(p.category);
+
+      // 8. ฟิลเตอร์จากหน้า FilterPage (Brands Checkbox)
+      final byFilterBrand =
+          filterBrands.isEmpty ||
+          (p.brand != null && filterBrands.contains(p.brand));
+
+      // 9. คืนค่าสินค้าที่ตรงทุกเงื่อนไข (ลบ byC ออก)
+      return byQ && byP && byFilterCategory && byFilterBrand;
     }).toList();
   }
 }

@@ -18,6 +18,7 @@ import 'package:go_router/go_router.dart';
 // import '../features/account/presentation/pages/account_page.dart';
 import '../core/state/cart_controller.dart';
 import '../features/auth/presentation/pages/login_page.dart';
+import '../features/shop/presentation/pages/explore_page.dart';
 import '../features/shop/presentation/pages/shop_page.dart';
 
 GoRouter buildRouter() {
@@ -89,6 +90,10 @@ GoRouter buildRouter() {
                 path: '/',
                 builder: (_, _) => const ShopPage(),
                 routes: [
+                  GoRoute(
+                    path: '/explore',
+                    builder: (_, _) => const ExplorePage(),
+                  ),
                   GoRoute(
                     path: 'shop/product/:id',
                     builder: (context, state) {

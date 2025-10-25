@@ -1,12 +1,13 @@
+// ไฟล์: product.dart
+
 class Product {
   final int id;
   final String name;
   final double price;
   final String image;
   final String category;
-
-  // 1. เพิ่มฟิลด์ description: ใช้ String? เพื่อให้เป็น optional (อนุญาตให้เป็น null ได้)
   final String? description;
+  final String? brand; // 👈 1. เพิ่มฟิลด์ brand
 
   Product({
     required this.id,
@@ -14,8 +15,7 @@ class Product {
     required this.price,
     required this.image,
     required this.category,
-
-    // 2. รับค่า description ใน Constructor
     this.description,
+    this.brand, // 👈 2. เพิ่มใน constructor
   });
 }
