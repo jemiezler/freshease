@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+// --- Define App Colors from Figma ---
+// ⚠️ หมายเหตุ: คุณเปลี่ยน _scaffoldBgColor เป็นสีขาว ผมจะคงตามนี้นะครับ
+const Color _scaffoldBgColor = Color.fromARGB(255, 255, 255, 255);
+const Color _appBarBgColor = Color(0xFFF7F3F0);
+const Color _cardBgColor = Colors.white;
+// ⚠️ _buttonColor และ _buttonTextColor ไม่ได้ใช้สำหรับปุ่ม plan card แล้ว
+// const Color _buttonColor = Color(0xFFB0D9B1);
+// const Color _buttonTextColor = Color(0xFF333333);
+const Color _primaryTextColor = Color(0xFF333333);
+const Color _secondaryTextColor = Color(0xFF616161); // Colors.grey.shade700
+const Color _checkColor = Color(0xFF4CAF50); // Colors.green.shade600
+
 class PlansPage extends StatefulWidget {
   const PlansPage({super.key});
 
@@ -9,30 +21,31 @@ class PlansPage extends StatefulWidget {
 }
 
 class _PlansPageState extends State<PlansPage> {
+  // Data model with colors that will be used for buttons
   final _plans = const [
     {
       "id": 1,
       "title": "Fresh Starter Plan",
-      "subtitle": "7-Day Clean Eating Challenge",
+      "subtitle": "7 days Clean Eating Challenge",
       "price": 499.0,
       "features": [
         "Daily meal plan & recipes",
         "Auto-generated grocery bundle",
         "Basic nutrition coaching",
       ],
-      "color": Colors.green,
+      "color": Colors.green, // Now used for button
     },
     {
       "id": 2,
-      "title": "Balanced Weekly Plan",
+      "title": "Balanced weekly Plan",
       "subtitle": "Perfect for busy professionals",
       "price": 899.0,
       "features": [
-        "5 curated dinners per week",
+        "5 Curated dinners per week",
         "One-click grocery ordering",
         "AI meal recommendations",
       ],
-      "color": Colors.orange,
+      "color": Colors.orange, // Now used for button
     },
     {
       "id": 3,
@@ -44,41 +57,45 @@ class _PlansPageState extends State<PlansPage> {
         "Private nutrition coach",
         "Progress tracking dashboard",
       ],
-      "color": Colors.teal,
+      "color": Colors.teal, // Now used for button
     },
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('FreshEase Plans')),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 900;
-          final crossAxisCount = isWide
-              ? 3
-              : (constraints.maxWidth > 600 ? 2 : 1);
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: isWide ? 1.1 : 0.95,
+      backgroundColor: _scaffoldBgColor,
+      appBar: AppBar(
+        title: const Text(
+          'FreshEasePlans',
+          style: TextStyle(
+            color: _primaryTextColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: _appBarBgColor,
+        elevation: 0,
+        // Assuming default icon theme is fine (dark icons on light bg)
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        itemCount: _plans.length,
+        itemBuilder: (_, i) {
+          final plan = _plans[i];
+          return Padding(
+            // Add spacing between cards
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: _PlanCard(
+              title: plan["title"] as String,
+              subtitle: plan["subtitle"] as String,
+              price: plan["price"] as double,
+              features: (plan["features"] as List).cast<String>(),
+              // --- 🟢 FIX: Pass the color to the card ---
+              buttonColor: plan["color"] as Color,
+              // ------------------------------------------
+              onSubscribe: () =>
+                  context.go('/plans/${plan["id"]}', extra: plan),
             ),
-            itemCount: _plans.length,
-            itemBuilder: (_, i) {
-              final plan = _plans[i];
-              return _PlanCard(
-                title: plan["title"] as String,
-                subtitle: plan["subtitle"] as String,
-                price: plan["price"] as double,
-                features: (plan["features"] as List).cast<String>(),
-                color: plan["color"] as Color,
-                onSubscribe: () =>
-                    context.go('/plans/${plan["id"]}', extra: plan),
-              );
-            },
           );
         },
       ),
@@ -91,16 +108,22 @@ class _PlanCard extends StatelessWidget {
   final String subtitle;
   final double price;
   final List<String> features;
-  final Color color;
   final VoidCallback onSubscribe;
+  // --- 🟢 FIX: Add buttonColor property ---
+  final Color buttonColor;
+  // -------------------------------------
 
+  // --- Removed 'const' because Image.network is not const ---
   const _PlanCard({
+    super.key,
     required this.title,
     required this.subtitle,
     required this.price,
     required this.features,
-    required this.color,
     required this.onSubscribe,
+    // --- 🟢 FIX: Require buttonColor in constructor ---
+    required this.buttonColor,
+    // -----------------------------------------------
   });
 
   @override
@@ -109,74 +132,122 @@ class _PlanCard extends StatelessWidget {
       elevation: 2,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: .15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Icon(Icons.eco, color: color, size: 28),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(color: Colors.grey[600])),
-            const SizedBox(height: 12),
-            Text(
-              '฿${price.toStringAsFixed(0)} / plan',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.green,
+      color: _cardBgColor,
+      child: Stack(
+        children: [
+          // Salad bowl icon in top right
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Image.network(
+              'https://i.pinimg.com/736x/80/e2/0c/80e20c8ed50251fc4274d067df7c8a11.jpg',
+              width: 48,
+              height: 48,
+              // --- 🟢 FIX: Removed 'color' property so image is visible ---
+              // color: buttonColor.withOpacity(0.2), // This tints the image
+              // -----------------------------------------------------------
+              errorBuilder: (context, error, stackTrace) => Icon(
+                Icons.image_not_supported_outlined,
+                color: Colors.grey.shade200,
+                size: 40,
               ),
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                itemCount: features.length,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (_, i) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          features[i],
-                          style: const TextStyle(height: 1.2),
-                        ),
-                      ),
-                    ],
+          ),
+          // Main content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: _primaryTextColor,
                   ),
                 ),
+                const SizedBox(height: 4),
+                // Subtitle
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: _secondaryTextColor,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Price
+                Text(
+                  '฿ ${price.toStringAsFixed(0)} / Plan',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: _primaryTextColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Features
+                Column(
+                  children: features
+                      .map((feature) => _FeatureItem(text: feature))
+                      .toList(),
+                ),
+                const SizedBox(height: 16),
+                // Button
+                FilledButton(
+                  onPressed: onSubscribe,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(44),
+                    // --- 🟢 FIX: Use dynamic color ---
+                    backgroundColor: buttonColor,
+                    foregroundColor:
+                        Colors.white, // Use white text for contrast
+                    // ----------------------------------
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'View Details',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Helper widget for a single feature item
+class _FeatureItem extends StatelessWidget {
+  final String text;
+  const _FeatureItem({super.key, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.check_circle, size: 18, color: _checkColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: _primaryTextColor,
+                fontSize: 15,
+                height: 1.3,
               ),
             ),
-            const SizedBox(height: 8),
-            FilledButton.icon(
-              onPressed: onSubscribe,
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('View Details'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
-                backgroundColor: color.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
