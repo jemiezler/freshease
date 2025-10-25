@@ -11,13 +11,14 @@ import 'package:frontend/features/progress/presentation/pages/progress_page.dart
 import 'package:frontend/features/shop/domain/product.dart';
 import 'package:frontend/features/shop/presentation/pages/product_detail_page.dart';
 import 'package:go_router/go_router.dart';
-import '../features/auth/presentation/pages/login_page.dart';
-import '../features/shop/presentation/pages/shop_page.dart';
+
 // import '../features/cart/presentation/pages/cart_page.dart';
 // import '../features/plans/presentation/pages/plans_page.dart';
 // import '../features/progress/presentation/pages/progress_page.dart';
 // import '../features/account/presentation/pages/account_page.dart';
 import '../core/state/cart_controller.dart';
+import '../features/auth/presentation/pages/login_page.dart';
+import '../features/shop/presentation/pages/shop_page.dart';
 
 GoRouter buildRouter() {
   return GoRouter(

@@ -34,20 +34,25 @@ class CartController extends ChangeNotifier {
   String? get promoCode => _promoCode;
 
   // --- mutators
-  void add(Product p, {int qty = 1}) {
+  // 🎯 แก้ไข: เปลี่ยนชื่อพารามิเตอร์จาก 'qty' เป็น 'quantity'
+  void add(Product p, {int quantity = 1}) {
     final i = _lines.indexWhere((l) => l.product.id == p.id);
     if (i >= 0) {
-      _lines[i].qty += qty;
+      // 🎯 ใช้ 'quantity' แทน 'qty'
+      _lines[i].qty += quantity;
     } else {
-      _lines.add(CartLine(product: p, qty: qty));
+      // 🎯 ใช้ 'quantity' แทน 'qty' ใน Constructor
+      _lines.add(CartLine(product: p, qty: quantity));
     }
     notifyListeners();
   }
 
-  void decrement(Product p, {int qty = 1}) {
+  // 🎯 แก้ไข: เปลี่ยนชื่อพารามิเตอร์จาก 'qty' เป็น 'quantity'
+  void decrement(Product p, {int quantity = 1}) {
     final i = _lines.indexWhere((l) => l.product.id == p.id);
     if (i < 0) return;
-    _lines[i].qty -= qty;
+    // 🎯 ใช้ 'quantity' แทน 'qty'
+    _lines[i].qty -= quantity;
     if (_lines[i].qty <= 0) _lines.removeAt(i);
     notifyListeners();
   }
