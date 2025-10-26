@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/features/account/presentation/pages/account_page.dart';
+import 'package:frontend/features/auth/presentation/pages/forgot_password.dart';
+import 'package:frontend/features/auth/presentation/pages/signup_page.dart';
 import 'package:frontend/features/cart/presentation/pages/cart_page.dart';
 import 'package:frontend/features/checkout/presentation/pages/address_page.dart';
 import 'package:frontend/features/checkout/presentation/pages/confirmation_page.dart';
@@ -13,16 +15,45 @@ import 'package:frontend/features/shop/presentation/pages/product_detail_page.da
 import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/shop/presentation/pages/shop_page.dart';
-// import '../features/cart/presentation/pages/cart_page.dart';
-// import '../features/plans/presentation/pages/plans_page.dart';
-// import '../features/progress/presentation/pages/progress_page.dart';
-// import '../features/account/presentation/pages/account_page.dart';
 import '../core/state/cart_controller.dart';
+import '../features/onboarding/onboarding_page.dart';
+import '../features/splash/splash_page.dart'; // Create this file
 
 GoRouter buildRouter() {
   return GoRouter(
+    initialLocation: '/splash',
     routes: [
-      GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
+      // Splash Screen
+      GoRoute(
+        path: '/splash',
+        builder: (_, _) => const SplashPage(),
+      ),
+      
+      // Onboarding
+      GoRoute(
+        path: '/onboarding',
+        builder: (_, _) => const OnboardingPage(),
+      ),
+      
+      // Login
+      GoRoute(
+        path: '/login',
+        builder: (_, _) => const LoginPage(),
+      ),
+      
+      //signup
+      GoRoute(
+        path: '/signup',
+        builder: (_, _) => const SignupPage(),
+      ),
+
+      //forgot-password
+      GoRoute(
+        path: '/forgot-password',
+        builder: (_, _) => const ForgotPasswordPage(),
+      ),
+
+      // Main app with bottom navigation
       StatefulShellRoute.indexedStack(
         builder: (context, state, nav) {
           final cart = CartScope.of(context);

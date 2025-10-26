@@ -1,30 +1,46 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/primary_button.dart';
 import 'package:go_router/go_router.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
   
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<SignupPage> createState() => _SignupPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _SignupPageState extends State<SignupPage> {
+  final _username = TextEditingController();
   final _email = TextEditingController();
-  final _pass = TextEditingController();
+  final _password = TextEditingController();
   bool _obscurePassword = true;
+  bool _isEmailValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _email.addListener(_validateEmail);
+  }
+
+  void _validateEmail() {
+    final email = _email.text;
+    final isValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+    setState(() {
+      _isEmailValid = isValid && email.isNotEmpty;
+    });
+  }
 
   @override
   void dispose() {
+    _username.dispose();
     _email.dispose();
-    _pass.dispose();
+    _password.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // Light gray background
+      backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -46,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
               
               // Title
               const Text(
-                'Loging',
+                'Sign Up',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w600,
@@ -58,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
               
               // Subtitle
               const Text(
-                'Enter your emails and password',
+                'Enter your credentials to continue',
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey,
@@ -68,9 +84,9 @@ class _LoginPageState extends State<LoginPage> {
               
               const SizedBox(height: 50),
               
-              // Email label
+              // Username label
               const Text(
-                'Email',
+                'Username',
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey,
@@ -80,12 +96,11 @@ class _LoginPageState extends State<LoginPage> {
               
               const SizedBox(height: 12),
               
-              // Email field
+              // Username field
               TextField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
+                controller: _username,
                 decoration: const InputDecoration(
-                  hintText: 'imshuvo97@gmail.com',
+                  hintText: 'Afsar Hossen Shuvo',
                   hintStyle: TextStyle(
                     color: Colors.black,
                     fontSize: 16,
@@ -109,6 +124,54 @@ class _LoginPageState extends State<LoginPage> {
               
               const SizedBox(height: 40),
               
+              // Email label
+              const Text(
+                'Email',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Email field
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  hintText: 'imshuvo97@gmail.com',
+                  hintStyle: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                  ),
+                  border: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFE0E0E0)),
+                  ),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFE0E0E0)),
+                  ),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF5FBE7E), width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  suffixIcon: _isEmailValid
+                      ? const Icon(
+                          Icons.check,
+                          color: Color(0xFF5FBE7E),
+                          size: 22,
+                        )
+                      : null,
+                ),
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                ),
+              ),
+              
+              const SizedBox(height: 40),
+              
               // Password label
               const Text(
                 'Password',
@@ -123,7 +186,7 @@ class _LoginPageState extends State<LoginPage> {
               
               // Password field
               TextField(
-                controller: _pass,
+                controller: _password,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   hintText: '••••••••',
@@ -160,37 +223,47 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               
-              // Forgot password
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => context.push('/forgot-password'),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(0, 0),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              // Terms and privacy text
+              RichText(
+                text: const TextSpan(
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey,
+                    height: 1.5,
                   ),
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
+                  children: [
+                    TextSpan(text: 'By continuing you agree to our '),
+                    TextSpan(
+                      text: 'Terms of Service',
+                      style: TextStyle(
+                        color: Color(0xFF5FBE7E),
+                      ),
                     ),
-                  ),
+                    TextSpan(text: ' and '),
+                    TextSpan(
+                      text: 'Privacy Policy',
+                      style: TextStyle(
+                        color: Color(0xFF5FBE7E),
+                      ),
+                    ),
+                    TextSpan(text: '.'),
+                  ],
                 ),
               ),
               
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               
-              // Login button
+              // Sign Up button
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () => context.go('/'),
+                  onPressed: () {
+                    // Add signup logic here
+                    context.go('/');
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5FBE7E),
                     foregroundColor: Colors.white,
@@ -200,7 +273,7 @@ class _LoginPageState extends State<LoginPage> {
                     elevation: 0,
                   ),
                   child: const Text(
-                    'Log In',
+                    'Sign Up',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -211,13 +284,13 @@ class _LoginPageState extends State<LoginPage> {
               
               const SizedBox(height: 24),
               
-              // Sign up text
+              // Login text
               Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      "Don't have an account? ",
+                      'Already have an account? ',
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 14,
@@ -226,11 +299,10 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        // Navigate to signup
-                        context.go('/signup');
+                        context.go('/login');
                       },
                       child: const Text(
-                        'Signup',
+                        'Signin',
                         style: TextStyle(
                           color: Color(0xFF5FBE7E),
                           fontSize: 14,
