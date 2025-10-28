@@ -4,13 +4,75 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-type Controller struct{ s *Service }
+type Controller struct {
+	s          *Service
+	stateStore *StateStore
+}
 
-func NewController(s *Service) *Controller { return &Controller{s: s} }
+type StateStore struct {
+	states map[string]time.Time
+	mutex  sync.RWMutex
+}
+
+func NewStateStore() *StateStore {
+	store := &StateStore{
+		states: make(map[string]time.Time),
+	}
+	// Start cleanup goroutine
+	go store.cleanup()
+	return store
+}
+
+func (s *StateStore) Store(state string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.states[state] = time.Now().Add(10 * time.Minute) // 10 minute expiration
+}
+
+func (s *StateStore) Validate(state string) bool {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	expiry, exists := s.states[state]
+	if !exists {
+		return false
+	}
+	return time.Now().Before(expiry)
+}
+
+func (s *StateStore) Delete(state string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	delete(s.states, state)
+}
+
+func (s *StateStore) cleanup() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		s.mutex.Lock()
+		now := time.Now()
+		for state, expiry := range s.states {
+			if now.After(expiry) {
+				delete(s.states, state)
+			}
+		}
+		s.mutex.Unlock()
+	}
+}
+
+func NewController(s *Service) *Controller {
+	return &Controller{
+		s:          s,
+		stateStore: NewStateStore(),
+	}
+}
 
 func randB64(n int) string {
 	b := make([]byte, n)
@@ -23,7 +85,7 @@ func (ctl *Controller) Start(c *fiber.Ctx) error {
 	p := ProviderName(c.Params("provider"))
 	state := randB64(16)
 	nonce := randB64(16)
-
+	ctl.stateStore.Store(state)
 	c.Cookie(&fiber.Cookie{Name: "oidc_state", Value: state, HTTPOnly: true, SameSite: "Lax", Path: "/"})
 	c.Cookie(&fiber.Cookie{Name: "oidc_nonce", Value: nonce, HTTPOnly: true, SameSite: "Lax", Path: "/"})
 
@@ -31,6 +93,7 @@ func (ctl *Controller) Start(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
 	}
+
 	return c.Redirect(url, fiber.StatusTemporaryRedirect)
 }
 
@@ -43,13 +106,15 @@ func (ctl *Controller) Callback(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "missing code or state"})
 	}
 
-	if c.Cookies("oidc_state") != state {
+	// Validate state against our memory store (primary) or cookie (fallback)
+	stateValid := ctl.stateStore.Validate(state) || c.Cookies("oidc_state") == state
+	if !stateValid {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "invalid state"})
 	}
 
 	// For mobile apps, redirect to custom scheme with the authorization code
 	// The mobile app will then call the exchange endpoint
-	redirectURL := fmt.Sprintf("freshease://auth/callback?code=%s&state=%s", code, state)
+	redirectURL := fmt.Sprintf("freshease://callback?code=%s&state=%s", code, state)
 	return c.Redirect(redirectURL, fiber.StatusTemporaryRedirect)
 }
 
@@ -70,15 +135,20 @@ func (ctl *Controller) Exchange(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Missing code or state"})
 	}
 
-	// Verify state matches cookie (basic security check)
-	if req.State != c.Cookies("oidc_state") {
+	// Verify state against our memory store (primary) or cookie (fallback)
+	stateValid := ctl.stateStore.Validate(req.State) || req.State == c.Cookies("oidc_state")
+	if !stateValid {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "Invalid state"})
 	}
 
+	fmt.Printf("🔄 [OAuth Exchange] Calling ExchangeAndLogin...\n")
 	access, err := ctl.s.ExchangeAndLogin(c.Context(), p, req.Code, "")
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": err.Error()})
 	}
+
+	// Clean up state from memory store
+	ctl.stateStore.Delete(req.State)
 
 	// Clear cookies
 	c.Cookie(&fiber.Cookie{Name: "oidc_state", Value: "", MaxAge: -1, Path: "/"})

@@ -41,6 +41,11 @@ class AppState extends State<App> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return CheckoutScope(
       controller: CheckoutController(),

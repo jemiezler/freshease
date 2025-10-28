@@ -47,12 +47,55 @@ class _LoginPageState extends State<LoginPage> {
             prev.error != curr.error || prev.user != curr.user,
         listener: (context, state) {
           if (state.error != null) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.error!)));
+            // Handle different types of errors
+            String message;
+            Color backgroundColor;
+
+            if (state.error!.contains('canceled')) {
+              message = 'Login was canceled. You can try again anytime.';
+              backgroundColor = Colors.orange;
+            } else if (state.error!.contains('Network error')) {
+              message = 'Network error. Please check your internet connection.';
+              backgroundColor = Colors.red;
+            } else if (state.error!.contains('Authentication failed')) {
+              message = 'Authentication failed. Please try again.';
+              backgroundColor = Colors.red;
+            } else {
+              message = 'Login failed: ${state.error!}';
+              backgroundColor = Colors.red;
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(message),
+                backgroundColor: backgroundColor,
+                duration: const Duration(seconds: 3),
+                action: backgroundColor == Colors.orange
+                    ? SnackBarAction(
+                        label: 'Try Again',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          _cubit.clearError();
+                          _cubit.googleLogin();
+                        },
+                      )
+                    : null,
+              ),
+            );
           }
           if (state.user != null) {
-            context.go('/'); // navigate after successful login
+            // Login successful - show success message and navigate
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Login successful! Welcome!'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+            // Navigate to home page after a short delay
+            Future.delayed(const Duration(milliseconds: 500), () {
+              context.go('/');
+            });
           }
         },
         builder: (context, state) {

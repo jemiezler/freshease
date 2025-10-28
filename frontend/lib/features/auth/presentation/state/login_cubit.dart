@@ -8,13 +8,33 @@ class LoginState extends Equatable {
   final bool loading;
   final String? error;
   final User? user;
-  const LoginState({this.loading = false, this.error, this.user});
+  final bool isSuccess;
+  final bool isFailure;
 
-  LoginState copyWith({bool? loading, String? error, User? user}) =>
-      LoginState(loading: loading ?? this.loading, error: error, user: user);
+  const LoginState({
+    this.loading = false,
+    this.error,
+    this.user,
+    this.isSuccess = false,
+    this.isFailure = false,
+  });
+
+  LoginState copyWith({
+    bool? loading,
+    String? error,
+    User? user,
+    bool? isSuccess,
+    bool? isFailure,
+  }) => LoginState(
+    loading: loading ?? this.loading,
+    error: error,
+    user: user,
+    isSuccess: isSuccess ?? this.isSuccess,
+    isFailure: isFailure ?? this.isFailure,
+  );
 
   @override
-  List<Object?> get props => [loading, error, user];
+  List<Object?> get props => [loading, error, user, isSuccess, isFailure];
 }
 
 class LoginCubit extends Cubit<LoginState> {
@@ -22,12 +42,33 @@ class LoginCubit extends Cubit<LoginState> {
   LoginCubit(this.repo) : super(const LoginState());
 
   Future<void> googleLogin() async {
-    emit(state.copyWith(loading: true, error: null));
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        loading: true,
+        error: null,
+        isSuccess: false,
+        isFailure: false,
+      ),
+    );
     try {
       final u = await repo.signInWithGoogle();
-      emit(LoginState(user: u));
+      if (!isClosed) {
+        emit(LoginState(user: u, isSuccess: true, isFailure: false));
+      }
     } catch (e) {
-      emit(LoginState(error: e.toString()));
+      if (!isClosed) {
+        emit(
+          LoginState(error: e.toString(), isSuccess: false, isFailure: true),
+        );
+      }
+    }
+  }
+
+  /// Clear error state
+  void clearError() {
+    if (!isClosed) {
+      emit(state.copyWith(error: null, isFailure: false));
     }
   }
 }
