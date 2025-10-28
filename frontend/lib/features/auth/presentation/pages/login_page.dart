@@ -59,181 +59,178 @@ class _LoginPageState extends State<LoginPage> {
           final loading = state.loading;
 
           return Scaffold(
-            body: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, c) {
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: Column(
-                      children: [
-                        // --- Hero section (image + soft gradient) ---
-                        SizedBox(
-                          height: 320,
-                          width: double.infinity,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Align(
-                                alignment: Alignment.bottomCenter,
-                                child: Container(
-                                  height: 120,
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.transparent,
-                                        Color(0x1F6AB7FF),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Padding(
+            body: Column(
+              children: [
+                // --- Hero section (image + soft gradient) ---
+                SizedBox(
+                  height: 320,
+                  width: double.infinity,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(
+                        'lib/assets/login_hero.png',
+                        fit: BoxFit
+                            .cover, // fills width and height while keeping aspect ratio
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                      ),
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Color(0x1F6AB7FF)],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SafeArea(
+                  child: LayoutBuilder(
+                    builder: (context, c) {
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: Column(
+                          children: [
+                            // --- Body content ---
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 420),
+                              child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
+                                  horizontal: 24,
                                 ),
-                                child: FittedBox(
-                                  fit: BoxFit.contain,
-                                  child: Image.asset(
-                                    'assets/images/freshease_hero.png',
-                                    errorBuilder: (_, __, ___) =>
-                                        const SizedBox.shrink(),
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Get your groceries\nwith FreshEase',
+                                      style: theme.textTheme.headlineSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            height: 1.2,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 20),
+
+                                    // Phone field (+ country code)
+                                    TextField(
+                                      controller: _phone,
+                                      keyboardType: TextInputType.phone,
+                                      enabled: !loading,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Phone number',
+                                        hintText: '8x-xxx-xxxx',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(14),
+                                          ),
+                                        ),
+                                        prefixIcon: _CountryCodePrefix(
+                                          code: '+66',
+                                          flag: '🇹🇭',
+                                        ),
+                                        prefixIconConstraints: BoxConstraints(
+                                          minWidth: 0,
+                                          minHeight: 0,
+                                        ),
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 16,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'We’ll send an OTP to verify your number.',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(color: theme.hintColor),
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Continue (OTP flow stub)
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 52,
+                                      child: ElevatedButton(
+                                        onPressed: loading
+                                            ? null
+                                            : () {
+                                                // TODO: trigger OTP flow
+                                                context.go('/');
+                                              },
+                                        style: ElevatedButton.styleFrom(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                          ),
+                                        ),
+                                        child: loading
+                                            ? const SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                              )
+                                            : const Text('Continue'),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 20),
+                                    const _DividerWithText(
+                                      text: 'Or connect with social media',
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Google
+                                    _SocialButton(
+                                      label: 'Continue with Google',
+                                      leading: Image.asset(
+                                        'assets/icons/google.png',
+                                        height: 22,
+                                        errorBuilder: (_, __, ___) =>
+                                            const Icon(
+                                              Icons.g_mobiledata,
+                                              size: 26,
+                                            ),
+                                      ),
+                                      onTap: loading
+                                          ? null
+                                          : () => context
+                                                .read<LoginCubit>()
+                                                .googleLogin(),
+                                    ),
+
+                                    const SizedBox(height: 12),
+
+                                    // Facebook (stub)
+                                    _SocialButton(
+                                      label: 'Continue with Facebook',
+                                      leading: const Icon(
+                                        Icons.facebook,
+                                        size: 24,
+                                      ),
+                                      onTap: loading
+                                          ? null
+                                          : () {
+                                              // TODO: Facebook sign-in
+                                              context.go('/');
+                                            },
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-
-                        // --- Body content ---
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 420),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Get your groceries\nwith FreshEase',
-                                  style: theme.textTheme.headlineSmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        height: 1.2,
-                                      ),
-                                ),
-                                const SizedBox(height: 20),
-
-                                // Phone field (+ country code)
-                                TextField(
-                                  controller: _phone,
-                                  keyboardType: TextInputType.phone,
-                                  enabled: !loading,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Phone number',
-                                    hintText: '8x-xxx-xxxx',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(14),
-                                      ),
-                                    ),
-                                    prefixIcon: _CountryCodePrefix(
-                                      code: '+66',
-                                      flag: '🇹🇭',
-                                    ),
-                                    prefixIconConstraints: BoxConstraints(
-                                      minWidth: 0,
-                                      minHeight: 0,
-                                    ),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 16,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'We’ll send an OTP to verify your number.',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.hintColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Continue (OTP flow stub)
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 52,
-                                  child: ElevatedButton(
-                                    onPressed: loading
-                                        ? null
-                                        : () {
-                                            // TODO: trigger OTP flow
-                                            context.go('/');
-                                          },
-                                    style: ElevatedButton.styleFrom(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                    child: loading
-                                        ? const SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Text('Continue'),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 20),
-                                const _DividerWithText(
-                                  text: 'Or connect with social media',
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Google
-                                _SocialButton(
-                                  label: 'Continue with Google',
-                                  leading: Image.asset(
-                                    'assets/icons/google.png',
-                                    height: 22,
-                                    errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.g_mobiledata,
-                                      size: 26,
-                                    ),
-                                  ),
-                                  onTap: loading
-                                      ? null
-                                      : () => context
-                                            .read<LoginCubit>()
-                                            .googleLogin(),
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // Facebook (stub)
-                                _SocialButton(
-                                  label: 'Continue with Facebook',
-                                  leading: const Icon(Icons.facebook, size: 24),
-                                  onTap: loading
-                                      ? null
-                                      : () {
-                                          // TODO: Facebook sign-in
-                                          context.go('/');
-                                        },
-                                ),
-                              ],
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -311,7 +308,9 @@ class _SocialButton extends StatelessWidget {
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           side: BorderSide(
-            color: Theme.of(context).colorScheme.primary.withOpacity(.25),
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.25),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -328,7 +327,7 @@ class _SocialButton extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w600)
-                    ?.apply(
+                    .apply(
                       color: isDisabled
                           ? Theme.of(context).disabledColor
                           : null,

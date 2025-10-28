@@ -54,6 +54,9 @@
         </Array>
     </Dict>
     </Array>
-
+    <key>NSHealthShareUsageDescription</key>
+    <string>This app reads your steps, distance, and heart rate to show today’s activity.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>This app may write health data in the future.</string>
 </dict>
 </plist>

@@ -90,6 +90,15 @@ class _AccountPageState extends State<AccountPage> {
               children: [
                 const _SectionHeader(title: 'Shortcuts'),
                 ListTile(
+                  leading: const Icon(Icons.health_and_safety),
+                  title: const Text('My Health'),
+                  subtitle: const Text('See health data & suggessions'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () =>
+                      context.go('/account/health'), // Orders tab lives there
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.receipt_long_outlined),
                   title: const Text('My Orders'),
                   subtitle: const Text('See order history & delivery status'),

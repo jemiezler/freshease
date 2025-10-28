@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:frontend/core/state/cart_controller.dart';
+import 'package:frontend/core/widgets/banner_carousel.dart';
 import 'package:frontend/core/widgets/global_appbar.dart';
+import 'package:frontend/core/widgets/search_pill.dart';
+import 'package:frontend/features/shop/data/product_repository.dart';
+import 'package:frontend/features/shop/domain/product.dart';
 import 'package:frontend/features/shop/widgets/product_card.dart';
-import '../../../shop/data/product_repository.dart';
-import '../../../shop/domain/product.dart';
 import 'package:go_router/go_router.dart';
 
 class ShopPage extends StatefulWidget {
@@ -20,7 +22,15 @@ class _ShopPageState extends State<ShopPage> {
   RangeValues _range = const RangeValues(0, 150);
   Timer? _debounce;
   List<Product> _items = [];
-
+  final List<BannerItem> _banners = const [
+    BannerItem(imageUrl: 'https://picsum.photos/1200/400?1', route: '/promo/1'),
+    BannerItem(imageUrl: 'https://picsum.photos/1200/400?2', route: '/promo/2'),
+    BannerItem(
+      imageUrl: 'https://picsum.photos/1200/400?3',
+      // or custom onTap if you don’t want a route:
+      // onTap: () => debugPrint('clicked banner 3'),
+    ),
+  ];
   List<String> get _chips => const [
     'All',
     'Prepared Food',
@@ -73,7 +83,7 @@ class _ShopPageState extends State<ShopPage> {
           preferredSize: const Size.fromHeight(64),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: _SearchPill(
+            child: SearchPill(
               controller: _search,
               onFilterTap: () => _openFilterSheet().then((_) => _load()),
             ),
@@ -101,6 +111,20 @@ class _ShopPageState extends State<ShopPage> {
 
             return CustomScrollView(
               slivers: [
+                // --- Banner carousel ---
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: BannerCarousel(
+                      items: _banners,
+                      borderRadius: 16,
+                      autoPlay: true,
+                      autoPlayInterval: const Duration(seconds: 4),
+                      onPageChanged: (_) {},
+                    ),
+                  ),
+                ),
+
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: 50,
@@ -166,7 +190,6 @@ class _ShopPageState extends State<ShopPage> {
                   ),
                 ),
 
-                // empty state
                 if (_items.isEmpty)
                   const SliverFillRemaining(
                     hasScrollBody: false,
@@ -247,53 +270,6 @@ class _ShopPageState extends State<ShopPage> {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _SearchPill extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onFilterTap;
-  const _SearchPill({required this.controller, required this.onFilterTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 12,
-            spreadRadius: -2,
-            color: Colors.black.withValues(alpha: 0.06),
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Row(
-        children: [
-          const Icon(Icons.search, size: 22),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                hintText: 'Search…',
-              ),
-              textInputAction: TextInputAction.search,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.tune_rounded),
-            onPressed: onFilterTap,
-          ),
-        ],
       ),
     );
   }

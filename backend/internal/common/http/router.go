@@ -3,10 +3,18 @@ package http
 import (
 	"freshease/backend/ent"
 	"freshease/backend/internal/common/middleware"
+	"freshease/backend/modules/addresses"
 	"freshease/backend/modules/auth/authoidc"
+	"freshease/backend/modules/cart_items"
+	"freshease/backend/modules/carts"
+	"freshease/backend/modules/genai"
+	"freshease/backend/modules/inventories"
 	"freshease/backend/modules/permissions"
+	"freshease/backend/modules/product_categories"
+	"freshease/backend/modules/products"
 	"freshease/backend/modules/roles"
 	"freshease/backend/modules/users"
+	"freshease/backend/modules/vendors"
 	"slices"
 	"sort"
 	"strings"
@@ -24,14 +32,22 @@ func RegisterRoutes(app *fiber.App, client *ent.Client) {
 	if err := authoidc.RegisterModule(api, client); err != nil {
 		panic(err)
 	}
-
+	genai.RegisterModuleWithEnt(api, client)
 	// 2) Secured area (everything below requires Authorization: Bearer <JWT>)
 	secured := api.Group("", middleware.RequireAuth())
 
 	// mount protected modules on the secured router
+	addresses.RegisterModuleWithEnt(secured, client)
+	cart_items.RegisterModuleWithEnt(secured, client)
+	carts.RegisterModuleWithEnt(secured, client)
+	inventories.RegisterModuleWithEnt(secured, client)
+	permissions.RegisterModuleWithEnt(secured, client)
+	products.RegisterModuleWithEnt(secured, client)
+	product_categories.RegisterModuleWithEnt(secured, client)
 	users.RegisterModuleWithEnt(secured, client)
 	roles.RegisterModuleWithEnt(secured, client)
-	permissions.RegisterModuleWithEnt(secured, client)
+	vendors.RegisterModuleWithEnt(secured, client)
+
 	secured.Get("/whoami", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"ok": true})
 	})

@@ -16,6 +16,7 @@ type Config struct {
 	OIDC_GOOGLE_CLIENT_ID     string
 	OIDC_GOOGLE_CLIENT_SECRET string
 	OIDC_GOOGLE_REDIRECT_URI  string
+	GENAI_APIKEY              string
 }
 
 type EntConfig struct {
@@ -38,6 +39,7 @@ func Load() Config {
 		OIDC_GOOGLE_CLIENT_ID:     getEnv("OIDC_GOOGLE_CLIENT_ID", ""),
 		OIDC_GOOGLE_CLIENT_SECRET: getEnv("OIDC_GOOGLE_CLIENT_SECRET", ""),
 		OIDC_GOOGLE_REDIRECT_URI:  getEnv("OIDC_GOOGLE_REDIRECT_URI", ""),
+		GENAI_APIKEY:              getEnv("GENAI_APIKEY", ""),
 	}
 
 	log.Printf("[config] Loaded config: DB=%s HTTP=%s EntDebug=%v", cfg.DatabaseURL, cfg.HTTPPort, cfg.Ent.Debug)

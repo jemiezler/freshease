@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/features/account/presentation/pages/account_page.dart';
+import 'package:frontend/features/account/presentation/pages/health_page.dart';
 import 'package:frontend/features/auth/presentation/pages/forgot_password.dart';
 import 'package:frontend/features/auth/presentation/pages/signup_page.dart';
 import 'package:frontend/features/cart/presentation/pages/cart_page.dart';
@@ -24,28 +25,16 @@ GoRouter buildRouter() {
     initialLocation: '/splash',
     routes: [
       // Splash Screen
-      GoRoute(
-        path: '/splash',
-        builder: (_, _) => const SplashPage(),
-      ),
-      
+      GoRoute(path: '/splash', builder: (_, _) => const SplashPage()),
+
       // Onboarding
-      GoRoute(
-        path: '/onboarding',
-        builder: (_, _) => const OnboardingPage(),
-      ),
-      
+      GoRoute(path: '/onboarding', builder: (_, _) => const OnboardingPage()),
+
       // Login
-      GoRoute(
-        path: '/login',
-        builder: (_, _) => const LoginPage(),
-      ),
-      
+      GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
+
       //signup
-      GoRoute(
-        path: '/signup',
-        builder: (_, _) => const SignupPage(),
-      ),
+      GoRoute(path: '/signup', builder: (_, _) => const SignupPage()),
 
       //forgot-password
       GoRoute(
@@ -179,7 +168,16 @@ GoRouter buildRouter() {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/account', builder: (_, _) => const AccountPage()),
+              GoRoute(
+                path: '/account',
+                builder: (_, _) => const AccountPage(),
+                routes: [
+                  GoRoute(
+                    path: '/health',
+                    builder: (_, _) => const HealthPage(),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
