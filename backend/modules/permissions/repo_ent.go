@@ -3,49 +3,87 @@ package permissions
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"freshease/backend/ent"
 	"freshease/backend/ent/permission"
+	"freshease/backend/internal/common/errs"
+
+	"github.com/google/uuid"
 )
 
 type EntRepo struct{ c *ent.Client }
 
 func NewEntRepo(client *ent.Client) Repository { return &EntRepo{c: client} }
 
-func (r *EntRepo) List(ctx context.Context) ([]*Permission, error) {
+func (r *EntRepo) List(ctx context.Context) ([]*GetPermissionDTO, error) {
 	rows, err := r.c.Permission.Query().Order(ent.Asc(permission.FieldID)).All(ctx)
-	if err != nil { return nil, err }
-	out := make([]*Permission, 0, len(rows))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*GetPermissionDTO, 0, len(rows))
 	for _, v := range rows {
-		out = append(out, &Permission{ID: v.ID, Email: v.Email, Name: v.Name})
+		out = append(out, &GetPermissionDTO{
+			ID:          v.ID,
+			Name:        v.Name,
+			Description: v.Description,
+		})
 	}
 	return out, nil
 }
 
-func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*Permission, error) {
+func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetPermissionDTO, error) {
 	v, err := r.c.Permission.Get(ctx, id)
-	if err != nil { return nil, err }
-	return &Permission{ID: v.ID, Email: v.Email, Name: v.Name}, nil
+	if err != nil {
+		return nil, err
+	}
+	return &GetPermissionDTO{
+		ID:          v.ID,
+		Name:        v.Name,
+		Description: v.Description,
+	}, nil
 }
 
-func (r *EntRepo) Create(ctx context.Context, u *Permission) error {
-	newRow, err := r.c.Permission.
+func (r *EntRepo) Create(ctx context.Context, dto *CreatePermissionDTO) (*GetPermissionDTO, error) {
+	q := r.c.Permission.
 		Create().
-		SetEmail(u.Email).
-		SetName(u.Name).
-		Save(ctx)
-	if err != nil { return err }
-	u.ID = newRow.ID
-	return nil
+		SetName(dto.Name).
+		SetDescription(dto.Description)
+
+	row, err := q.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GetPermissionDTO{
+		ID:          row.ID,
+		Name:        row.Name,
+		Description: row.Description,
+	}, nil
 }
 
-func (r *EntRepo) Update(ctx context.Context, u *Permission) error {
-	_, err := r.c.Permission.
-		UpdateOneID(u.ID).
-		SetEmail(u.Email).
-		SetName(u.Name).
-		Save(ctx)
-	return err
+func (r *EntRepo) Update(ctx context.Context, dto *UpdatePermissionDTO) (*GetPermissionDTO, error) {
+	q := r.c.Permission.UpdateOneID(dto.ID)
+
+	if dto.Name != nil {
+		q.SetName(*dto.Name)
+	}
+	if dto.Description != nil {
+		q.SetDescription(*dto.Description)
+	}
+
+	if len(q.Mutation().Fields()) == 0 {
+		return nil, errs.NoFieldsToUpdate
+	}
+
+	row, err := q.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GetPermissionDTO{
+		ID:          row.ID,
+		Name:        row.Name,
+		Description: row.Description,
+	}, nil
 }
 
 func (r *EntRepo) Delete(ctx context.Context, id uuid.UUID) error {

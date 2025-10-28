@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+    <Array>
+    <Dict>
+        <key>CFBundleURLSchemes</key>
+        <Array>
+        <String>freshease</String>
+        </Array>
+    </Dict>
+    </Array>
+
 </dict>
 </plist>

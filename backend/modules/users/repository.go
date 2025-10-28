@@ -6,16 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
-type User struct {
-	ID    uuid.UUID `json:"id"`
-	Email string     `json:"email"`
-	Name  string     `json:"name"`
-}
-
 type Repository interface {
-	List(ctx context.Context) ([]*User, error)
-	FindByID(ctx context.Context, id uuid.UUID) (*User, error)
-	Create(ctx context.Context, u *User) error
-	Update(ctx context.Context, u *User) error
+	List(ctx context.Context) ([]*GetUserDTO, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*GetUserDTO, error)
+	Create(ctx context.Context, u *CreateUserDTO) (*GetUserDTO, error)
+	Update(ctx context.Context, u *UpdateUserDTO) (*GetUserDTO, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }

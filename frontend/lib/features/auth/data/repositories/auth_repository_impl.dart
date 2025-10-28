@@ -1,3 +1,4 @@
+// data/repositories/auth_repository_impl.dart
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/user.dart';
 import '../models/user_dto.dart';
@@ -8,8 +9,8 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this.api);
 
   @override
-  Future<User> login({required String email, required String password}) async {
-    final json = await api.login(email, password);
+  Future<User> signInWithGoogle() async {
+    final json = await api.signInWithGoogle();
     return UserDto.fromJson(json).toEntity();
   }
 }
