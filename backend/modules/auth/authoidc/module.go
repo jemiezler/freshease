@@ -18,5 +18,6 @@ func RegisterModule(api fiber.Router, db *ent.Client) error {
 	r := api.Group("/auth")
 	r.Get("/:provider/start", ctl.Start)
 	r.Get("/:provider/callback", ctl.Callback)
+	r.Post("/:provider/exchange", ctl.Exchange)
 	return nil
 }

@@ -9,57 +9,49 @@ class AuthApi {
   AuthApi(DioClient client) : _dio = client.dio;
 
   static const _scheme = 'freshease';
-  static const _redirectUri = '$_scheme://auth/callback';
   static const _provider = 'google';
 
   Future<Map<String, dynamic>> signInWithGoogle() async {
     // 1) Start OIDC via your backend
-    final startUrl = '${_dio.options.baseUrl}/auth/$_provider/start';
+    final startUrl = '${_dio.options.baseUrl}/api/auth/$_provider/start';
 
     final callbackUrl = await FlutterWebAuth2.authenticate(
       url: startUrl,
       callbackUrlScheme: _scheme,
     );
 
-    // 2) Parse the app callback
+    // 2) Parse the app callback - backend returns JSON with accessToken
     final uri = Uri.parse(callbackUrl);
-    final access = uri.queryParameters['access_token'];
-    final refresh = uri.queryParameters['refresh_token'];
-    final idToken = uri.queryParameters['id_token']; // optional
-    final code = uri.queryParameters['code']; // fallback
+    final code = uri.queryParameters['code'];
+    final state = uri.queryParameters['state'];
 
-    final prefs = await SharedPreferences.getInstance();
-
-    if (access != null) {
-      await prefs.setString('access_token', access);
-      if (refresh != null) await prefs.setString('refresh_token', refresh);
-      if (idToken != null) await prefs.setString('id_token', idToken);
-    } else if (code != null) {
-      // If your backend returns a code to the app, expose an exchange endpoint:
-      // POST /auth/:provider/exchange { code, redirect_uri }
-      final res = await _dio.post(
-        '/auth/$_provider/exchange',
-        data: {'code': code, 'redirect_uri': _redirectUri},
-      );
-      final data = res.data as Map<String, dynamic>;
-      final at = data['accessToken'] ?? data['access_token'];
-      final rt = data['refreshToken'] ?? data['refresh_token'];
-      final it = data['idToken'] ?? data['id_token'];
-      if (at == null) {
-        throw DioException(
-          requestOptions: res.requestOptions,
-          error: 'No access token in exchange response',
-        );
-      }
-      await prefs.setString('access_token', at);
-      if (rt != null) await prefs.setString('refresh_token', rt);
-      if (it != null) await prefs.setString('id_token', it);
-    } else {
-      throw Exception('OAuth callback missing token/code');
+    if (code == null || state == null) {
+      throw Exception('OAuth callback missing code or state');
     }
 
-    // 3) Fetch current user (adjust path to your backend, e.g. /auth/me)
-    final me = await _dio.get('/auth/me');
+    // 3) Exchange code for tokens using backend exchange endpoint
+    final res = await _dio.post(
+      '/api/auth/$_provider/exchange',
+      data: {'code': code, 'state': state},
+    );
+
+    final data = res.data as Map<String, dynamic>;
+    final responseData = data['data'] as Map<String, dynamic>;
+    final accessToken = responseData['accessToken'] as String;
+
+    if (accessToken.isEmpty) {
+      throw DioException(
+        requestOptions: res.requestOptions,
+        error: 'No access token in exchange response',
+      );
+    }
+
+    // 4) Store the access token
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('access_token', accessToken);
+
+    // 5) Fetch current user info
+    final me = await _dio.get('/api/whoami');
     return me.data as Map<String, dynamic>;
   }
 }

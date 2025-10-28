@@ -20,6 +20,13 @@ func RequireAuth() fiber.Handler {
 		if err != nil || !tok.Valid {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "invalid token"})
 		}
+
+		// Store user info in context for use in handlers
+		if claims, ok := tok.Claims.(jwt.MapClaims); ok {
+			c.Locals("user_id", claims["sub"])
+			c.Locals("user_email", claims["email"])
+		}
+
 		return c.Next()
 	}
 }

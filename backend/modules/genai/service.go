@@ -80,7 +80,7 @@ func (s *service) GenerateWeeklyMeals(ctx context.Context, req *GenerateMealsReq
 
 func (s *service) GenerateDailyMeals(ctx context.Context, req *GenerateMealsReq) (any, error) {
 	// If any profile fields missing, try loading from repo:
-	if (req.Gender == "" || req.Age == 0 || req.HeightCm == 0 || req.WeightKg == 0 || req.ActiveKcal24h == 0 || req.Target == "" || req.StepsToday == 0 || req.Target == "") && s.repo != nil && req.UserID != "" {
+	if (req.Gender == "" || req.Age == 0 || req.HeightCm == 0 || req.WeightKg == 0 || req.ActiveKcal24h == 0 || req.Target == "" || req.StepsToday == 0) && s.repo != nil && req.UserID != "" {
 		if prof, err := s.repo.GetUserProfile(ctx, req.UserID); err == nil && prof != nil {
 			if req.Gender == "" {
 				req.Gender = prof.Gender

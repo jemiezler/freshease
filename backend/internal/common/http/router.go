@@ -2,6 +2,7 @@ package http
 
 import (
 	"freshease/backend/ent"
+	"freshease/backend/ent/user"
 	"freshease/backend/internal/common/middleware"
 	"freshease/backend/modules/addresses"
 	"freshease/backend/modules/auth/authoidc"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/google/uuid"
 )
 
 func RegisterRoutes(app *fiber.App, client *ent.Client) {
@@ -49,7 +51,33 @@ func RegisterRoutes(app *fiber.App, client *ent.Client) {
 	vendors.RegisterModuleWithEnt(secured, client)
 
 	secured.Get("/whoami", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"ok": true})
+		userID := c.Locals("user_id")
+		userEmail := c.Locals("user_email")
+
+		if userID == nil || userEmail == nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "user not found in token"})
+		}
+
+		// Parse user ID from string to UUID
+		userUUID, err := uuid.Parse(userID.(string))
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid user ID"})
+		}
+
+		// Get user details from database
+		user, err := client.User.Query().Where(user.ID(userUUID)).First(c.Context())
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "user not found"})
+		}
+
+		return c.JSON(fiber.Map{
+			"id":        user.ID.String(),
+			"email":     user.Email,
+			"name":      user.Name,
+			"avatar":    user.Avatar,
+			"createdAt": user.CreatedAt,
+			"updatedAt": user.UpdatedAt,
+		})
 	})
 
 	logRegisteredModules(app, "/api")

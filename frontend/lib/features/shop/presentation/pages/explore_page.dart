@@ -70,18 +70,14 @@ class _ExplorePageState extends State<ExplorePage> {
     super.dispose();
   }
 
-  // 4. ฟังก์ชัน _load() ที่ถูกต้อง (ใช้ q และ filters)
+  // 4. ฟังก์ชัน _load() ที่ถูกต้อง (ใช้ q และ category)
   Future<void> _load() async {
     final String query = _search.text;
-    final List<String> categories = _selectedCategories.toList();
-    final List<String> brands = _selectedBrand != null ? [_selectedBrand!] : [];
+    final String category = _selectedCategories.isNotEmpty
+        ? _selectedCategories.first
+        : 'All';
 
-    final Map<String, List<String>> filters = {
-      'categories': categories,
-      'brands': brands,
-    };
-
-    final list = await _repo.list(q: query, filters: filters);
+    final list = await _repo.list(q: query, category: category);
 
     if (mounted) {
       setState(() => _items = list);
