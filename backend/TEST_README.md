@@ -23,8 +23,13 @@ The Freshease backend test suite provides comprehensive automated testing for al
 | **Roles** | 81.2% | 3 files | ✅ PASS |
 | **Shop** | 77.7% | 3 files | ✅ PASS |
 | **Vendors** | 75.7% | 3 files | ✅ PASS |
+| **Config** | 100.0% | 1 file | ✅ PASS |
+| **Helpers** | 100.0% | 1 file | ✅ PASS |
+| **DB** | 61.1% | 1 file | ✅ PASS |
+| **HTTP/Router** | 79.4% | 1 file | ✅ PASS |
+| **HTTP/Server** | 100.0% | 1 file | ✅ PASS |
 
-**Overall Coverage: 43.5%**
+**Overall Coverage: 62.0%** ✅ **ALL TESTS PASSING**
 
 ## 🚀 Running Tests
 
