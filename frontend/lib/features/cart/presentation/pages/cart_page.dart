@@ -20,56 +20,66 @@ class CartPage extends StatelessWidget {
               if (cart.lines.isNotEmpty)
                 IconButton(
                   tooltip: 'Clear cart',
-                  icon: const Icon(Icons.delete_sweep_outlined),
-                  onPressed: cart.clear,
+                  icon: cart.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.delete_sweep_outlined),
+                  onPressed: cart.isLoading ? null : cart.clear,
                 ),
             ],
           ),
-          body: LayoutBuilder(
-            builder: (context, c) {
-              final isWide = c.maxWidth >= 900;
-              if (cart.lines.isEmpty) {
-                return _EmptyState(onShop: () => context.go('/'));
-              }
+          body: cart.isLoading && cart.lines.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : cart.error != null
+              ? _ErrorState(error: cart.error!, onRetry: cart.refresh)
+              : LayoutBuilder(
+                  builder: (context, c) {
+                    final isWide = c.maxWidth >= 900;
+                    if (cart.lines.isEmpty) {
+                      return _EmptyState(onShop: () => context.go('/'));
+                    }
 
-              final list = _CartList();
-              final summary = _SummaryCard();
+                    final list = _CartList();
+                    final summary = _SummaryCard();
 
-              if (isWide) {
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // List
-                      Expanded(
-                        flex: 7,
-                        child: Card(
-                          clipBehavior: Clip.antiAlias,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: list,
+                    if (isWide) {
+                      return Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // List
+                            Expanded(
+                              flex: 7,
+                              child: Card(
+                                clipBehavior: Clip.antiAlias,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: list,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Summary
+                            Expanded(flex: 4, child: summary),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Summary
-                      Expanded(flex: 4, child: summary),
-                    ],
-                  ),
-                );
-              } else {
-                // Mobile: list + sticky summary
-                return Column(
-                  children: [
-                    Expanded(child: list),
-                    const Divider(height: 1),
-                    SafeArea(child: summary),
-                  ],
-                );
-              }
-            },
-          ),
+                      );
+                    } else {
+                      // Mobile: list + sticky summary
+                      return Column(
+                        children: [
+                          Expanded(child: list),
+                          const Divider(height: 1),
+                          SafeArea(child: summary),
+                        ],
+                      );
+                    }
+                  },
+                ),
         );
       },
     );
@@ -141,7 +151,9 @@ class _CartList extends StatelessWidget {
                       children: [
                         _QtyButton(
                           icon: Icons.remove,
-                          onTap: () => cart.decrement(line.product),
+                          onTap: cart.isLoading
+                              ? () {}
+                              : () => cart.decrement(line.product),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -152,7 +164,9 @@ class _CartList extends StatelessWidget {
                         ),
                         _QtyButton(
                           icon: Icons.add,
-                          onTap: () => cart.add(line.product),
+                          onTap: cart.isLoading
+                              ? () {}
+                              : () => cart.add(line.product),
                         ),
                         const Spacer(),
                         Text(
@@ -171,7 +185,9 @@ class _CartList extends StatelessWidget {
               IconButton(
                 tooltip: 'Remove',
                 icon: const Icon(Icons.close),
-                onPressed: () => cart.remove(line.product),
+                onPressed: cart.isLoading
+                    ? null
+                    : () => cart.remove(line.product),
               ),
             ],
           ),
@@ -242,16 +258,18 @@ class _SummaryCardState extends State<_SummaryCard> {
                 const SizedBox(width: 8),
                 if (cart.promoCode == null)
                   FilledButton(
-                    onPressed: () {
-                      setState(() => _error = null);
-                      final ok = cart.applyPromo(_promoCtrl.text);
-                      if (!ok) setState(() => _error = 'Invalid code');
-                    },
+                    onPressed: cart.isLoading
+                        ? null
+                        : () async {
+                            setState(() => _error = null);
+                            final ok = await cart.applyPromo(_promoCtrl.text);
+                            if (!ok) setState(() => _error = 'Invalid code');
+                          },
                     child: const Text('Apply'),
                   )
                 else
                   OutlinedButton(
-                    onPressed: cart.removePromo,
+                    onPressed: cart.isLoading ? null : cart.removePromo,
                     child: Text('Remove (${cart.promoCode})'),
                   ),
               ],
@@ -350,6 +368,44 @@ class _EmptyState extends StatelessWidget {
               onPressed: onShop,
               icon: const Icon(Icons.storefront),
               label: const Text('Go to Shop'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+  const _ErrorState({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 80, color: Colors.red),
+            const SizedBox(height: 12),
+            const Text(
+              'Something went wrong',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try Again'),
             ),
           ],
         ),

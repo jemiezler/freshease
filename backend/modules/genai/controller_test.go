@@ -310,3 +310,160 @@ func TestController_RequestParsing(t *testing.T) {
 		mockSvc.AssertExpectations(t)
 	})
 }
+
+// Additional comprehensive tests for edge cases and error handling
+func TestController_EdgeCases(t *testing.T) {
+	t.Run("weekly meals with minimal data", func(t *testing.T) {
+		mockSvc := new(MockService)
+		req := GenerateMealsReq{
+			UserID:        "user123",
+			Gender:        "male",
+			Age:           30,
+			HeightCm:      175.0,
+			WeightKg:      70.0,
+			StepsToday:    0,
+			ActiveKcal24h: 0.0,
+			Allergies:     []string{},
+			Preferences:   []string{},
+			Target:        "maintenance",
+		}
+
+		expectedResult := map[string]any{
+			"steps_today":     req.StepsToday,
+			"active_kcal_24h": req.ActiveKcal24h,
+			"plan":            []map[string]any{},
+		}
+
+		mockSvc.On("GenerateWeeklyMeals", mock.Anything, mock.MatchedBy(func(actual *GenerateMealsReq) bool {
+			return actual.UserID == req.UserID && actual.Target == req.Target
+		})).Return(expectedResult, nil)
+
+		controller := NewController(mockSvc)
+		app := fiber.New()
+		app.Post("/weekly-meals", controller.GenerateWeeklyMeals)
+
+		jsonBody, err := json.Marshal(req)
+		require.NoError(t, err)
+
+		reqHTTP := httptest.NewRequest(http.MethodPost, "/weekly-meals", bytes.NewBuffer(jsonBody))
+		reqHTTP.Header.Set("Content-Type", "application/json")
+		resp, err := app.Test(reqHTTP)
+
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("daily meals with extreme values", func(t *testing.T) {
+		mockSvc := new(MockService)
+		req := GenerateMealsReq{
+			UserID:        "user123",
+			Gender:        "female",
+			Age:           100,
+			HeightCm:      200.0,
+			WeightKg:      150.0,
+			StepsToday:    50000,
+			ActiveKcal24h: 5000.0,
+			Allergies:     []string{"nuts", "dairy", "gluten", "soy"},
+			Preferences:   []string{"keto", "paleo", "raw"},
+			Target:        "muscle_gain",
+		}
+
+		expectedResult := map[string]any{
+			"steps_today":     req.StepsToday,
+			"active_kcal_24h": req.ActiveKcal24h,
+			"plan":            []map[string]any{},
+		}
+
+		mockSvc.On("GenerateDailyMeals", mock.Anything, mock.MatchedBy(func(actual *GenerateMealsReq) bool {
+			return actual.UserID == req.UserID && actual.Target == req.Target
+		})).Return(expectedResult, nil)
+
+		controller := NewController(mockSvc)
+		app := fiber.New()
+		app.Post("/daily-meals", controller.GenerateDailyMeals)
+
+		jsonBody, err := json.Marshal(req)
+		require.NoError(t, err)
+
+		reqHTTP := httptest.NewRequest(http.MethodPost, "/daily-meals", bytes.NewBuffer(jsonBody))
+		reqHTTP.Header.Set("Content-Type", "application/json")
+		resp, err := app.Test(reqHTTP)
+
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		mockSvc.AssertExpectations(t)
+	})
+}
+
+func TestController_ErrorHandling(t *testing.T) {
+	t.Run("service returns nil result", func(t *testing.T) {
+		mockSvc := new(MockService)
+		req := GenerateMealsReq{
+			UserID:        "user123",
+			Gender:        "male",
+			Age:           30,
+			HeightCm:      175.0,
+			WeightKg:      70.0,
+			StepsToday:    8000,
+			ActiveKcal24h: 2000.0,
+			Allergies:     []string{"nuts"},
+			Preferences:   []string{"vegetarian"},
+			Target:        "maintenance",
+		}
+
+		mockSvc.On("GenerateWeeklyMeals", mock.Anything, mock.Anything).Return(nil, nil)
+
+		controller := NewController(mockSvc)
+		app := fiber.New()
+		app.Post("/weekly-meals", controller.GenerateWeeklyMeals)
+
+		jsonBody, err := json.Marshal(req)
+		require.NoError(t, err)
+
+		reqHTTP := httptest.NewRequest(http.MethodPost, "/weekly-meals", bytes.NewBuffer(jsonBody))
+		reqHTTP.Header.Set("Content-Type", "application/json")
+		resp, err := app.Test(reqHTTP)
+
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("service returns timeout error", func(t *testing.T) {
+		mockSvc := new(MockService)
+		req := GenerateMealsReq{
+			UserID:        "user123",
+			Gender:        "male",
+			Age:           30,
+			HeightCm:      175.0,
+			WeightKg:      70.0,
+			StepsToday:    8000,
+			ActiveKcal24h: 2000.0,
+			Allergies:     []string{"nuts"},
+			Preferences:   []string{"vegetarian"},
+			Target:        "maintenance",
+		}
+
+		mockSvc.On("GenerateDailyMeals", mock.Anything, mock.Anything).Return(nil, errors.New("timeout"))
+
+		controller := NewController(mockSvc)
+		app := fiber.New()
+		app.Post("/daily-meals", controller.GenerateDailyMeals)
+
+		jsonBody, err := json.Marshal(req)
+		require.NoError(t, err)
+
+		reqHTTP := httptest.NewRequest(http.MethodPost, "/daily-meals", bytes.NewBuffer(jsonBody))
+		reqHTTP.Header.Set("Content-Type", "application/json")
+		resp, err := app.Test(reqHTTP)
+
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusBadGateway, resp.StatusCode)
+
+		mockSvc.AssertExpectations(t)
+	})
+}

@@ -9,6 +9,11 @@ class UserProfile extends Equatable {
   final String? bio;
   final String? avatar;
   final String? cover;
+  final DateTime? dateOfBirth;
+  final String? sex;
+  final String? goal;
+  final double? heightCm;
+  final double? weightKg;
   final String status;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -21,6 +26,11 @@ class UserProfile extends Equatable {
     this.bio,
     this.avatar,
     this.cover,
+    this.dateOfBirth,
+    this.sex,
+    this.goal,
+    this.heightCm,
+    this.weightKg,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -35,6 +45,11 @@ class UserProfile extends Equatable {
     bio,
     avatar,
     cover,
+    dateOfBirth,
+    sex,
+    goal,
+    heightCm,
+    weightKg,
     status,
     createdAt,
     updatedAt,
@@ -68,6 +83,11 @@ class UserProfile extends Equatable {
     String? bio,
     String? avatar,
     String? cover,
+    DateTime? dateOfBirth,
+    String? sex,
+    String? goal,
+    double? heightCm,
+    double? weightKg,
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -80,6 +100,11 @@ class UserProfile extends Equatable {
       bio: bio ?? this.bio,
       avatar: avatar ?? this.avatar,
       cover: cover ?? this.cover,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      sex: sex ?? this.sex,
+      goal: goal ?? this.goal,
+      heightCm: heightCm ?? this.heightCm,
+      weightKg: weightKg ?? this.weightKg,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

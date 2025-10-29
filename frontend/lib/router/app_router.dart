@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/features/account/presentation/pages/account_page.dart';
+import 'package:frontend/features/account/presentation/pages/edit_profile_page.dart';
 import 'package:frontend/features/account/presentation/pages/health_page.dart';
 import 'package:frontend/features/auth/presentation/pages/forgot_password.dart';
 import 'package:frontend/features/auth/presentation/pages/signup_page.dart';
@@ -12,6 +13,7 @@ import 'package:frontend/features/plans/presentation/pages/plan_detail_page.dart
 import 'package:frontend/features/plans/presentation/pages/plans_page.dart';
 import 'package:frontend/features/progress/presentation/pages/progress_page.dart';
 import 'package:frontend/features/shop/domain/product.dart';
+import 'package:frontend/features/account/domain/entities/user_profile.dart';
 import 'package:frontend/features/shop/presentation/pages/product_detail_page.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/pages/login_page.dart';
@@ -173,8 +175,19 @@ GoRouter buildRouter() {
                 builder: (_, _) => const AccountPage(),
                 routes: [
                   GoRoute(
-                    path: '/health',
+                    path: 'health', // becomes /account/health
                     builder: (_, _) => const HealthPage(),
+                  ),
+                  GoRoute(
+                    path: 'edit-profile', // becomes /account/edit-profile
+                    builder: (context, state) {
+                      final user = state.extra as UserProfile?;
+                      if (user == null) {
+                        context.pop();
+                        return const SizedBox.shrink();
+                      }
+                      return EditProfilePage(user: user);
+                    },
                   ),
                 ],
               ),

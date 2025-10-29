@@ -81,14 +81,6 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _navigate() async {
-    // DEV MODE: Set to true to freeze on splash screen
-    const bool devMode = false;
-
-    if (devMode) {
-      // Stay on splash screen for development
-      return;
-    }
-
     // Show splash for 2 seconds
     await Future.delayed(const Duration(seconds: 2));
 

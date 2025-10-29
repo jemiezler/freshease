@@ -137,6 +137,11 @@ func TestController_ListCart_items(t *testing.T) {
 	}
 }
 
+// Helper function to create string pointers
+func stringPtr(s string) *string {
+	return &s
+}
+
 func TestController_GetCart_item(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -212,6 +217,8 @@ func TestController_GetCart_item(t *testing.T) {
 		})
 	}
 }
+
+// Helper function to create string pointers
 
 func TestController_CreateCart_item(t *testing.T) {
 	tests := []struct {
@@ -291,6 +298,8 @@ func TestController_CreateCart_item(t *testing.T) {
 		})
 	}
 }
+
+// Helper function to create string pointers
 
 func TestController_UpdateCart_item(t *testing.T) {
 	tests := []struct {
@@ -383,6 +392,8 @@ func TestController_UpdateCart_item(t *testing.T) {
 	}
 }
 
+// Helper function to create string pointers
+
 func TestController_DeleteCart_item(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -446,4 +457,30 @@ func TestController_DeleteCart_item(t *testing.T) {
 			mockSvc.AssertExpectations(t)
 		})
 	}
+}
+
+// Helper function to create string pointers
+
+// Additional comprehensive tests for edge cases and error handling
+func TestController_EdgeCases(t *testing.T) {
+	t.Run("empty cart items list", func(t *testing.T) {
+		mockSvc := new(MockService)
+		mockSvc.On("List", mock.Anything).Return([]*GetCart_itemDTO{}, nil)
+
+		controller := NewController(mockSvc)
+		app := fiber.New()
+		app.Get("/cart_items", controller.ListCart_items)
+
+		req := httptest.NewRequest(http.MethodGet, "/cart_items", nil)
+		resp, err := app.Test(req)
+
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var responseBody map[string]interface{}
+		err = json.NewDecoder(resp.Body).Decode(&responseBody)
+		require.NoError(t, err)
+
+		mockSvc.AssertExpectations(t)
+	})
 }

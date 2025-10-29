@@ -1,8 +1,13 @@
+// ignore_for_file: constant_identifier_names
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend/core/state/cart_controller.dart';
 import 'package:frontend/core/state/checkout_controller.dart';
 import 'package:frontend/core/theme/app_theme.dart';
+import 'package:frontend/features/account/presentation/state/user_cubit.dart';
 import 'package:frontend/router/app_router.dart';
+import 'package:frontend/app/di.dart';
 import 'package:health/health.dart';
 
 class App extends StatefulWidget {
@@ -51,13 +56,16 @@ class AppState extends State<App> {
       controller: CheckoutController(),
       child: CartScope(
         // provides CartController down the tree
-        controller: CartController(),
-        child: MaterialApp.router(
-          title: 'FreshEase',
-          debugShowCheckedModeBanner: false,
-          routerConfig: buildRouter(),
-          theme: AppTheme.light(),
-          themeMode: ThemeMode.light,
+        controller: getIt<CartController>(),
+        child: BlocProvider<UserCubit>.value(
+          value: getIt<UserCubit>()..loadCurrentUser(),
+          child: MaterialApp.router(
+            title: 'FreshEase',
+            debugShowCheckedModeBanner: false,
+            routerConfig: buildRouter(),
+            theme: AppTheme.light(),
+            themeMode: ThemeMode.light,
+          ),
         ),
       ),
     );

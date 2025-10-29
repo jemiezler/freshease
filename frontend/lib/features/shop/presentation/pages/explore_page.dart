@@ -1,5 +1,7 @@
 // ไฟล์: explore_page.dart
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -268,7 +270,7 @@ class _CategoryCard extends StatelessWidget {
           border: Border.all(color: borderColor, width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.05),
+              color: Colors.grey.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -280,8 +282,8 @@ class _CategoryCard extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(20),
-            splashColor: borderColor.withOpacity(0.3),
-            highlightColor: borderColor.withOpacity(0.1),
+            splashColor: borderColor.withValues(alpha: 0.3),
+            highlightColor: borderColor.withValues(alpha: 0.1),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

@@ -42,7 +42,7 @@ class SearchPill extends StatelessWidget {
     final surface =
         backgroundColor ??
         // use withOpacity for wider SDK compatibility; swap to withValues if you prefer
-        theme.colorScheme.surfaceContainerHighest.withOpacity(0.95);
+        theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.95);
 
     return Container(
       decoration: BoxDecoration(
@@ -52,7 +52,7 @@ class SearchPill extends StatelessWidget {
           BoxShadow(
             blurRadius: 12,
             spreadRadius: -2,
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             offset: const Offset(0, 6),
           ),
         ],
@@ -87,7 +87,7 @@ class SearchPill extends StatelessWidget {
           if (showClear)
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: controller,
-              builder: (_, value, __) => AnimatedSwitcher(
+              builder: (_, value, _) => AnimatedSwitcher(
                 duration: const Duration(milliseconds: 150),
                 child: value.text.isEmpty
                     ? const SizedBox.shrink()

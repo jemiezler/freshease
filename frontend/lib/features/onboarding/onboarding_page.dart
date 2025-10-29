@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingPage extends StatelessWidget {
-  const OnboardingPage({Key? key}) : super(key: key);
+  const OnboardingPage({super.key});
 
   Future<void> _completeOnboarding(BuildContext context) async {
     // Mark onboarding as seen
@@ -27,7 +27,7 @@ class OnboardingPage extends StatelessWidget {
             'lib/assets/onboarding_bg.png', // Add your background image
             fit: BoxFit.cover,
           ),
-          
+
           // Dark overlay
           Container(
             decoration: BoxDecoration(
@@ -35,13 +35,13 @@ class OnboardingPage extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.3),
-                  Colors.black.withOpacity(0.6),
+                  Colors.black.withValues(alpha: 0.3),
+                  Colors.black.withValues(alpha: 0.6),
                 ],
               ),
             ),
           ),
-          
+
           // Content
           SafeArea(
             child: Padding(
@@ -49,16 +49,12 @@ class OnboardingPage extends StatelessWidget {
               child: Column(
                 children: [
                   const Spacer(flex: 3),
-                  
+
                   // Logo
-                  Image.asset(
-                    'lib/assets/logo.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                  
+                  Image.asset('lib/assets/logo.png', width: 60, height: 60),
+
                   const SizedBox(height: 40),
-                  
+
                   // Welcome text
                   const Text(
                     'Welcome',
@@ -69,7 +65,7 @@ class OnboardingPage extends StatelessWidget {
                       height: 1.2,
                     ),
                   ),
-                  
+
                   const Text(
                     'to our store',
                     style: TextStyle(
@@ -79,9 +75,9 @@ class OnboardingPage extends StatelessWidget {
                       height: 1.2,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Subtitle
                   const Text(
                     'Get your groceries in as fast as two hour',
@@ -92,9 +88,9 @@ class OnboardingPage extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  
+
                   const Spacer(flex: 2),
-                  
+
                   // Get Started button
                   SizedBox(
                     width: double.infinity,
@@ -118,7 +114,7 @@ class OnboardingPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
                 ],
               ),

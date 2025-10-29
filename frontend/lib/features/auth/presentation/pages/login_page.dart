@@ -32,7 +32,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _phone.dispose();
-    _cubit.close();
+    // Don't close the cubit as it's managed by BlocProvider
     super.dispose();
   }
 
@@ -156,75 +156,8 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     const SizedBox(height: 20),
 
-                                    // Phone field (+ country code)
-                                    TextField(
-                                      controller: _phone,
-                                      keyboardType: TextInputType.phone,
-                                      enabled: !loading,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Phone number',
-                                        hintText: '8x-xxx-xxxx',
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(14),
-                                          ),
-                                        ),
-                                        prefixIcon: _CountryCodePrefix(
-                                          code: '+66',
-                                          flag: '🇹🇭',
-                                        ),
-                                        prefixIconConstraints: BoxConstraints(
-                                          minWidth: 0,
-                                          minHeight: 0,
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'We’ll send an OTP to verify your number.',
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(color: theme.hintColor),
-                                    ),
-                                    const SizedBox(height: 16),
-
-                                    // Continue (OTP flow stub)
-                                    SizedBox(
-                                      width: double.infinity,
-                                      height: 52,
-                                      child: ElevatedButton(
-                                        onPressed: loading
-                                            ? null
-                                            : () {
-                                                // TODO: trigger OTP flow
-                                                context.go('/');
-                                              },
-                                        style: ElevatedButton.styleFrom(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                          ),
-                                        ),
-                                        child: loading
-                                            ? const SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : const Text('Continue'),
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 20),
                                     const _DividerWithText(
-                                      text: 'Or connect with social media',
+                                      text: 'connect with social media',
                                     ),
                                     const SizedBox(height: 16),
 
@@ -234,34 +167,16 @@ class _LoginPageState extends State<LoginPage> {
                                       leading: Image.asset(
                                         'assets/icons/google.png',
                                         height: 22,
-                                        errorBuilder: (_, __, ___) =>
-                                            const Icon(
-                                              Icons.g_mobiledata,
-                                              size: 26,
-                                            ),
+                                        errorBuilder: (_, _, _) => const Icon(
+                                          Icons.g_mobiledata,
+                                          size: 26,
+                                        ),
                                       ),
                                       onTap: loading
                                           ? null
                                           : () => context
                                                 .read<LoginCubit>()
                                                 .googleLogin(),
-                                    ),
-
-                                    const SizedBox(height: 12),
-
-                                    // Facebook (stub)
-                                    _SocialButton(
-                                      label: 'Continue with Facebook',
-                                      leading: const Icon(
-                                        Icons.facebook,
-                                        size: 24,
-                                      ),
-                                      onTap: loading
-                                          ? null
-                                          : () {
-                                              // TODO: Facebook sign-in
-                                              context.go('/');
-                                            },
                                     ),
                                   ],
                                 ),

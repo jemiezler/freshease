@@ -145,7 +145,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                         begin: Alignment.bottomCenter,
                         end: Alignment.center,
                         colors: [
-                          Colors.black.withOpacity(0.28),
+                          Colors.black.withValues(alpha: 0.28),
                           Colors.transparent,
                         ],
                       ),
@@ -172,7 +172,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                       decoration: BoxDecoration(
                         color: active
                             ? Theme.of(context).colorScheme.primary
-                            : Colors.white.withOpacity(0.6),
+                            : Colors.white.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                     );

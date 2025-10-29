@@ -309,13 +309,11 @@ func TestController_UpdateUser(t *testing.T) {
 			name:   "success - updates user",
 			userID: uuid.New().String(),
 			requestBody: UpdateUserDTO{
-				ID:    uuid.New(), // This will be overridden by the service
 				Email: stringPtr("updated@example.com"),
 				Name:  stringPtr("Updated User"),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateUserDTO) {
 				expectedUser := &GetUserDTO{
-					ID:     id,
 					Email:  *dto.Email,
 					Name:   *dto.Name,
 					Status: "active",
@@ -324,7 +322,6 @@ func TestController_UpdateUser(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody: &GetUserDTO{
-				ID:     uuid.New(),
 				Email:  "updated@example.com",
 				Name:   "Updated User",
 				Status: "active",
@@ -333,7 +330,7 @@ func TestController_UpdateUser(t *testing.T) {
 		{
 			name:           "error - invalid UUID",
 			userID:         "invalid-uuid",
-			requestBody:    UpdateUserDTO{ID: uuid.New()},
+			requestBody:    UpdateUserDTO{},
 			mockSetup:      func(mockSvc *MockService, id uuid.UUID, dto UpdateUserDTO) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   map[string]string{"message": "invalid uuid"},
@@ -342,7 +339,6 @@ func TestController_UpdateUser(t *testing.T) {
 			name:   "error - service returns error",
 			userID: uuid.New().String(),
 			requestBody: UpdateUserDTO{
-				ID:    uuid.New(),
 				Email: stringPtr("updated@example.com"),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateUserDTO) {
@@ -385,6 +381,11 @@ func TestController_UpdateUser(t *testing.T) {
 			mockSvc.AssertExpectations(t)
 		})
 	}
+}
+
+// Helper function to create string pointers
+func stringPtr(s string) *string {
+	return &s
 }
 
 func TestController_DeleteUser(t *testing.T) {

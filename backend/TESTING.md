@@ -2,6 +2,42 @@
 
 This document provides a comprehensive guide to the testing setup for the Freshease backend application.
 
+## 📚 Complete Test Documentation
+
+For comprehensive test documentation, please refer to:
+
+- **[TEST_README.md](./TEST_README.md)** - Complete test suite documentation with coverage analysis
+- **[TEST_CASES.md](./TEST_CASES.md)** - Detailed test case specification with 200+ individual test cases
+- **[TEST_QUICK_REFERENCE.md](./TEST_QUICK_REFERENCE.md)** - Quick reference guide for daily test operations
+
+## 🚀 Quick Start
+
+```bash
+# Run all tests with coverage
+./run_tests.sh
+
+# Run specific module tests
+go test ./modules/users -v
+
+# Generate HTML coverage report
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out -o coverage.html
+```
+
+## 📊 Test Coverage Summary
+
+| Module | Coverage | Status |
+|--------|----------|--------|
+| **Users** | 74.6% | ✅ PASS |
+| **Products** | 55.7% | ✅ PASS |
+| **Middleware** | 91.7% | ✅ PASS |
+| **Integration** | 0.0% | ✅ PASS |
+| **All Modules** | 43.5% | ✅ PASS |
+
+**Total Test Files**: 40  
+**Total Test Cases**: 200+  
+**Modules Covered**: 13  
+
 ## Overview
 
 The testing suite includes:

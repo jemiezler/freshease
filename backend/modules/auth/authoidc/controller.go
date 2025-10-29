@@ -1,6 +1,7 @@
 package authoidc
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -10,8 +11,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type ServiceInterface interface {
+	AuthCodeURL(p ProviderName, state, nonce, codeChallenge string) (string, error)
+	ExchangeAndLogin(ctx context.Context, p ProviderName, code, codeVerifier string) (string, error)
+}
+
 type Controller struct {
-	s          *Service
+	s          ServiceInterface
 	stateStore *StateStore
 }
 
@@ -67,7 +73,7 @@ func (s *StateStore) cleanup() {
 	}
 }
 
-func NewController(s *Service) *Controller {
+func NewController(s ServiceInterface) *Controller {
 	return &Controller{
 		s:          s,
 		stateStore: NewStateStore(),

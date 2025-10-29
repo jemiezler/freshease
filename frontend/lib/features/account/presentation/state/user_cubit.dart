@@ -91,12 +91,30 @@ class UserCubit extends Cubit<UserState> {
       }
     } catch (e) {
       if (!isClosed) {
-        emit(
-          state.copyWith(
-            isUpdating: false,
-            error: 'Failed to update profile: ${e.toString()}',
-          ),
-        );
+        // Check if it's an authentication error
+        if (e.toString().contains('401') ||
+            e.toString().contains('missing bearer token') ||
+            e.toString().contains('Authentication expired')) {
+          // Clear stored tokens and emit auth error
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('access_token');
+          await prefs.remove('refresh_token');
+          await prefs.remove('id_token');
+
+          emit(
+            state.copyWith(
+              isUpdating: false,
+              error: 'Authentication expired. Please login again.',
+            ),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              isUpdating: false,
+              error: 'Failed to update profile: ${e.toString()}',
+            ),
+          );
+        }
       }
     }
   }

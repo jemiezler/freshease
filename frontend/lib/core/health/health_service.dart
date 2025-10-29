@@ -70,10 +70,6 @@ class HealthService {
     // For distance in workouts
     await Permission.location.request();
 
-    // hasPermissions returns false if WRITE can’t be disclosed—force re-request
-    bool? has = await _health.hasPermissions(types, permissions: permissions);
-    has = false;
-
     try {
       final ok = await _health.requestAuthorization(
         types,

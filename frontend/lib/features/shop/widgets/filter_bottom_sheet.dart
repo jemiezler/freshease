@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 // ⚠️ ต้องแน่ใจว่า AppColors_primary ถูก import หรือนิยามไว้
@@ -160,7 +162,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                             dense: true,
                             title: Text(brand),
                             value: brand,
+                            // ignore: deprecated_member_use
                             groupValue: _currentBrand,
+                            // ignore: deprecated_member_use
                             onChanged: (String? newValue) {
                               setState(() {
                                 _currentBrand = newValue;

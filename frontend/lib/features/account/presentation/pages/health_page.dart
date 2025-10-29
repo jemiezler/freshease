@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/app/di.dart';
 import 'package:frontend/core/health/health_controller.dart';
 import 'package:frontend/core/widgets/global_appbar.dart';
+import 'package:frontend/core/genai/widgets.dart';
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -18,10 +19,23 @@ class _HealthPageState extends State<HealthPage> {
     super.initState();
     hc = getIt<HealthController>();
     // Ask for permissions, then fetch & compute KPIs
+    // Meal plans are now auto-generated in HealthController.init()
     hc.authorize().then((_) => hc.fetchAll24hAndComputeKpis());
   }
 
   Future<void> _refresh() => hc.fetchAll24hAndComputeKpis();
+
+  String _formatCacheAge(Duration duration) {
+    if (duration.inMinutes < 1) {
+      return 'just now';
+    } else if (duration.inMinutes < 60) {
+      return '${duration.inMinutes}m ago';
+    } else if (duration.inHours < 24) {
+      return '${duration.inHours}h ago';
+    } else {
+      return '${duration.inDays}d ago';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +98,159 @@ class _HealthPageState extends State<HealthPage> {
                     padding: EdgeInsets.only(top: 12),
                     child: Center(child: CircularProgressIndicator()),
                   ),
+
+                // GenAI Meal Plan Section
+                if (hc.state == HealthState.ready)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'AI Meal Plan',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Row(
+                            children: [
+                              if (hc.cacheAge != null)
+                                Text(
+                                  'Updated ${_formatCacheAge(hc.cacheAge!)}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () => hc.refreshAllPlans(),
+                                icon: const Icon(Icons.refresh),
+                                tooltip: 'Refresh meal plans',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Based on your activity: ${hc.stepsToday} steps, ${hc.kcalToday.toStringAsFixed(0)} kcal burned',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Show loading state
+                      if (hc.isGeneratingMealPlan)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Column(
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Generating your personalized meal plan...',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // Show error if any
+                      if (hc.mealPlanError != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.errorContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  hc.mealPlanError!,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onErrorContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Display generated meal plan
+                      if (hc.currentMealPlan != null)
+                        Column(
+                          children: [
+                            ...hc.currentMealPlan!.plan.map(
+                              (mealPlan) => MealPlanCard(mealPlan: mealPlan),
+                            ),
+                          ],
+                        ),
+
+                      // Show message if no plan available
+                      if (hc.currentMealPlan == null &&
+                          !hc.isGeneratingMealPlan &&
+                          hc.mealPlanError == null)
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.restaurant_menu,
+                                size: 48,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Complete your profile to get personalized meal plans',
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Add your goal, height, and weight in your profile settings',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -134,7 +301,7 @@ class _KpiCard extends StatelessWidget {
             BoxShadow(
               blurRadius: 12,
               offset: const Offset(0, 6),
-              color: theme.colorScheme.shadow.withOpacity(.06),
+              color: theme.colorScheme.shadow.withValues(alpha: .06),
             ),
           ],
         ),

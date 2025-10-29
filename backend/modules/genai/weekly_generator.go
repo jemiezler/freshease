@@ -53,10 +53,10 @@ Do not include markdown, code fences, comments, or any extra prose. Output JSON 
 
 The item must strictly follow this schema:
 {
-  "day": "Monday",
-  "meals": { "breakfast": "...", "lunch": "...", "dinner": "..." },
-  "calories": { "breakfast": 0, "lunch": 0, "dinner": 0 },
-  "total_calories": 0
+  "day": "Monday",
+  "meals": { "breakfast": "meal description", "lunch": "meal description", "dinner": "meal description" },
+  "calories": { "breakfast": 400, "lunch": 500, "dinner": 600 },
+  "total_calories": 1500
 }
 
 ---
@@ -66,6 +66,8 @@ User Profile and Goal:
 - Goal: %s
 
 ***Instruction: %s Adjust calories and portions based on the profile and goal.***
+
+IMPORTANT: Return ONLY valid JSON. No markdown, no comments, no explanations, no Chinese characters. Use only English characters and standard JSON syntax.
 `, gender, age, heightCm, weightKg, steps_today, active_kcal_24h, target, calorieInstruction)
 
 	log.Println("INFO: Calling Gemini API with adjusted prompt.")
@@ -133,14 +135,18 @@ func WeeklyMealsGenerator(gender string, age int, heightCm, weightKg float64) ([
 
 	model := client.GenerativeModel("gemini-2.5-flash")
 	prompt := fmt.Sprintf(`
-You are a nutrition planner. Return a strict JSON array of 7 items (Mon..Sun), each:
+You are a nutrition planner. Return ONLY a valid JSON array of exactly 7 items (Monday through Sunday). Each item must follow this exact structure:
+
 {
   "day": "Monday",
-  "meals": { "breakfast": "...", "lunch": "...", "dinner": "..." },
-  "calories": { "breakfast": 0, "lunch": 0, "dinner": 0 }
+  "meals": { "breakfast": "meal description", "lunch": "meal description", "dinner": "meal description" },
+  "calories": { "breakfast": 400, "lunch": 500, "dinner": 600 },
+  "total_calories": 1500
 }
+
 Profile: gender=%s, age=%d, height_cm=%.1f, weight_kg=%.1f.
-Do not include markdown, comments, or prose. Output JSON only.
+
+IMPORTANT: Return ONLY valid JSON. No markdown, no comments, no explanations, no Chinese characters. Use only English characters and standard JSON syntax.
 `, gender, age, heightCm, weightKg)
 
 	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
@@ -163,6 +169,16 @@ Do not include markdown, comments, or prose. Output JSON only.
 	if out == "" {
 		return nil, fmt.Errorf("no text returned from model")
 	}
+
+	// Enhanced JSON cleanup
+	out = strings.TrimPrefix(out, "```json")
+	out = strings.TrimPrefix(out, "```")
+	out = strings.TrimSuffix(out, "```")
+	out = strings.TrimSpace(out)
+
+	// Remove any Chinese characters or invalid characters that might break JSON
+	out = strings.ReplaceAll(out, "辦法}", "}")
+	out = strings.ReplaceAll(out, "辦法", "")
 
 	// Validate it parses as array
 	var week []map[string]any

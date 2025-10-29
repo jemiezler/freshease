@@ -15,6 +15,8 @@ void registerAccountDependencies(GetIt getIt) {
     () => UserRepositoryImpl(getIt<UserApi>()),
   );
 
-  // Register UserCubit as factory (new instance each time)
-  getIt.registerFactory<UserCubit>(() => UserCubit(getIt<UserRepository>()));
+  // Register UserCubit as singleton (same instance throughout app lifecycle)
+  getIt.registerLazySingleton<UserCubit>(
+    () => UserCubit(getIt<UserRepository>()),
+  );
 }

@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"time"
 
 	"freshease/backend/ent"
 	"freshease/backend/ent/user"
@@ -27,14 +28,19 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetUserDTO, error) {
 	out := make([]*GetUserDTO, 0, len(rows))
 	for _, v := range rows {
 		out = append(out, &GetUserDTO{
-			ID:     v.ID,
-			Email:  v.Email,
-			Name:   v.Name,
-			Phone:  v.Phone,
-			Bio:    helpers.PtrIfNotNil(v.Bio),
-			Avatar: helpers.PtrIfNotNil(v.Avatar),
-			Cover:  helpers.PtrIfNotNil(v.Cover),
-			Status: v.Status,
+			ID:          v.ID,
+			Email:       v.Email,
+			Name:        v.Name,
+			Phone:       v.Phone,
+			Bio:         helpers.PtrIfNotNil(v.Bio),
+			Avatar:      helpers.PtrIfNotNil(v.Avatar),
+			Cover:       helpers.PtrIfNotNil(v.Cover),
+			DateOfBirth: helpers.TimeToISOString(v.DateOfBirth),
+			Sex:         helpers.PtrIfNotNil(v.Sex),
+			Goal:        helpers.PtrIfNotNil(v.Goal),
+			HeightCm:    v.HeightCm,
+			WeightKg:    v.WeightKg,
+			Status:      v.Status,
 		})
 	}
 	return out, nil
@@ -46,14 +52,19 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetUserDTO, erro
 		return nil, err
 	}
 	return &GetUserDTO{
-		ID:     v.ID,
-		Email:  v.Email,
-		Name:   v.Name,
-		Phone:  v.Phone,
-		Bio:    helpers.PtrIfNotNil(v.Bio),
-		Avatar: helpers.PtrIfNotNil(v.Avatar),
-		Cover:  helpers.PtrIfNotNil(v.Cover),
-		Status: v.Status,
+		ID:          v.ID,
+		Email:       v.Email,
+		Name:        v.Name,
+		Phone:       v.Phone,
+		Bio:         helpers.PtrIfNotNil(v.Bio),
+		Avatar:      helpers.PtrIfNotNil(v.Avatar),
+		Cover:       helpers.PtrIfNotNil(v.Cover),
+		DateOfBirth: helpers.TimeToISOString(v.DateOfBirth),
+		Sex:         helpers.PtrIfNotNil(v.Sex),
+		Goal:        helpers.PtrIfNotNil(v.Goal),
+		HeightCm:    v.HeightCm,
+		WeightKg:    v.WeightKg,
+		Status:      v.Status,
 	}, nil
 }
 
@@ -73,6 +84,23 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateUserDTO) (*GetUserDTO, 
 	if dto.Cover != nil {
 		q.SetNillableCover(dto.Cover)
 	}
+	if dto.DateOfBirth != nil {
+		if parsedTime, err := time.Parse(time.RFC3339, *dto.DateOfBirth); err == nil {
+			q.SetDateOfBirth(parsedTime)
+		}
+	}
+	if dto.Sex != nil {
+		q.SetNillableSex(dto.Sex)
+	}
+	if dto.Goal != nil {
+		q.SetNillableGoal(dto.Goal)
+	}
+	if dto.HeightCm != nil {
+		q.SetNillableHeightCm(dto.HeightCm)
+	}
+	if dto.WeightKg != nil {
+		q.SetNillableWeightKg(dto.WeightKg)
+	}
 	if dto.Status != nil {
 		q.SetStatus(*dto.Status)
 	}
@@ -89,14 +117,19 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateUserDTO) (*GetUserDTO, 
 	}
 
 	return &GetUserDTO{
-		ID:     row.ID,
-		Email:  row.Email,
-		Name:   row.Name,
-		Phone:  row.Phone,
-		Bio:    helpers.PtrIfNotNil(row.Bio),
-		Avatar: helpers.PtrIfNotNil(row.Avatar),
-		Cover:  helpers.PtrIfNotNil(row.Cover),
-		Status: row.Status,
+		ID:          row.ID,
+		Email:       row.Email,
+		Name:        row.Name,
+		Phone:       row.Phone,
+		Bio:         helpers.PtrIfNotNil(row.Bio),
+		Avatar:      helpers.PtrIfNotNil(row.Avatar),
+		Cover:       helpers.PtrIfNotNil(row.Cover),
+		DateOfBirth: helpers.TimeToISOString(row.DateOfBirth),
+		Sex:         helpers.PtrIfNotNil(row.Sex),
+		Goal:        helpers.PtrIfNotNil(row.Goal),
+		HeightCm:    row.HeightCm,
+		WeightKg:    row.WeightKg,
+		Status:      row.Status,
 	}, nil
 }
 
@@ -130,6 +163,23 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateUserDTO) (*GetUserDTO, 
 	if dto.Cover != nil {
 		q.SetNillableCover(dto.Cover)
 	}
+	if dto.DateOfBirth != nil {
+		if parsedTime, err := time.Parse(time.RFC3339, *dto.DateOfBirth); err == nil {
+			q.SetDateOfBirth(parsedTime)
+		}
+	}
+	if dto.Sex != nil {
+		q.SetNillableSex(dto.Sex)
+	}
+	if dto.Goal != nil {
+		q.SetNillableGoal(dto.Goal)
+	}
+	if dto.HeightCm != nil {
+		q.SetNillableHeightCm(dto.HeightCm)
+	}
+	if dto.WeightKg != nil {
+		q.SetNillableWeightKg(dto.WeightKg)
+	}
 	if dto.Status != nil {
 		q.SetStatus(*dto.Status)
 	}
@@ -144,14 +194,19 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateUserDTO) (*GetUserDTO, 
 	}
 
 	return &GetUserDTO{
-		ID:     row.ID,
-		Email:  row.Email,
-		Name:   row.Name,
-		Phone:  row.Phone,
-		Bio:    helpers.PtrIfNotNil(row.Bio),
-		Avatar: helpers.PtrIfNotNil(row.Avatar),
-		Cover:  helpers.PtrIfNotNil(row.Cover),
-		Status: row.Status,
+		ID:          row.ID,
+		Email:       row.Email,
+		Name:        row.Name,
+		Phone:       row.Phone,
+		Bio:         helpers.PtrIfNotNil(row.Bio),
+		Avatar:      helpers.PtrIfNotNil(row.Avatar),
+		Cover:       helpers.PtrIfNotNil(row.Cover),
+		DateOfBirth: helpers.TimeToISOString(row.DateOfBirth),
+		Sex:         helpers.PtrIfNotNil(row.Sex),
+		Goal:        helpers.PtrIfNotNil(row.Goal),
+		HeightCm:    row.HeightCm,
+		WeightKg:    row.WeightKg,
+		Status:      row.Status,
 	}, nil
 }
 

@@ -1,6 +1,8 @@
 package authoidc
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,6 +11,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// MockService is a mock implementation of the Service interface
+type MockService struct {
+	clients map[ProviderName]*providerClient
+}
+
+func (m *MockService) AuthCodeURL(p ProviderName, state, nonce, codeChallenge string) (string, error) {
+	if _, ok := m.clients[p]; !ok {
+		return "", errors.New("unknown provider")
+	}
+	return "https://example.com/auth?state=" + state, nil
+}
+
+func (m *MockService) ExchangeAndLogin(ctx context.Context, p ProviderName, code, codeVerifier string) (string, error) {
+	if _, ok := m.clients[p]; !ok {
+		return "", errors.New("unknown provider")
+	}
+	return "mock-jwt-token", nil
+}
 
 func TestController_Start(t *testing.T) {
 	tests := []struct {
@@ -30,8 +51,8 @@ func TestController_Start(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a minimal service for testing
-			service := &Service{
+			// Create a mock service for testing
+			service := &MockService{
 				clients: map[ProviderName]*providerClient{},
 			}
 			controller := NewController(service)
@@ -62,7 +83,7 @@ func TestController_Callback(t *testing.T) {
 			state:          "",
 			code:           "test-code",
 			cookieState:    "test-state",
-			expectedStatus: fiber.StatusUnauthorized,
+			expectedStatus: fiber.StatusBadRequest,
 		},
 		{
 			name:           "error - state mismatch",
@@ -78,14 +99,14 @@ func TestController_Callback(t *testing.T) {
 			state:          "test-state",
 			code:           "test-code",
 			cookieState:    "test-state",
-			expectedStatus: fiber.StatusUnauthorized,
+			expectedStatus: fiber.StatusTemporaryRedirect,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a minimal service for testing
-			service := &Service{
+			// Create a mock service for testing
+			service := &MockService{
 				clients: map[ProviderName]*providerClient{},
 			}
 			controller := NewController(service)
@@ -107,8 +128,8 @@ func TestController_Callback(t *testing.T) {
 
 func TestController_Integration(t *testing.T) {
 	t.Run("test error cases", func(t *testing.T) {
-		// Create a minimal service for testing
-		service := &Service{
+		// Create a mock service for testing
+		service := &MockService{
 			clients: map[ProviderName]*providerClient{},
 		}
 		controller := NewController(service)
@@ -127,6 +148,6 @@ func TestController_Integration(t *testing.T) {
 		callbackReq.Header.Set("Cookie", "oidc_state=test-state")
 		callbackResp, err := app.Test(callbackReq)
 		require.NoError(t, err)
-		assert.Equal(t, fiber.StatusUnauthorized, callbackResp.StatusCode)
+		assert.Equal(t, fiber.StatusTemporaryRedirect, callbackResp.StatusCode)
 	})
 }

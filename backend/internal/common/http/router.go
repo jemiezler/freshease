@@ -14,6 +14,7 @@ import (
 	"freshease/backend/modules/product_categories"
 	"freshease/backend/modules/products"
 	"freshease/backend/modules/roles"
+	"freshease/backend/modules/shop"
 	"freshease/backend/modules/users"
 	"freshease/backend/modules/vendors"
 	"slices"
@@ -35,20 +36,23 @@ func RegisterRoutes(app *fiber.App, client *ent.Client) {
 		panic(err)
 	}
 	genai.RegisterModuleWithEnt(api, client)
+
+	// 2) Public: Shop API (no authentication required)
+	shop.RegisterModuleWithEnt(api, client)
+	// mount protected modules on the secured router
+	addresses.RegisterModuleWithEnt(api, client)
+	cart_items.RegisterModuleWithEnt(api, client)
+	carts.RegisterModuleWithEnt(api, client)
+	inventories.RegisterModuleWithEnt(api, client)
+	permissions.RegisterModuleWithEnt(api, client)
+	products.RegisterModuleWithEnt(api, client)
+	product_categories.RegisterModuleWithEnt(api, client)
+	users.RegisterModuleWithEnt(api, client)
+	roles.RegisterModuleWithEnt(api, client)
+	vendors.RegisterModuleWithEnt(api, client)
+
 	// 2) Secured area (everything below requires Authorization: Bearer <JWT>)
 	secured := api.Group("", middleware.RequireAuth())
-
-	// mount protected modules on the secured router
-	addresses.RegisterModuleWithEnt(secured, client)
-	cart_items.RegisterModuleWithEnt(secured, client)
-	carts.RegisterModuleWithEnt(secured, client)
-	inventories.RegisterModuleWithEnt(secured, client)
-	permissions.RegisterModuleWithEnt(secured, client)
-	products.RegisterModuleWithEnt(secured, client)
-	product_categories.RegisterModuleWithEnt(secured, client)
-	users.RegisterModuleWithEnt(secured, client)
-	roles.RegisterModuleWithEnt(secured, client)
-	vendors.RegisterModuleWithEnt(secured, client)
 
 	secured.Get("/whoami", func(c *fiber.Ctx) error {
 		userID := c.Locals("user_id")
@@ -71,12 +75,21 @@ func RegisterRoutes(app *fiber.App, client *ent.Client) {
 		}
 
 		return c.JSON(fiber.Map{
-			"id":        user.ID.String(),
-			"email":     user.Email,
-			"name":      user.Name,
-			"avatar":    user.Avatar,
-			"createdAt": user.CreatedAt,
-			"updatedAt": user.UpdatedAt,
+			"id":            user.ID.String(),
+			"email":         user.Email,
+			"name":          user.Name,
+			"phone":         user.Phone,
+			"bio":           user.Bio,
+			"avatar":        user.Avatar,
+			"cover":         user.Cover,
+			"date_of_birth": user.DateOfBirth,
+			"sex":           user.Sex,
+			"goal":          user.Goal,
+			"height_cm":     user.HeightCm,
+			"weight_kg":     user.WeightKg,
+			"status":        user.Status,
+			"created_at":    user.CreatedAt,
+			"updated_at":    user.UpdatedAt,
 		})
 	})
 

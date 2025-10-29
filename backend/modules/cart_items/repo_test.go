@@ -27,10 +27,6 @@ func TestRepository_Delete(t *testing.T) {
 }
 
 // Helper functions to create pointers
-func stringPtr(s string) *string {
-	return &s
-}
-
 func uuidPtr(u uuid.UUID) *uuid.UUID {
 	return &u
 }

@@ -8,14 +8,48 @@ class UserApi {
 
   /// Get current user profile
   Future<Map<String, dynamic>> getCurrentUser() async {
-    final response = await _dio.get('/api/whoami');
-    return response.data as Map<String, dynamic>;
+    try {
+      final response = await _dio.get('/api/whoami');
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw Exception('Failed to fetch user profile: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(
+          'API Error: ${e.response?.data?['message'] ?? e.message}',
+        );
+      } else {
+        throw Exception('Network Error: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
   }
 
   /// Get user by ID
   Future<Map<String, dynamic>> getUserById(String userId) async {
-    final response = await _dio.get('/api/users/$userId');
-    return response.data as Map<String, dynamic>;
+    try {
+      final response = await _dio.get('/api/users/$userId');
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw Exception('Failed to fetch user: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(
+          'API Error: ${e.response?.data?['message'] ?? e.message}',
+        );
+      } else {
+        throw Exception('Network Error: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
   }
 
   /// Update user profile
@@ -23,18 +57,39 @@ class UserApi {
     String userId,
     Map<String, dynamic> userData,
   ) async {
-    final response = await _dio.put('/api/users/$userId', data: userData);
-    return response.data as Map<String, dynamic>;
+    try {
+      final response = await _dio.put('/api/users/$userId', data: userData);
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw Exception('Failed to update user: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(
+          'API Error: ${e.response?.data?['message'] ?? e.message}',
+        );
+      } else {
+        throw Exception('Network Error: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
   }
 
   /// Update current user profile
   Future<Map<String, dynamic>> updateCurrentUser(
     Map<String, dynamic> userData,
   ) async {
-    // First get current user to get the ID
-    final currentUser = await getCurrentUser();
-    final userId = currentUser['id'] as String;
+    try {
+      // First get current user to get the ID
+      final currentUser = await getCurrentUser();
+      final userId = currentUser['id'] as String;
 
-    return updateUser(userId, userData);
+      return await updateUser(userId, userData);
+    } catch (e) {
+      throw Exception('Failed to update current user: $e');
+    }
   }
 }

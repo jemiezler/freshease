@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/features/shop/domain/product.dart';
+import 'package:frontend/features/cart/data/cart_repository.dart';
+import 'package:frontend/features/cart/data/models/cart_dtos.dart';
 
 class CartLine {
   final Product product;
@@ -9,83 +11,177 @@ class CartLine {
 }
 
 class CartController extends ChangeNotifier {
-  final List<CartLine> _lines = [];
-  String? _promoCode;
+  final CartRepository _repository;
+  CartDTO? _cart;
+  bool _isLoading = false;
+  String? _error;
+
+  CartController(this._repository) {
+    _loadCart();
+  }
 
   // --- getters
-  List<CartLine> get lines => List.unmodifiable(_lines);
-  int get itemKinds => _lines.length;
-  int get count => _lines.fold(0, (s, l) => s + l.qty);
-  double get subtotal => _lines.fold(0.0, (s, l) => s + l.lineTotal);
+  CartDTO? get cart => _cart;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
-  // Simple business rules (tweak as needed)
-  double get shipping =>
-      subtotal == 0 ? 0 : (subtotal >= 200 ? 0 : 20); // free shipping over ฿200
-  double get promoDiscount {
-    if (_promoCode == null) return 0;
-    if (_promoCode!.toUpperCase() == 'FRESH10') return subtotal * 0.10;
-    if (_promoCode!.toUpperCase() == 'FREESHIP') return shipping;
-    return 0;
+  List<CartLine> get lines {
+    if (_cart == null) return [];
+    return _cart!.items
+        .map(
+          (item) => CartLine(
+            product: Product.fromLegacy(
+              id: int.parse(item.productId),
+              name: item.productName,
+              price: item.productPrice,
+              image: item.productImage,
+              category: 'Unknown',
+            ),
+            qty: item.quantity,
+          ),
+        )
+        .toList();
   }
 
-  double get vat => (subtotal - promoDiscount) * 0.07; // 7% VAT after discount
-  double get total => (subtotal - promoDiscount) + shipping + vat;
+  int get itemKinds => _cart?.items.length ?? 0;
+  int get count {
+    if (_cart == null) return 0;
+    return _cart!.items.fold(0, (sum, item) => sum + item.quantity);
+  }
 
-  String? get promoCode => _promoCode;
+  double get subtotal => _cart?.subtotal ?? 0.0;
+  double get shipping => _cart?.shipping ?? 0.0;
+  double get promoDiscount => _cart?.promoDiscount ?? 0.0;
+  double get vat => _cart?.tax ?? 0.0;
+  double get total => _cart?.total ?? 0.0;
+  String? get promoCode => _cart?.promoCode;
+
+  Future<void> _loadCart() async {
+    _setLoading(true);
+    try {
+      _cart = await _repository.getCart();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
+  }
 
   // --- mutators
-  void add(Product p, {int qty = 1}) {
-    final i = _lines.indexWhere((l) => l.product.id == p.id);
-    if (i >= 0) {
-      _lines[i].qty += qty;
-    } else {
-      _lines.add(CartLine(product: p, qty: qty));
+  Future<void> add(Product p, {int qty = 1}) async {
+    _setLoading(true);
+    try {
+      _cart = await _repository.addToCart(p, quantity: qty);
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
     }
-    notifyListeners();
   }
 
-  void decrement(Product p, {int qty = 1}) {
-    final i = _lines.indexWhere((l) => l.product.id == p.id);
-    if (i < 0) return;
-    _lines[i].qty -= qty;
-    if (_lines[i].qty <= 0) _lines.removeAt(i);
-    notifyListeners();
+  Future<void> decrement(Product p, {int qty = 1}) async {
+    final item = _cart?.items.firstWhere(
+      (item) => item.productId == p.id,
+      orElse: () => throw Exception('Item not found'),
+    );
+
+    if (item != null) {
+      final newQuantity = item.quantity - qty;
+      if (newQuantity <= 0) {
+        await remove(p);
+      } else {
+        await setQty(p, newQuantity);
+      }
+    }
   }
 
-  void setQty(Product p, int qty) {
+  Future<void> setQty(Product p, int qty) async {
     if (qty <= 0) return remove(p);
-    final i = _lines.indexWhere((l) => l.product.id == p.id);
-    if (i >= 0) {
-      _lines[i].qty = qty;
-      notifyListeners();
+
+    final item = _cart?.items.firstWhere(
+      (item) => item.productId == p.id,
+      orElse: () => throw Exception('Item not found'),
+    );
+
+    if (item != null) {
+      _setLoading(true);
+      try {
+        _cart = await _repository.updateCartItem(item.id, qty);
+        _error = null;
+      } catch (e) {
+        _error = e.toString();
+      } finally {
+        _setLoading(false);
+      }
     }
   }
 
-  void remove(Product p) {
-    _lines.removeWhere((l) => l.product.id == p.id);
-    notifyListeners();
+  Future<void> remove(Product p) async {
+    final item = _cart?.items.firstWhere(
+      (item) => item.productId == p.id,
+      orElse: () => throw Exception('Item not found'),
+    );
+
+    if (item != null) {
+      _setLoading(true);
+      try {
+        _cart = await _repository.removeCartItem(item.id);
+        _error = null;
+      } catch (e) {
+        _error = e.toString();
+      } finally {
+        _setLoading(false);
+      }
+    }
   }
 
-  void clear() {
-    _lines.clear();
-    _promoCode = null;
-    notifyListeners();
+  Future<void> clear() async {
+    _setLoading(true);
+    try {
+      _cart = await _repository.clearCart();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  bool applyPromo(String code) {
-    final c = code.trim().toUpperCase();
-    // Accept only known codes (sample)
-    if (c == 'FRESH10' || c == 'FREESHIP') {
-      _promoCode = c;
-      notifyListeners();
+  Future<bool> applyPromo(String code) async {
+    _setLoading(true);
+    try {
+      _cart = await _repository.applyPromoCode(code);
+      _error = null;
       return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
     }
-    return false;
   }
 
-  void removePromo() {
-    _promoCode = null;
-    notifyListeners();
+  Future<void> removePromo() async {
+    _setLoading(true);
+    try {
+      _cart = await _repository.removePromoCode();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> refresh() async {
+    await _loadCart();
   }
 }
 

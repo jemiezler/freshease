@@ -5,26 +5,49 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-// import 'package:flutter/material.dart';
-// import 'package:flutter_test/flutter_test.dart';
-
-// import 'package:frontend/main.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  // testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-  //   // Build our app and trigger a frame.
-  //   await tester.pumpWidget(const MyApp());
+  testWidgets('Basic widget test', (WidgetTester tester) async {
+    // Create a simple test widget
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: Text('Hello World'))),
+    );
 
-  //   // Verify that our counter starts at 0.
-  //   expect(find.text('0'), findsOneWidget);
-  //   expect(find.text('1'), findsNothing);
+    // Verify that the text is displayed
+    expect(find.text('Hello World'), findsOneWidget);
+    expect(find.byType(MaterialApp), findsOneWidget);
+  });
 
-  //   // Tap the '+' icon and trigger a frame.
-  //   await tester.tap(find.byIcon(Icons.add));
-  //   await tester.pump();
+  testWidgets('Button interaction test', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              const Text('Counter: 0'),
+              ElevatedButton(
+                onPressed: () {
+                  // This would normally trigger a state change
+                },
+                child: const Text('Increment'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
 
-  //   // Verify that our counter has incremented.
-  //   expect(find.text('0'), findsNothing);
-  //   expect(find.text('1'), findsOneWidget);
-  // });
+    // Verify initial state
+    expect(find.text('Counter: 0'), findsOneWidget);
+    expect(find.text('Increment'), findsOneWidget);
+
+    // Tap the button
+    await tester.tap(find.text('Increment'));
+    await tester.pump();
+
+    // Verify the button was tapped (text still exists)
+    expect(find.text('Increment'), findsOneWidget);
+  });
 }

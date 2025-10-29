@@ -4,10 +4,12 @@ import 'package:frontend/core/state/cart_controller.dart';
 import 'package:frontend/core/widgets/banner_carousel.dart';
 import 'package:frontend/core/widgets/global_appbar.dart';
 import 'package:frontend/core/widgets/search_pill.dart';
+import 'package:frontend/core/health/health_controller.dart';
 import 'package:frontend/features/shop/data/product_repository.dart';
 import 'package:frontend/features/shop/domain/product.dart';
 import 'package:frontend/features/shop/widgets/product_card.dart';
 import 'package:go_router/go_router.dart';
+import 'package:get_it/get_it.dart';
 
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
@@ -16,12 +18,14 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
-  final _repo = MockProductRepository();
+  final _repo = GetIt.instance<ProductRepository>();
+  final _healthController = GetIt.instance<HealthController>();
   final _search = TextEditingController();
   String _category = 'All';
   RangeValues _range = const RangeValues(0, 150);
   Timer? _debounce;
   List<Product> _items = [];
+  bool _isLoading = false;
   final List<BannerItem> _banners = const [
     BannerItem(imageUrl: 'https://picsum.photos/1200/400?1', route: '/promo/1'),
     BannerItem(imageUrl: 'https://picsum.photos/1200/400?2', route: '/promo/2'),
@@ -39,19 +43,33 @@ class _ShopPageState extends State<ShopPage> {
   ];
 
   Future<void> _load() async {
-    final list = await _repo.list(
-      q: _search.text,
-      category: _category,
-      min: _range.start,
-      max: _range.end,
-    );
-    setState(() => _items = list);
+    if (_isLoading) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final list = await _repo.list(
+        q: _search.text,
+        category: _category,
+        min: _range.start,
+        max: _range.end,
+      );
+      setState(() => _items = list);
+    } catch (e) {
+      setState(() => _items = []);
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   void initState() {
     super.initState();
     _load();
+
+    // Trigger meal plan generation when user visits shop page
+    _healthController.triggerAutoGeneration();
+
     _search.addListener(() {
       _debounce?.cancel();
       _debounce = Timer(const Duration(milliseconds: 180), _load);
@@ -161,36 +179,42 @@ class _ShopPageState extends State<ShopPage> {
                   ),
                 ),
 
-                SliverPadding(
-                  padding: const EdgeInsets.all(16),
-                  sliver: SliverGrid(
-                    delegate: SliverChildBuilderDelegate((context, i) {
-                      final p = _items[i];
-                      return ProductCard(
-                        product: p,
-                        onTap: () =>
-                            context.go('/shop/product/${p.id}', extra: p),
-                        onAdd: () {
-                          cart.add(p);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${p.name} added to cart'),
-                              duration: const Duration(milliseconds: 900),
-                            ),
-                          );
-                        },
-                      );
-                    }, childCount: _items.length),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      mainAxisSpacing: 0,
-                      crossAxisSpacing: 0,
-                      childAspectRatio: aspectRatio,
+                if (_isLoading)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: SliverGrid(
+                      delegate: SliverChildBuilderDelegate((context, i) {
+                        final p = _items[i];
+                        return ProductCard(
+                          product: p,
+                          onTap: () =>
+                              context.go('/shop/product/${p.id}', extra: p),
+                          onAdd: () {
+                            cart.add(p);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${p.name} added to cart'),
+                                duration: const Duration(milliseconds: 900),
+                              ),
+                            );
+                          },
+                        );
+                      }, childCount: _items.length),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 0,
+                        crossAxisSpacing: 0,
+                        childAspectRatio: aspectRatio,
+                      ),
                     ),
                   ),
-                ),
 
-                if (_items.isEmpty)
+                if (!_isLoading && _items.isEmpty)
                   const SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(child: Text('No results')),

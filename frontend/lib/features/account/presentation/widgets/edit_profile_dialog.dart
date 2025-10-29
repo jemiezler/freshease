@@ -18,6 +18,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   late final TextEditingController _phoneController;
   late final TextEditingController _bioController;
   late final TextEditingController _avatarController;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -51,44 +52,100 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
       },
       child: AlertDialog(
         title: const Text('Edit Profile'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
+        content: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Name is required';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'Name must be at least 2 characters';
+                    }
+                    if (value.trim().length > 100) {
+                      return 'Name must be less than 100 characters';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.phone),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value != null && value.trim().isNotEmpty) {
+                      if (value.trim().length < 10) {
+                        return 'Phone must be at least 10 characters';
+                      }
+                      if (value.trim().length > 20) {
+                        return 'Phone must be less than 20 characters';
+                      }
+                    }
+                    return null;
+                  },
                 ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _bioController,
-                decoration: const InputDecoration(
-                  labelText: 'Bio',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _bioController,
+                  decoration: const InputDecoration(
+                    labelText: 'Bio',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.info),
+                  ),
+                  maxLines: 3,
+                  validator: (value) {
+                    if (value != null && value.trim().isNotEmpty) {
+                      if (value.trim().length < 10) {
+                        return 'Bio must be at least 10 characters';
+                      }
+                      if (value.trim().length > 500) {
+                        return 'Bio must be less than 500 characters';
+                      }
+                    }
+                    return null;
+                  },
                 ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _avatarController,
-                decoration: const InputDecoration(
-                  labelText: 'Avatar URL',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _avatarController,
+                  decoration: const InputDecoration(
+                    labelText: 'Avatar URL',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.image),
+                  ),
+                  validator: (value) {
+                    if (value != null && value.trim().isNotEmpty) {
+                      if (value.trim().length < 10) {
+                        return 'Avatar URL must be at least 10 characters';
+                      }
+                      if (value.trim().length > 200) {
+                        return 'Avatar URL must be less than 200 characters';
+                      }
+                      final uri = Uri.tryParse(value.trim());
+                      if (uri == null || !uri.hasAbsolutePath) {
+                        return 'Please enter a valid URL';
+                      }
+                    }
+                    return null;
+                  },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -116,6 +173,10 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   }
 
   void _saveProfile() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final userCubit = context.read<UserCubit>();
     userCubit.updateProfile({
       'name': _nameController.text.trim(),

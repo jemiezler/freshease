@@ -9,6 +9,11 @@ class UserProfileDto {
   final String? bio;
   final String? avatar;
   final String? cover;
+  final DateTime? dateOfBirth;
+  final String? sex;
+  final String? goal;
+  final double? heightCm;
+  final double? weightKg;
   final String status;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -21,6 +26,11 @@ class UserProfileDto {
     this.bio,
     this.avatar,
     this.cover,
+    this.dateOfBirth,
+    this.sex,
+    this.goal,
+    this.heightCm,
+    this.weightKg,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -35,9 +45,20 @@ class UserProfileDto {
       bio: json['bio'] as String?,
       avatar: json['avatar'] as String?,
       cover: json['cover'] as String?,
+      dateOfBirth: json['date_of_birth'] != null
+          ? DateTime.parse(json['date_of_birth'] as String)
+          : null,
+      sex: json['sex'] as String?,
+      goal: json['goal'] as String?,
+      heightCm: json['height_cm'] != null
+          ? (json['height_cm'] as num).toDouble()
+          : null,
+      weightKg: json['weight_kg'] != null
+          ? (json['weight_kg'] as num).toDouble()
+          : null,
       status: json['status'] as String? ?? 'active',
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
 
@@ -50,9 +71,14 @@ class UserProfileDto {
       'bio': bio,
       'avatar': avatar,
       'cover': cover,
+      'date_of_birth': dateOfBirth?.toIso8601String(),
+      'sex': sex,
+      'goal': goal,
+      'height_cm': heightCm,
+      'weight_kg': weightKg,
       'status': status,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
@@ -65,6 +91,11 @@ class UserProfileDto {
       'bio': bio,
       'avatar': avatar,
       'cover': cover,
+      'date_of_birth': dateOfBirth?.toIso8601String(),
+      'sex': sex,
+      'goal': goal,
+      'height_cm': heightCm,
+      'weight_kg': weightKg,
       'status': status,
     };
   }
@@ -78,6 +109,11 @@ class UserProfileDto {
       bio: bio,
       avatar: avatar,
       cover: cover,
+      dateOfBirth: dateOfBirth,
+      sex: sex,
+      goal: goal,
+      heightCm: heightCm,
+      weightKg: weightKg,
       status: status,
       createdAt: createdAt,
       updatedAt: updatedAt,

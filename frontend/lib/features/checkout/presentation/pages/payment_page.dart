@@ -78,7 +78,9 @@ class _PaymentPageState extends State<PaymentPage> {
                           const SizedBox(height: 12),
                           RadioListTile<PaymentMethod>(
                             value: PaymentMethod.cod,
+                            // ignore: deprecated_member_use
                             groupValue: _method,
+                            // ignore: deprecated_member_use
                             onChanged: (m) => setState(() => _method = m),
                             title: const Text('Cash on Delivery'),
                             subtitle: const Text(
@@ -88,7 +90,9 @@ class _PaymentPageState extends State<PaymentPage> {
                           const SizedBox(height: 8),
                           RadioListTile<PaymentMethod>(
                             value: PaymentMethod.card,
+                            // ignore: deprecated_member_use
                             groupValue: _method,
+                            // ignore: deprecated_member_use
                             onChanged: (m) => setState(() => _method = m),
                             title: const Text('Credit / Debit Card'),
                             subtitle: const Text(
