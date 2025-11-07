@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockService is a mock implementation of the Service interface
 type MockService struct {
 	mock.Mock
 }

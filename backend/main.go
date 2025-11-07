@@ -10,7 +10,7 @@ import (
 	"freshease/backend/internal/common/db"
 	httpserver "freshease/backend/internal/common/http"
 
-	_ "freshease/backend/internal/docs" // swagger (if generated)
+	_ "freshease/backend/internal/docs"
 
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/cors"

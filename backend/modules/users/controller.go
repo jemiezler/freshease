@@ -18,12 +18,29 @@ func (ctl *Controller) Register(r fiber.Router) {
 	r.Delete("/:id", ctl.DeleteUser)
 }
 
+// ListUsers godoc
+// @Summary      List users
+// @Description  Get all users
+// @Tags         users
+// @Produce      json
+// @Success      200 {array}  GetUserDTO
+// @Failure      500 {object} map[string]interface{}
+// @Router       /users [get]
 func (ctl *Controller) ListUsers(c *fiber.Ctx) error {
 	items, err := ctl.svc.List(c.Context())
 	if err != nil { return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()}) }
 	return c.JSON(items)
 }
 
+// GetUser godoc
+// @Summary      Get user by ID
+// @Tags         users
+// @Produce      json
+// @Param        id   path      string true "User ID (UUID)"
+// @Success      200  {object}  GetUserDTO
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      404  {object}  map[string]interface{}
+// @Router       /users/{id} [get]
 func (ctl *Controller) GetUser(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -33,6 +50,15 @@ func (ctl *Controller) GetUser(c *fiber.Ctx) error {
 	return c.JSON(item)
 }
 
+// CreateUser godoc
+// @Summary      Create user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        payload body      CreateUserDTO true "User payload"
+// @Success      201     {object}  GetUserDTO
+// @Failure      400     {object}  map[string]interface{}
+// @Router       /users [post]
 func (ctl *Controller) CreateUser(c *fiber.Ctx) error {
 	var dto CreateUserDTO
 	if err := middleware.BindAndValidate(c, &dto); err != nil { return err }
@@ -41,6 +67,16 @@ func (ctl *Controller) CreateUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(item)
 }
 
+// UpdateUser godoc
+// @Summary      Update user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id      path      string        true "User ID (UUID)"
+// @Param        payload body      UpdateUserDTO true "Partial/Full update"
+// @Success      200     {object}  GetUserDTO
+// @Failure      400     {object}  map[string]interface{}
+// @Router       /users/{id} [put]
 func (ctl *Controller) UpdateUser(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -52,6 +88,14 @@ func (ctl *Controller) UpdateUser(c *fiber.Ctx) error {
 	return c.JSON(item)
 }
 
+// DeleteUser godoc
+// @Summary      Delete user
+// @Tags         users
+// @Produce      json
+// @Param        id   path      string true "User ID (UUID)"
+// @Success      204  {object}  nil
+// @Failure      400  {object}  map[string]interface{}
+// @Router       /users/{id} [delete]
 func (ctl *Controller) DeleteUser(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)

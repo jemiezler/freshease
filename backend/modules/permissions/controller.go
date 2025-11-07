@@ -19,6 +19,14 @@ func (ctl *Controller) Register(r fiber.Router) {
 	r.Delete("/:id", ctl.DeletePermission)
 }
 
+// ListPermissions godoc
+// @Summary      List permissions
+// @Description  Get all permissions
+// @Tags         permissions
+// @Produce      json
+// @Success      200 {array}  GetPermissionDTO
+// @Failure      500 {object} map[string]interface{}
+// @Router       /permissions [get]
 func (ctl *Controller) ListPermissions(c *fiber.Ctx) error {
 	items, err := ctl.svc.List(c.Context())
 	if err != nil {
@@ -27,6 +35,15 @@ func (ctl *Controller) ListPermissions(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": items, "message": "Permissions Retrieved Successfully"})
 }
 
+// GetPermission godoc
+// @Summary      Get permission by ID
+// @Tags         permissions
+// @Produce      json
+// @Param        id   path      string true "Permission ID (UUID)"
+// @Success      200  {object}  GetPermissionDTO
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      404  {object}  map[string]interface{}
+// @Router       /permissions/{id} [get]
 func (ctl *Controller) GetPermission(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -40,6 +57,15 @@ func (ctl *Controller) GetPermission(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": item, "message": "Permission Retrieved Successfully"})
 }
 
+// CreatePermission godoc
+// @Summary      Create permission
+// @Tags         permissions
+// @Accept       json
+// @Produce      json
+// @Param        payload body      CreatePermissionDTO true "Permission payload"
+// @Success      201     {object}  GetPermissionDTO
+// @Failure      400     {object}  map[string]interface{}
+// @Router       /permissions [post]
 func (ctl *Controller) CreatePermission(c *fiber.Ctx) error {
 	var dto CreatePermissionDTO
 	if err := middleware.BindAndValidate(c, &dto); err != nil {
@@ -52,6 +78,16 @@ func (ctl *Controller) CreatePermission(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": item, "message": "Permission Created Successfully"})
 }
 
+// UpdatePermission godoc
+// @Summary      Update permission
+// @Tags         permissions
+// @Accept       json
+// @Produce      json
+// @Param        id      path      string             true "Permission ID (UUID)"
+// @Param        payload body      UpdatePermissionDTO true "Partial/Full update"
+// @Success      201     {object}  GetPermissionDTO
+// @Failure      400     {object}  map[string]interface{}
+// @Router       /permissions/{id} [patch]
 func (ctl *Controller) UpdatePermission(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -69,6 +105,14 @@ func (ctl *Controller) UpdatePermission(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": item, "message": "Permission Updated Successfully"})
 }
 
+// DeletePermission godoc
+// @Summary      Delete permission
+// @Tags         permissions
+// @Produce      json
+// @Param        id   path      string true "Permission ID (UUID)"
+// @Success      202  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Router       /permissions/{id} [delete]
 func (ctl *Controller) DeletePermission(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)

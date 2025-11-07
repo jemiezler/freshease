@@ -25,6 +25,22 @@ func (ctl *Controller) Register(r fiber.Router) {
 	r.Get("/vendors/:id", ctl.GetVendor)
 }
 
+// SearchProducts godoc
+// @Summary      Search products
+// @Description  Public catalog search with optional filters
+// @Tags         shop
+// @Produce      json
+// @Param        category_id  query string false "Filter by category UUID"
+// @Param        vendor_id    query string false "Filter by vendor UUID"
+// @Param        min_price    query number false "Minimum price"
+// @Param        max_price    query number false "Maximum price"
+// @Param        search       query string false "Search term"
+// @Param        in_stock     query boolean false "Only items in stock"
+// @Param        limit        query integer false "Limit results"
+// @Param        offset       query integer false "Offset results"
+// @Success      200 {array}  products.GetProductDTO
+// @Failure      500 {object} map[string]interface{}
+// @Router       /shop/products [get]
 func (ctl *Controller) SearchProducts(c *fiber.Ctx) error {
 	filters := ShopSearchFilters{}
 
@@ -89,6 +105,15 @@ func (ctl *Controller) SearchProducts(c *fiber.Ctx) error {
 	})
 }
 
+// GetProduct godoc
+// @Summary      Get product (public)
+// @Tags         shop
+// @Produce      json
+// @Param        id   path      string true "Product ID (UUID)"
+// @Success      200  {object}  products.GetProductDTO
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      404  {object}  map[string]interface{}
+// @Router       /shop/products/{id} [get]
 func (ctl *Controller) GetProduct(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -111,6 +136,13 @@ func (ctl *Controller) GetProduct(c *fiber.Ctx) error {
 	})
 }
 
+// GetCategories godoc
+// @Summary      List categories (public)
+// @Tags         shop
+// @Produce      json
+// @Success      200 {array}  product_categories.GetProductCategoryDTO
+// @Failure      500 {object} map[string]interface{}
+// @Router       /shop/categories [get]
 func (ctl *Controller) GetCategories(c *fiber.Ctx) error {
 	categories, err := ctl.svc.GetCategories(c.Context())
 	if err != nil {
@@ -126,6 +158,15 @@ func (ctl *Controller) GetCategories(c *fiber.Ctx) error {
 	})
 }
 
+// GetCategory godoc
+// @Summary      Get category (public)
+// @Tags         shop
+// @Produce      json
+// @Param        id   path      string true "Category ID (UUID)"
+// @Success      200  {object}  product_categories.GetProductCategoryDTO
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      404  {object}  map[string]interface{}
+// @Router       /shop/categories/{id} [get]
 func (ctl *Controller) GetCategory(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -148,6 +189,13 @@ func (ctl *Controller) GetCategory(c *fiber.Ctx) error {
 	})
 }
 
+// GetVendors godoc
+// @Summary      List vendors (public)
+// @Tags         shop
+// @Produce      json
+// @Success      200 {array}  vendors.GetVendorDTO
+// @Failure      500 {object} map[string]interface{}
+// @Router       /shop/vendors [get]
 func (ctl *Controller) GetVendors(c *fiber.Ctx) error {
 	vendors, err := ctl.svc.GetVendors(c.Context())
 	if err != nil {
@@ -163,6 +211,15 @@ func (ctl *Controller) GetVendors(c *fiber.Ctx) error {
 	})
 }
 
+// GetVendor godoc
+// @Summary      Get vendor (public)
+// @Tags         shop
+// @Produce      json
+// @Param        id   path      string true "Vendor ID (UUID)"
+// @Success      200  {object}  vendors.GetVendorDTO
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      404  {object}  map[string]interface{}
+// @Router       /shop/vendors/{id} [get]
 func (ctl *Controller) GetVendor(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)

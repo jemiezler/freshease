@@ -1,9 +1,2332 @@
 basePath: /api
-host: localhost:3000
+definitions:
+  addresses.CreateAddressDTO:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      id:
+        type: string
+      is_default:
+        type: boolean
+      line1:
+        type: string
+      line2:
+        type: string
+      province:
+        type: string
+      zip:
+        type: string
+    required:
+    - city
+    - country
+    - id
+    - line1
+    - province
+    - zip
+    type: object
+  addresses.GetAddressDTO:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      id:
+        type: string
+      is_default:
+        type: boolean
+      line1:
+        type: string
+      line2:
+        type: string
+      province:
+        type: string
+      zip:
+        type: string
+    required:
+    - city
+    - country
+    - id
+    - line1
+    - province
+    - zip
+    type: object
+  addresses.UpdateAddressDTO:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      id:
+        type: string
+      is_default:
+        type: boolean
+      line1:
+        type: string
+      line2:
+        type: string
+      province:
+        type: string
+      zip:
+        type: string
+    required:
+    - id
+    type: object
+  cart_items.CreateCart_itemDTO:
+    properties:
+      cart:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+    required:
+    - cart
+    - description
+    - id
+    - name
+    type: object
+  cart_items.GetCart_itemDTO:
+    properties:
+      cart:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+    required:
+    - cart
+    - description
+    - id
+    - name
+    type: object
+  cart_items.UpdateCart_itemDTO:
+    properties:
+      cart:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+    required:
+    - id
+    type: object
+  carts.CreateCartDTO:
+    properties:
+      status:
+        type: string
+      total:
+        type: number
+    type: object
+  carts.GetCartDTO:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+      total:
+        type: number
+      updated_at:
+        type: string
+    required:
+    - created_at
+    - id
+    - status
+    - total
+    - updated_at
+    type: object
+  carts.UpdateCartDTO:
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+      total:
+        type: number
+    required:
+    - id
+    type: object
+  genai.GenerateMealsReq:
+    properties:
+      active_kcal_24h:
+        type: number
+      age:
+        type: integer
+      allergies:
+        items:
+          type: string
+        type: array
+      gender:
+        type: string
+      height_cm:
+        type: number
+      preferences:
+        items:
+          type: string
+        type: array
+      steps_today:
+        type: integer
+      target:
+        type: string
+      user_id:
+        type: string
+      weight_kg:
+        type: number
+    type: object
+  inventories.CreateInventoryDTO:
+    properties:
+      quantity:
+        type: integer
+      restock_amount:
+        type: integer
+      updated_at:
+        type: string
+    required:
+    - quantity
+    - restock_amount
+    type: object
+  inventories.GetInventoryDTO:
+    properties:
+      id:
+        type: string
+      quantity:
+        type: integer
+      restock_amount:
+        type: integer
+      updated_at:
+        type: string
+    required:
+    - id
+    - quantity
+    - restock_amount
+    - updated_at
+    type: object
+  inventories.UpdateInventoryDTO:
+    properties:
+      id:
+        type: string
+      quantity:
+        type: integer
+      restock_amount:
+        type: integer
+      updated_at:
+        type: string
+    required:
+    - id
+    type: object
+  permissions.CreatePermissionDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+    required:
+    - description
+    - id
+    - name
+    type: object
+  permissions.GetPermissionDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+    required:
+    - description
+    - id
+    - name
+    type: object
+  permissions.UpdatePermissionDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+    required:
+    - id
+    type: object
+  product_categories.CreateProductCategoryDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      slug:
+        type: string
+    required:
+    - description
+    - id
+    - name
+    - slug
+    type: object
+  product_categories.GetProductCategoryDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      slug:
+        type: string
+    required:
+    - description
+    - id
+    - name
+    - slug
+    type: object
+  product_categories.UpdateProductCategoryDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      slug:
+        type: string
+    required:
+    - id
+    type: object
+  products.CreateProductDTO:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      is_active:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      price:
+        type: number
+      unit_label:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - created_at
+    - description
+    - id
+    - image_url
+    - is_active
+    - name
+    - price
+    - unit_label
+    - updated_at
+    type: object
+  products.GetProductDTO:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      is_active:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      price:
+        type: number
+      unit_label:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - created_at
+    - description
+    - id
+    - image_url
+    - is_active
+    - name
+    - price
+    - unit_label
+    - updated_at
+    type: object
+  products.UpdateProductDTO:
+    properties:
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      is_active:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      price:
+        type: number
+      unit_label:
+        type: string
+    required:
+    - id
+    type: object
+  roles.CreateRoleDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+    required:
+    - description
+    - id
+    - name
+    type: object
+  roles.GetRoleDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+    required:
+    - description
+    - id
+    - name
+    type: object
+  roles.UpdateRoleDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+    required:
+    - id
+    type: object
+  users.CreateUserDTO:
+    properties:
+      avatar:
+        maxLength: 200
+        minLength: 10
+        type: string
+      bio:
+        maxLength: 500
+        minLength: 1
+        type: string
+      cover:
+        maxLength: 200
+        minLength: 10
+        type: string
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      goal:
+        enum:
+        - maintenance
+        - weight_loss
+        - weight_gain
+        type: string
+      height_cm:
+        maximum: 300
+        minimum: 50
+        type: number
+      id:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 10
+        type: string
+      sex:
+        enum:
+        - male
+        - female
+        - other
+        type: string
+      status:
+        type: string
+      weight_kg:
+        maximum: 500
+        minimum: 20
+        type: number
+    required:
+    - email
+    - id
+    - name
+    - password
+    type: object
+  users.GetUserDTO:
+    properties:
+      avatar:
+        type: string
+      bio:
+        type: string
+      cover:
+        type: string
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      goal:
+        type: string
+      height_cm:
+        type: number
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      sex:
+        type: string
+      status:
+        type: string
+      weight_kg:
+        type: number
+    type: object
+  users.UpdateUserDTO:
+    properties:
+      avatar:
+        maxLength: 200
+        minLength: 10
+        type: string
+      bio:
+        maxLength: 500
+        minLength: 1
+        type: string
+      cover:
+        maxLength: 200
+        minLength: 10
+        type: string
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      goal:
+        enum:
+        - maintenance
+        - weight_loss
+        - weight_gain
+        type: string
+      height_cm:
+        maximum: 300
+        minimum: 50
+        type: number
+      id:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 10
+        type: string
+      sex:
+        enum:
+        - male
+        - female
+        - other
+        type: string
+      status:
+        type: string
+      weight_kg:
+        maximum: 500
+        minimum: 20
+        type: number
+    type: object
+  vendors.CreateVendorDTO:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: string
+      logo_url:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      phone:
+        type: string
+      postal_code:
+        type: string
+      state:
+        type: string
+      updated_at:
+        type: string
+      website:
+        type: string
+    required:
+    - id
+    - is_active
+    type: object
+  vendors.GetVendorDTO:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: string
+      logo_url:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      phone:
+        type: string
+      postal_code:
+        type: string
+      state:
+        type: string
+      updated_at:
+        type: string
+      website:
+        type: string
+    required:
+    - created_at
+    - id
+    - is_active
+    - updated_at
+    type: object
+  vendors.UpdateVendorDTO:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: string
+      logo_url:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      phone:
+        type: string
+      postal_code:
+        type: string
+      state:
+        type: string
+      website:
+        type: string
+    required:
+    - id
+    - is_active
+    type: object
+host: localhost:8080
 info:
   contact: {}
   description: API docs for Freshease backend.
   title: Freshease API
   version: "1.0"
-paths: {}
+paths:
+  /addresses:
+    get:
+      description: Get all addresses for current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/addresses.GetAddressDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List addresses
+      tags:
+      - addresses
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Address payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/addresses.CreateAddressDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/addresses.GetAddressDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create address
+      tags:
+      - addresses
+  /addresses/{id}:
+    delete:
+      parameters:
+      - description: Address ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete address
+      tags:
+      - addresses
+    get:
+      parameters:
+      - description: Address ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/addresses.GetAddressDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get address by ID
+      tags:
+      - addresses
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Address ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/addresses.UpdateAddressDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/addresses.GetAddressDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update address
+      tags:
+      - addresses
+  /auth/{provider}/callback:
+    get:
+      description: Validates state and redirects back to app with code
+      parameters:
+      - description: OIDC provider (google|line)
+        in: path
+        name: provider
+        required: true
+        type: string
+      - description: Authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: State
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: Temporary Redirect back to app
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: OIDC provider callback
+      tags:
+      - auth
+  /auth/{provider}/exchange:
+    post:
+      consumes:
+      - application/json
+      description: Verifies state, exchanges code, returns access token
+      parameters:
+      - description: OIDC provider (google|line)
+        in: path
+        name: provider
+        required: true
+        type: string
+      - description: '{ code, state }'
+        in: body
+        name: payload
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Exchange auth code for access token
+      tags:
+      - auth
+  /auth/{provider}/start:
+    get:
+      description: Redirects to the chosen OIDC provider with state and nonce
+      parameters:
+      - description: OIDC provider (google|line)
+        in: path
+        name: provider
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: Temporary Redirect to provider
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Begin OIDC login
+      tags:
+      - auth
+  /cart_items:
+    get:
+      description: Get all cart items
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cart_items.GetCart_itemDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List cart items
+      tags:
+      - cart_items
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: CartItem payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/cart_items.CreateCart_itemDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/cart_items.GetCart_itemDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create cart item
+      tags:
+      - cart_items
+  /cart_items/{id}:
+    delete:
+      parameters:
+      - description: CartItem ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete cart item
+      tags:
+      - cart_items
+    get:
+      parameters:
+      - description: CartItem ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cart_items.GetCart_itemDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get cart item by ID
+      tags:
+      - cart_items
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: CartItem ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/cart_items.UpdateCart_itemDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/cart_items.GetCart_itemDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update cart item
+      tags:
+      - cart_items
+  /carts:
+    get:
+      description: Get all carts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/carts.GetCartDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List carts
+      tags:
+      - carts
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Cart payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/carts.CreateCartDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/carts.GetCartDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create cart
+      tags:
+      - carts
+  /carts/{id}:
+    delete:
+      parameters:
+      - description: Cart ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete cart
+      tags:
+      - carts
+    get:
+      parameters:
+      - description: Cart ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/carts.GetCartDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get cart by ID
+      tags:
+      - carts
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Cart ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/carts.UpdateCartDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/carts.GetCartDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update cart
+      tags:
+      - carts
+  /genai/daily:
+    post:
+      consumes:
+      - application/json
+      description: Uses user profile and preferences to generate a daily plan
+      parameters:
+      - description: Generation request
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/genai.GenerateMealsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Generate a 1-day meal plan
+      tags:
+      - genai
+  /genai/weekly:
+    post:
+      consumes:
+      - application/json
+      description: Uses user profile and preferences to generate a weekly plan
+      parameters:
+      - description: Generation request
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/genai.GenerateMealsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Generate a 7-day meal plan
+      tags:
+      - genai
+  /inventories:
+    get:
+      description: Get all inventories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/inventories.GetInventoryDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List inventories
+      tags:
+      - inventories
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Inventory payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/inventories.CreateInventoryDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/inventories.GetInventoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create inventory
+      tags:
+      - inventories
+  /inventories/{id}:
+    delete:
+      parameters:
+      - description: Inventory ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete inventory
+      tags:
+      - inventories
+    get:
+      parameters:
+      - description: Inventory ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventories.GetInventoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get inventory by ID
+      tags:
+      - inventories
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Inventory ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/inventories.UpdateInventoryDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/inventories.GetInventoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update inventory
+      tags:
+      - inventories
+  /permissions:
+    get:
+      description: Get all permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/permissions.GetPermissionDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List permissions
+      tags:
+      - permissions
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Permission payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/permissions.CreatePermissionDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/permissions.GetPermissionDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create permission
+      tags:
+      - permissions
+  /permissions/{id}:
+    delete:
+      parameters:
+      - description: Permission ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete permission
+      tags:
+      - permissions
+    get:
+      parameters:
+      - description: Permission ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/permissions.GetPermissionDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get permission by ID
+      tags:
+      - permissions
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Permission ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/permissions.UpdatePermissionDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/permissions.GetPermissionDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update permission
+      tags:
+      - permissions
+  /product_categories:
+    get:
+      description: Get all product categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/product_categories.GetProductCategoryDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List product categories
+      tags:
+      - product_categories
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ProductCategory payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/product_categories.CreateProductCategoryDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/product_categories.GetProductCategoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create product category
+      tags:
+      - product_categories
+  /product_categories/{id}:
+    delete:
+      parameters:
+      - description: ProductCategory ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete product category
+      tags:
+      - product_categories
+    get:
+      parameters:
+      - description: ProductCategory ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/product_categories.GetProductCategoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get product category by ID
+      tags:
+      - product_categories
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: ProductCategory ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/product_categories.UpdateProductCategoryDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/product_categories.GetProductCategoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update product category
+      tags:
+      - product_categories
+  /products:
+    get:
+      description: Get all products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/products.GetProductDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List products
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/products.CreateProductDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/products.GetProductDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create product
+      tags:
+      - products
+  /products/{id}:
+    delete:
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete product
+      tags:
+      - products
+    get:
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/products.GetProductDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get product by ID
+      tags:
+      - products
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/products.UpdateProductDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/products.GetProductDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update product
+      tags:
+      - products
+  /roles:
+    get:
+      description: Get all roles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/roles.GetRoleDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List roles
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Role payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/roles.CreateRoleDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/roles.GetRoleDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create role
+      tags:
+      - roles
+  /roles/{id}:
+    delete:
+      parameters:
+      - description: Role ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete role
+      tags:
+      - roles
+    get:
+      parameters:
+      - description: Role ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/roles.GetRoleDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get role by ID
+      tags:
+      - roles
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Role ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/roles.UpdateRoleDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/roles.GetRoleDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update role
+      tags:
+      - roles
+  /shop/categories:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/product_categories.GetProductCategoryDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List categories (public)
+      tags:
+      - shop
+  /shop/categories/{id}:
+    get:
+      parameters:
+      - description: Category ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/product_categories.GetProductCategoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get category (public)
+      tags:
+      - shop
+  /shop/products:
+    get:
+      description: Public catalog search with optional filters
+      parameters:
+      - description: Filter by category UUID
+        in: query
+        name: category_id
+        type: string
+      - description: Filter by vendor UUID
+        in: query
+        name: vendor_id
+        type: string
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: number
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: number
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Only items in stock
+        in: query
+        name: in_stock
+        type: boolean
+      - description: Limit results
+        in: query
+        name: limit
+        type: integer
+      - description: Offset results
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/products.GetProductDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search products
+      tags:
+      - shop
+  /shop/products/{id}:
+    get:
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/products.GetProductDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get product (public)
+      tags:
+      - shop
+  /shop/vendors:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/vendors.GetVendorDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List vendors (public)
+      tags:
+      - shop
+  /shop/vendors/{id}:
+    get:
+      parameters:
+      - description: Vendor ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vendors.GetVendorDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get vendor (public)
+      tags:
+      - shop
+  /users:
+    get:
+      description: Get all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/users.GetUserDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/users.CreateUserDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/users.GetUserDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete user
+      tags:
+      - users
+    get:
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.GetUserDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/users.UpdateUserDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.GetUserDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update user
+      tags:
+      - users
+  /vendors:
+    get:
+      description: Get all vendors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/vendors.GetVendorDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List vendors
+      tags:
+      - vendors
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Vendor payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/vendors.CreateVendorDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/vendors.GetVendorDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create vendor
+      tags:
+      - vendors
+  /vendors/{id}:
+    delete:
+      parameters:
+      - description: Vendor ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete vendor
+      tags:
+      - vendors
+    get:
+      parameters:
+      - description: Vendor ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vendors.GetVendorDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get vendor by ID
+      tags:
+      - vendors
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Vendor ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/vendors.UpdateVendorDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/vendors.GetVendorDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update vendor
+      tags:
+      - vendors
 swagger: "2.0"

@@ -6,3 +6,6 @@ go generate ./ent
 
 # How to Generate Module
 go run ./cmd/genmodule users
+
+#How to Generate Swagger
+go run ./cmd/gen-swag

@@ -86,7 +86,15 @@ func randB64(n int) string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-// GET /api/auth/:provider/start
+// Start godoc
+// @Summary      Begin OIDC login
+// @Description  Redirects to the chosen OIDC provider with state and nonce
+// @Tags         auth
+// @Produce      json
+// @Param        provider path string true "OIDC provider (google|line)"
+// @Success      307  {string} string "Temporary Redirect to provider"
+// @Failure      400  {object}  map[string]interface{}
+// @Router       /auth/{provider}/start [get]
 func (ctl *Controller) Start(c *fiber.Ctx) error {
 	p := ProviderName(c.Params("provider"))
 	state := randB64(16)
@@ -103,7 +111,18 @@ func (ctl *Controller) Start(c *fiber.Ctx) error {
 	return c.Redirect(url, fiber.StatusTemporaryRedirect)
 }
 
-// GET /api/auth/:provider/callback?code=...&state=...
+// Callback godoc
+// @Summary      OIDC provider callback
+// @Description  Validates state and redirects back to app with code
+// @Tags         auth
+// @Produce      json
+// @Param        provider path  string true "OIDC provider (google|line)"
+// @Param        code     query  string true "Authorization code"
+// @Param        state    query  string true "State"
+// @Success      307 {string} string "Temporary Redirect back to app"
+// @Failure      400 {object}  map[string]interface{}
+// @Failure      401 {object}  map[string]interface{}
+// @Router       /auth/{provider}/callback [get]
 func (ctl *Controller) Callback(c *fiber.Ctx) error {
 	state := c.Query("state")
 	code := c.Query("code")
@@ -124,7 +143,18 @@ func (ctl *Controller) Callback(c *fiber.Ctx) error {
 	return c.Redirect(redirectURL, fiber.StatusTemporaryRedirect)
 }
 
-// POST /api/auth/:provider/exchange
+// Exchange godoc
+// @Summary      Exchange auth code for access token
+// @Description  Verifies state, exchanges code, returns access token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        provider path string true "OIDC provider (google|line)"
+// @Param        payload  body  map[string]string true "{ code, state }"
+// @Success      200 {object}  map[string]interface{}
+// @Failure      400 {object}  map[string]interface{}
+// @Failure      401 {object}  map[string]interface{}
+// @Router       /auth/{provider}/exchange [post]
 func (ctl *Controller) Exchange(c *fiber.Ctx) error {
 	p := ProviderName(c.Params("provider"))
 

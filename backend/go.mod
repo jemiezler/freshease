@@ -55,6 +55,7 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.25.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/gofiber/swagger v1.1.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
@@ -73,6 +74,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
+	github.com/swaggo/files/v2 v2.0.2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.67.0 // indirect
 	github.com/zclconf/go-cty v1.14.4 // indirect

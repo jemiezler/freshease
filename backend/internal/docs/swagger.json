@@ -6,7 +6,3438 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:3000",
+    "host": "localhost:8080",
     "basePath": "/api",
-    "paths": {}
+    "paths": {
+        "/addresses": {
+            "get": {
+                "description": "Get all addresses for current user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "addresses"
+                ],
+                "summary": "List addresses",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/addresses.GetAddressDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "addresses"
+                ],
+                "summary": "Create address",
+                "parameters": [
+                    {
+                        "description": "Address payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/addresses.CreateAddressDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/addresses.GetAddressDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/addresses/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "addresses"
+                ],
+                "summary": "Get address by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Address ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/addresses.GetAddressDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "addresses"
+                ],
+                "summary": "Delete address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Address ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "addresses"
+                ],
+                "summary": "Update address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Address ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/addresses.UpdateAddressDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/addresses.GetAddressDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/{provider}/callback": {
+            "get": {
+                "description": "Validates state and redirects back to app with code",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "OIDC provider callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OIDC provider (google|line)",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "State",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "307": {
+                        "description": "Temporary Redirect back to app",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/{provider}/exchange": {
+            "post": {
+                "description": "Verifies state, exchanges code, returns access token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Exchange auth code for access token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OIDC provider (google|line)",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "{ code, state }",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/{provider}/start": {
+            "get": {
+                "description": "Redirects to the chosen OIDC provider with state and nonce",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Begin OIDC login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OIDC provider (google|line)",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "307": {
+                        "description": "Temporary Redirect to provider",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/cart_items": {
+            "get": {
+                "description": "Get all cart items",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart_items"
+                ],
+                "summary": "List cart items",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/cart_items.GetCart_itemDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart_items"
+                ],
+                "summary": "Create cart item",
+                "parameters": [
+                    {
+                        "description": "CartItem payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/cart_items.CreateCart_itemDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/cart_items.GetCart_itemDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/cart_items/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart_items"
+                ],
+                "summary": "Get cart item by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "CartItem ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/cart_items.GetCart_itemDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart_items"
+                ],
+                "summary": "Delete cart item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "CartItem ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart_items"
+                ],
+                "summary": "Update cart item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "CartItem ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/cart_items.UpdateCart_itemDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/cart_items.GetCart_itemDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/carts": {
+            "get": {
+                "description": "Get all carts",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "carts"
+                ],
+                "summary": "List carts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/carts.GetCartDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "carts"
+                ],
+                "summary": "Create cart",
+                "parameters": [
+                    {
+                        "description": "Cart payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/carts.CreateCartDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/carts.GetCartDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/carts/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "carts"
+                ],
+                "summary": "Get cart by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cart ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/carts.GetCartDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "carts"
+                ],
+                "summary": "Delete cart",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cart ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "carts"
+                ],
+                "summary": "Update cart",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cart ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/carts.UpdateCartDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/carts.GetCartDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/genai/daily": {
+            "post": {
+                "description": "Uses user profile and preferences to generate a daily plan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "genai"
+                ],
+                "summary": "Generate a 1-day meal plan",
+                "parameters": [
+                    {
+                        "description": "Generation request",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/genai.GenerateMealsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/genai/weekly": {
+            "post": {
+                "description": "Uses user profile and preferences to generate a weekly plan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "genai"
+                ],
+                "summary": "Generate a 7-day meal plan",
+                "parameters": [
+                    {
+                        "description": "Generation request",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/genai.GenerateMealsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/inventories": {
+            "get": {
+                "description": "Get all inventories",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventories"
+                ],
+                "summary": "List inventories",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/inventories.GetInventoryDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventories"
+                ],
+                "summary": "Create inventory",
+                "parameters": [
+                    {
+                        "description": "Inventory payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventories.CreateInventoryDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/inventories.GetInventoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/inventories/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventories"
+                ],
+                "summary": "Get inventory by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Inventory ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/inventories.GetInventoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventories"
+                ],
+                "summary": "Delete inventory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Inventory ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventories"
+                ],
+                "summary": "Update inventory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Inventory ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventories.UpdateInventoryDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/inventories.GetInventoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/permissions": {
+            "get": {
+                "description": "Get all permissions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "List permissions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/permissions.GetPermissionDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Create permission",
+                "parameters": [
+                    {
+                        "description": "Permission payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/permissions.CreatePermissionDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/permissions.GetPermissionDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/permissions/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Get permission by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Permission ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/permissions.GetPermissionDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Delete permission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Permission ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Update permission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Permission ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/permissions.UpdatePermissionDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/permissions.GetPermissionDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/product_categories": {
+            "get": {
+                "description": "Get all product categories",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "product_categories"
+                ],
+                "summary": "List product categories",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/product_categories.GetProductCategoryDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "product_categories"
+                ],
+                "summary": "Create product category",
+                "parameters": [
+                    {
+                        "description": "ProductCategory payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/product_categories.CreateProductCategoryDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/product_categories.GetProductCategoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/product_categories/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "product_categories"
+                ],
+                "summary": "Get product category by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ProductCategory ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/product_categories.GetProductCategoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "product_categories"
+                ],
+                "summary": "Delete product category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ProductCategory ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "product_categories"
+                ],
+                "summary": "Update product category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ProductCategory ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/product_categories.UpdateProductCategoryDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/product_categories.GetProductCategoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/products": {
+            "get": {
+                "description": "Get all products",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "List products",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/products.GetProductDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Create product",
+                "parameters": [
+                    {
+                        "description": "Product payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/products.CreateProductDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/products.GetProductDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get product by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/products.GetProductDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Delete product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Update product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/products.UpdateProductDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/products.GetProductDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/roles": {
+            "get": {
+                "description": "Get all roles",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "List roles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/roles.GetRoleDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Create role",
+                "parameters": [
+                    {
+                        "description": "Role payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/roles.CreateRoleDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/roles.GetRoleDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/roles/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Get role by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/roles.GetRoleDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Delete role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Update role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/roles.UpdateRoleDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/roles.GetRoleDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/shop/categories": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shop"
+                ],
+                "summary": "List categories (public)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/product_categories.GetProductCategoryDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/shop/categories/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shop"
+                ],
+                "summary": "Get category (public)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/product_categories.GetProductCategoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/shop/products": {
+            "get": {
+                "description": "Public catalog search with optional filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shop"
+                ],
+                "summary": "Search products",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by category UUID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by vendor UUID",
+                        "name": "vendor_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Minimum price",
+                        "name": "min_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Maximum price",
+                        "name": "max_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Only items in stock",
+                        "name": "in_stock",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit results",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset results",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/products.GetProductDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/shop/products/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shop"
+                ],
+                "summary": "Get product (public)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/products.GetProductDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/shop/vendors": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shop"
+                ],
+                "summary": "List vendors (public)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/vendors.GetVendorDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/shop/vendors/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shop"
+                ],
+                "summary": "Get vendor (public)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vendors.GetVendorDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "description": "Get all users",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/users.GetUserDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create user",
+                "parameters": [
+                    {
+                        "description": "User payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/users.CreateUserDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/users.GetUserDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/users.GetUserDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/users.UpdateUserDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/users.GetUserDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/vendors": {
+            "get": {
+                "description": "Get all vendors",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendors"
+                ],
+                "summary": "List vendors",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/vendors.GetVendorDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendors"
+                ],
+                "summary": "Create vendor",
+                "parameters": [
+                    {
+                        "description": "Vendor payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/vendors.CreateVendorDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/vendors.GetVendorDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/vendors/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendors"
+                ],
+                "summary": "Get vendor by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vendors.GetVendorDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendors"
+                ],
+                "summary": "Delete vendor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendors"
+                ],
+                "summary": "Update vendor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/vendors.UpdateVendorDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/vendors.GetVendorDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "addresses.CreateAddressDTO": {
+            "type": "object",
+            "required": [
+                "city",
+                "country",
+                "id",
+                "line1",
+                "province",
+                "zip"
+            ],
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "line1": {
+                    "type": "string"
+                },
+                "line2": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                },
+                "zip": {
+                    "type": "string"
+                }
+            }
+        },
+        "addresses.GetAddressDTO": {
+            "type": "object",
+            "required": [
+                "city",
+                "country",
+                "id",
+                "line1",
+                "province",
+                "zip"
+            ],
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "line1": {
+                    "type": "string"
+                },
+                "line2": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                },
+                "zip": {
+                    "type": "string"
+                }
+            }
+        },
+        "addresses.UpdateAddressDTO": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "line1": {
+                    "type": "string"
+                },
+                "line2": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                },
+                "zip": {
+                    "type": "string"
+                }
+            }
+        },
+        "cart_items.CreateCart_itemDTO": {
+            "type": "object",
+            "required": [
+                "cart",
+                "description",
+                "id",
+                "name"
+            ],
+            "properties": {
+                "cart": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                }
+            }
+        },
+        "cart_items.GetCart_itemDTO": {
+            "type": "object",
+            "required": [
+                "cart",
+                "description",
+                "id",
+                "name"
+            ],
+            "properties": {
+                "cart": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                }
+            }
+        },
+        "cart_items.UpdateCart_itemDTO": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "cart": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                }
+            }
+        },
+        "carts.CreateCartDTO": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "number"
+                }
+            }
+        },
+        "carts.GetCartDTO": {
+            "type": "object",
+            "required": [
+                "created_at",
+                "id",
+                "status",
+                "total",
+                "updated_at"
+            ],
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "carts.UpdateCartDTO": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "number"
+                }
+            }
+        },
+        "genai.GenerateMealsReq": {
+            "type": "object",
+            "properties": {
+                "active_kcal_24h": {
+                    "type": "number"
+                },
+                "age": {
+                    "type": "integer"
+                },
+                "allergies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "height_cm": {
+                    "type": "number"
+                },
+                "preferences": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "steps_today": {
+                    "type": "integer"
+                },
+                "target": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "weight_kg": {
+                    "type": "number"
+                }
+            }
+        },
+        "inventories.CreateInventoryDTO": {
+            "type": "object",
+            "required": [
+                "quantity",
+                "restock_amount"
+            ],
+            "properties": {
+                "quantity": {
+                    "type": "integer"
+                },
+                "restock_amount": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventories.GetInventoryDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "quantity",
+                "restock_amount",
+                "updated_at"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "restock_amount": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventories.UpdateInventoryDTO": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "restock_amount": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "permissions.CreatePermissionDTO": {
+            "type": "object",
+            "required": [
+                "description",
+                "id",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                }
+            }
+        },
+        "permissions.GetPermissionDTO": {
+            "type": "object",
+            "required": [
+                "description",
+                "id",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                }
+            }
+        },
+        "permissions.UpdatePermissionDTO": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                }
+            }
+        },
+        "product_categories.CreateProductCategoryDTO": {
+            "type": "object",
+            "required": [
+                "description",
+                "id",
+                "name",
+                "slug"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
+                "slug": {
+                    "type": "string"
+                }
+            }
+        },
+        "product_categories.GetProductCategoryDTO": {
+            "type": "object",
+            "required": [
+                "description",
+                "id",
+                "name",
+                "slug"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
+                "slug": {
+                    "type": "string"
+                }
+            }
+        },
+        "product_categories.UpdateProductCategoryDTO": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
+                "slug": {
+                    "type": "string"
+                }
+            }
+        },
+        "products.CreateProductDTO": {
+            "type": "object",
+            "required": [
+                "created_at",
+                "description",
+                "id",
+                "image_url",
+                "is_active",
+                "name",
+                "price",
+                "unit_label",
+                "updated_at"
+            ],
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
+                "price": {
+                    "type": "number"
+                },
+                "unit_label": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "products.GetProductDTO": {
+            "type": "object",
+            "required": [
+                "created_at",
+                "description",
+                "id",
+                "image_url",
+                "is_active",
+                "name",
+                "price",
+                "unit_label",
+                "updated_at"
+            ],
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
+                "price": {
+                    "type": "number"
+                },
+                "unit_label": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "products.UpdateProductDTO": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "deleted_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
+                "price": {
+                    "type": "number"
+                },
+                "unit_label": {
+                    "type": "string"
+                }
+            }
+        },
+        "roles.CreateRoleDTO": {
+            "type": "object",
+            "required": [
+                "description",
+                "id",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                }
+            }
+        },
+        "roles.GetRoleDTO": {
+            "type": "object",
+            "required": [
+                "description",
+                "id",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                }
+            }
+        },
+        "roles.UpdateRoleDTO": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                }
+            }
+        },
+        "users.CreateUserDTO": {
+            "type": "object",
+            "required": [
+                "email",
+                "id",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "avatar": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 10
+                },
+                "bio": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1
+                },
+                "cover": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 10
+                },
+                "date_of_birth": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string",
+                    "enum": [
+                        "maintenance",
+                        "weight_loss",
+                        "weight_gain"
+                    ]
+                },
+                "height_cm": {
+                    "type": "number",
+                    "maximum": 300,
+                    "minimum": 50
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 8
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 10
+                },
+                "sex": {
+                    "type": "string",
+                    "enum": [
+                        "male",
+                        "female",
+                        "other"
+                    ]
+                },
+                "status": {
+                    "type": "string"
+                },
+                "weight_kg": {
+                    "type": "number",
+                    "maximum": 500,
+                    "minimum": 20
+                }
+            }
+        },
+        "users.GetUserDTO": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "cover": {
+                    "type": "string"
+                },
+                "date_of_birth": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string"
+                },
+                "height_cm": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "sex": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "weight_kg": {
+                    "type": "number"
+                }
+            }
+        },
+        "users.UpdateUserDTO": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 10
+                },
+                "bio": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1
+                },
+                "cover": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 10
+                },
+                "date_of_birth": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string",
+                    "enum": [
+                        "maintenance",
+                        "weight_loss",
+                        "weight_gain"
+                    ]
+                },
+                "height_cm": {
+                    "type": "number",
+                    "maximum": 300,
+                    "minimum": 50
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 8
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 10
+                },
+                "sex": {
+                    "type": "string",
+                    "enum": [
+                        "male",
+                        "female",
+                        "other"
+                    ]
+                },
+                "status": {
+                    "type": "string"
+                },
+                "weight_kg": {
+                    "type": "number",
+                    "maximum": 500,
+                    "minimum": 20
+                }
+            }
+        },
+        "vendors.CreateVendorDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "is_active"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "string"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "vendors.GetVendorDTO": {
+            "type": "object",
+            "required": [
+                "created_at",
+                "id",
+                "is_active",
+                "updated_at"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "string"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "vendors.UpdateVendorDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "is_active"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "string"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }
