@@ -52,6 +52,7 @@ GoRouter buildRouter() {
             body: nav,
             bottomNavigationBar: NavigationBar(
               height: 64,
+              backgroundColor: Colors.white,
               selectedIndex: nav.currentIndex,
               onDestinationSelected: (i) =>
                   nav.goBranch(i, initialLocation: i != nav.currentIndex),

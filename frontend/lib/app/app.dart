@@ -55,7 +55,6 @@ class AppState extends State<App> {
     return CheckoutScope(
       controller: CheckoutController(),
       child: CartScope(
-        // provides CartController down the tree
         controller: getIt<CartController>(),
         child: BlocProvider<UserCubit>.value(
           value: getIt<UserCubit>()..loadCurrentUser(),
