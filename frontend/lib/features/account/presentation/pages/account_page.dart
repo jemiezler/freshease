@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend/core/state/checkout_controller.dart';
 import 'package:frontend/app/di.dart';
+import 'package:frontend/features/account/presentation/state/user_cubit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../state/user_cubit.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -435,6 +435,7 @@ class _CardX extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: child,
     );

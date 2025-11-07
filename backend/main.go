@@ -49,7 +49,7 @@ func main() {
 	}
 
 	// Register routes, grouped under /api
-	httpserver.RegisterRoutes(app, client)
+	httpserver.RegisterRoutes(app, client, cfg)
 
 	// Start server
 	go func() {

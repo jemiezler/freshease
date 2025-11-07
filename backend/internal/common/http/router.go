@@ -3,6 +3,7 @@ package http
 import (
 	"freshease/backend/ent"
 	"freshease/backend/ent/user"
+	"freshease/backend/internal/common/config"
 	"freshease/backend/internal/common/middleware"
 	"freshease/backend/modules/addresses"
 	"freshease/backend/modules/auth/authoidc"
@@ -15,6 +16,7 @@ import (
 	"freshease/backend/modules/products"
 	"freshease/backend/modules/roles"
 	"freshease/backend/modules/shop"
+	"freshease/backend/modules/uploads"
 	"freshease/backend/modules/users"
 	"freshease/backend/modules/vendors"
 	"slices"
@@ -26,7 +28,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func RegisterRoutes(app *fiber.App, client *ent.Client) {
+func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	api := app.Group("/api")
 
 	log.Debug("[router] registering modules...")
@@ -39,6 +41,12 @@ func RegisterRoutes(app *fiber.App, client *ent.Client) {
 
 	// 2) Public: Shop API (no authentication required)
 	shop.RegisterModuleWithEnt(api, client)
+
+	// 3) File uploads (public for now, can be secured later)
+	if err := uploads.RegisterModule(api, cfg.MinIO); err != nil {
+		log.Fatalf("[router] failed to register uploads module: %v", err)
+	}
+
 	// mount protected modules on the secured router
 	addresses.RegisterModuleWithEnt(api, client)
 	cart_items.RegisterModuleWithEnt(api, client)
