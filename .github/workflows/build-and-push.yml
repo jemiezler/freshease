@@ -75,24 +75,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'   # match your project
+
       - uses: docker/setup-buildx-action@v3
 
       # Optional CI tests (best-effort)
-      - name: Go tests (best-effort)
-        working-directory: ${{ env.API_CTX }}
+      - name: Go mod tidy/verify (best-effort)
+        working-directory: ${{ env.API_CTX }}   # <— IMPORTANT
         run: |
-          if [ -f go.mod ]; then go mod tidy && go mod verify || true; fi
+          if [ -f go.mod ]; then
+            go mod tidy || true
+            go mod verify || true
+          fi
 
       - name: Generate Ent code
-        run: go run -mod=mod entgo.io/ent/cmd/ent generate ./ent/schema
+        working-directory: ${{ env.API_CTX }}   # <— IMPORTANT
+        run: |
+          go run -mod=mod entgo.io/ent/cmd/ent generate ./ent/schema
 
       - name: Generate Swagger code
-        run: go run -mod=mod github.com/swaggo/swag/cmd/swag init -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
+        working-directory: ${{ env.API_CTX }}   # <— IMPORTANT
+        run: |
+          # Either install swag binary...
+          # go install github.com/swaggo/swag/cmd/swag@latest
+          # $(go env GOPATH)/bin/swag init -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
+
+          # ...or use go run with version suffix (Go 1.20+):
+          go run -mod=mod github.com/swaggo/swag/cmd/swag@latest init \
+            -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
 
       - name: Build & push API (run tag)
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.API_CTX }}
+          context: ${{ env.API_CTX }}           # <— builds from backend/
           push: true
           tags: |
             ${{ env.API_REF }}:${{ env.RUN_TAG }}
