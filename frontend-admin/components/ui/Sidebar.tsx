@@ -19,9 +19,11 @@ import {
   Receipt,
   CreditCard,
   ChevronDown,
+  ChevronLeft,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
+import { useSidebar } from "./SidebarContext";
 
 type NavLink = {
   href: string;
@@ -65,38 +67,76 @@ const links: NavLink[] = [
       { href: "/permissions", label: "Permissions" },
     ],
   },
-  { href: "/carts", label: "Carts", icon: ShoppingCart, children: [
-    { href: "/carts", label: "Carts" },
-    { href: "/cart-items", label: "Cart Items" },
-  ] },
-  { href: "/orders", label: "Orders", icon: Receipt, children: [
-    { href: "/orders", label: "Orders" },
-    { href: "/order-items", label: "Order Items" },
-  ] },
-  { href: "/payments", label: "Payments", icon: CreditCard, children: [
-    { href: "/payments", label: "Payments" },
-    { href: "/payment-items", label: "Payment Items" },
-  ] },
-  { href: "/addresses", label: "Addresses", icon: MapPin, children: [
-    { href: "/addresses", label: "Addresses" },
-    { href: "/address-items", label: "Address Items" },
-  ] },
-  { href: "/deliveries", label: "Deliveries", icon: Truck, children: [
-    { href: "/deliveries", label: "Deliveries" },
-    { href: "/delivery-items", label: "Delivery Items" },
-  ] },
+  {
+    href: "/carts",
+    label: "Carts",
+    icon: ShoppingCart,
+    children: [
+      { href: "/carts", label: "Carts" },
+      { href: "/cart-items", label: "Cart Items" },
+    ],
+  },
+  {
+    href: "/orders",
+    label: "Orders",
+    icon: Receipt,
+    children: [
+      { href: "/orders", label: "Orders" },
+      { href: "/order-items", label: "Order Items" },
+    ],
+  },
+  {
+    href: "/payments",
+    label: "Payments",
+    icon: CreditCard,
+    children: [
+      { href: "/payments", label: "Payments" },
+      { href: "/payment-items", label: "Payment Items" },
+    ],
+  },
+  {
+    href: "/addresses",
+    label: "Addresses",
+    icon: MapPin,
+    children: [
+      { href: "/addresses", label: "Addresses" },
+      { href: "/address-items", label: "Address Items" },
+    ],
+  },
+  {
+    href: "/deliveries",
+    label: "Deliveries",
+    icon: Truck,
+    children: [
+      { href: "/deliveries", label: "Deliveries" },
+      { href: "/delivery-items", label: "Delivery Items" },
+    ],
+  },
   { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/reviews", label: "Reviews", icon: Star, children: [
-    { href: "/reviews", label: "Reviews" },
-  ] },
-  { href: "/meal-plans", label: "Meal Plans", icon: Calendar, children: [
-    { href: "/meal-plans", label: "Meal Plans" },
-    { href: "/meal-plan-items", label: "Meal Plan Items" },
-  ] },
-  { href: "/recipes", label: "Recipes", icon: ChefHat, children: [
-    { href: "/recipes", label: "Recipes" },
-    { href: "/recipe-items", label: "Recipe Items" },
-  ] },
+  {
+    href: "/reviews",
+    label: "Reviews",
+    icon: Star,
+    children: [{ href: "/reviews", label: "Reviews" }],
+  },
+  {
+    href: "/meal-plans",
+    label: "Meal Plans",
+    icon: Calendar,
+    children: [
+      { href: "/meal-plans", label: "Meal Plans" },
+      { href: "/meal-plan-items", label: "Meal Plan Items" },
+    ],
+  },
+  {
+    href: "/recipes",
+    label: "Recipes",
+    icon: ChefHat,
+    children: [
+      { href: "/recipes", label: "Recipes" },
+      { href: "/recipe-items", label: "Recipe Items" },
+    ],
+  },
 ];
 
 const itemVariants = {
@@ -117,6 +157,11 @@ const sidebarVariants = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const {
+    isCollapsed,
+    setIsCollapsed,
+    toggleCollapse: contextToggleCollapse,
+  } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(
     new Set(
       links
@@ -132,6 +177,7 @@ export function Sidebar() {
   );
 
   const toggleExpanded = (href: string) => {
+    if (isCollapsed) return; // Don't toggle when collapsed
     setExpandedItems((prev) => {
       const next = new Set(prev);
       if (next.has(href)) {
@@ -143,28 +189,47 @@ export function Sidebar() {
     });
   };
 
+  const toggleCollapse = () => {
+    contextToggleCollapse();
+    // Close all expanded items when collapsing
+    if (!isCollapsed) {
+      setExpandedItems(new Set());
+    }
+  };
+
   return (
     <motion.aside
       initial={{ x: -220 }}
-      animate={{ x: 0 }}
+      animate={{
+        x: 0,
+        width: isCollapsed ? 64 : 220,
+      }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      className="fixed inset-y-0 left-0 z-40 w-[220px] border-r bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/70 overflow-y-auto"
+      className="fixed inset-y-0 left-0 z-40 border-r bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/70 overflow-x-hidden flex flex-col"
     >
-      <div className="px-3 py-3">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold text-zinc-800"
+      {/* Top Section - Collapse Button */}
+      <div className={`px-3 py-3 border-b border-zinc-200 ${isCollapsed ? "px-2" : ""}`}>
+        <motion.button
+          onClick={toggleCollapse}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className={`w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm text-zinc-700 hover:bg-zinc-100 transition-colors ${
+            isCollapsed ? "px-0" : ""
+          }`}
+		  style={{ justifyContent: isCollapsed ? "center" : "flex-end" }}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring" }}
-            className="h-6 w-6 rounded bg-zinc-900"
-          />
-          <span>Freshease Admin</span>
-        </motion.div>
+            animate={{ rotate: isCollapsed ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </motion.div>
+        </motion.button>
+      </div>
+      
+      {/* Scrollable Navigation Area */}
+      <div className={`px-3 py-3 flex-1 overflow-y-auto ${isCollapsed ? "px-2" : ""}`}>
         <motion.nav
           variants={sidebarVariants}
           initial="closed"
@@ -193,36 +258,75 @@ export function Sidebar() {
                   className="space-y-1"
                 >
                   <motion.div
-                    whileHover={{ scale: 1.0, x: 2 }}
-                    whileTap={{ scale: 1 }}
+                    whileHover={
+                      !isCollapsed ? { scale: 1.0, x: 2 } : { scale: 1.05 }
+                    }
+                    whileTap={{ scale: 0.98 }}
                   >
                     <Link
                       href={l.href}
                       onClick={(e) => {
-                        e.preventDefault();
-                        toggleExpanded(l.href);
+                        if (isCollapsed) {
+                          e.preventDefault();
+                          setIsCollapsed(false);
+                          setExpandedItems(new Set([l.href]));
+                        } else {
+                          e.preventDefault();
+                          toggleExpanded(l.href);
+                        }
                       }}
                       className={[
-                        "flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm cursor-pointer transition-colors",
+                        "flex items-center gap-2 rounded-md px-2 py-2 text-sm cursor-pointer transition-colors",
                         isActive || hasActiveChild
                           ? "bg-zinc-900 text-white"
                           : "text-zinc-700 hover:bg-zinc-100",
+                        isCollapsed ? "justify-center" : "justify-between",
                       ].join(" ")}
+                      title={isCollapsed ? l.label : undefined}
                     >
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        <span className="truncate">{l.label}</span>
-                      </div>
-                      <motion.div
-                        animate={{ rotate: isExpanded || hasActiveChild ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
+                      <div
+                        className={`flex items-center gap-2 ${
+                          isCollapsed ? "justify-center" : ""
+                        }`}
                       >
-                        <ChevronDown className="h-3 w-3" />
-                      </motion.div>
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <AnimatePresence>
+                          {!isCollapsed && (
+                            <motion.span
+                              initial={{ opacity: 0, width: 0 }}
+                              animate={{ opacity: 1, width: "auto" }}
+                              exit={{ opacity: 0, width: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="truncate"
+                            >
+                              {l.label}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                      <AnimatePresence>
+                        {!isCollapsed && (
+                          <motion.div
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: "auto" }}
+                            exit={{ opacity: 0, width: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <motion.div
+                              animate={{
+                                rotate: isExpanded || hasActiveChild ? 180 : 0,
+                              }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <ChevronDown className="h-3 w-3" />
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </Link>
                   </motion.div>
                   <AnimatePresence>
-                    {(isExpanded || hasActiveChild) && (
+                    {!isCollapsed && (isExpanded || hasActiveChild) && (
                       <motion.div
                         initial="closed"
                         animate="open"
@@ -232,7 +336,10 @@ export function Sidebar() {
                             transition: { staggerChildren: 0.03 },
                           },
                           closed: {
-                            transition: { staggerChildren: 0.02, staggerDirection: -1 },
+                            transition: {
+                              staggerChildren: 0.02,
+                              staggerDirection: -1,
+                            },
                           },
                         }}
                         className="ml-4 space-y-1 border-l-2 border-zinc-200 pl-2 overflow-hidden"
@@ -267,7 +374,9 @@ export function Sidebar() {
                                     }}
                                     className="h-full bg-zinc-900 rounded-full"
                                   />
-                                  <span className="truncate">{child.label}</span>
+                                  <span className="truncate">
+                                    {child.label}
+                                  </span>
                                 </Link>
                               </motion.div>
                             </motion.div>
@@ -283,8 +392,10 @@ export function Sidebar() {
             return (
               <motion.div key={l.href} variants={itemVariants}>
                 <motion.div
-                  whileHover={{ scale: 1.0, x: 4 }}
-                  whileTap={{ scale: 1 }}
+                  whileHover={
+                    !isCollapsed ? { scale: 1.0, x: 4 } : { scale: 1.05 }
+                  }
+                  whileTap={{ scale: 0.98 }}
                 >
                   <Link
                     href={l.href}
@@ -293,17 +404,61 @@ export function Sidebar() {
                       isActive
                         ? "bg-zinc-900 text-white"
                         : "text-zinc-700 hover:bg-zinc-100",
+                      isCollapsed ? "justify-center" : "",
                     ].join(" ")}
+                    title={isCollapsed ? l.label : undefined}
                   >
-
-                    <Icon className="h-4 w-4" />
-                    <span className="truncate">{l.label}</span>
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <AnimatePresence>
+                      {!isCollapsed && (
+                        <motion.span
+                          initial={{ opacity: 0, width: 0 }}
+                          animate={{ opacity: 1, width: "auto" }}
+                          exit={{ opacity: 0, width: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="truncate"
+                        >
+                          {l.label}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </Link>
                 </motion.div>
               </motion.div>
             );
           })}
         </motion.nav>
+      </div>
+      {/* Bottom Section - Branding */}
+      <div className={`px-3 py-3 border-t border-zinc-200 ${isCollapsed ? "px-2" : ""}`}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className={`flex items-center gap-2 text-sm font-semibold text-zinc-800 ${
+            isCollapsed ? "justify-center" : ""
+          }`}
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring" }}
+            className="h-6 w-6 rounded bg-zinc-900 shrink-0"
+          />
+          <AnimatePresence mode="wait">
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+                className="whitespace-nowrap"
+              >
+                Freshease Admin
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </motion.aside>
   );
