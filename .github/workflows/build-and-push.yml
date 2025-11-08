@@ -95,12 +95,6 @@ jobs:
         run: |
           go run -mod=mod entgo.io/ent/cmd/ent generate ./ent/schema
 
-      - name: Generate Swagger code
-        working-directory: ${{ env.API_CTX }}   # <— IMPORTANT
-        run: |
-          go run -mod=mod github.com/swaggo/swag/cmd/swag@latest init -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
-          -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
-
       - name: Build & push API (run tag)
         uses: docker/build-push-action@v6
         with:
