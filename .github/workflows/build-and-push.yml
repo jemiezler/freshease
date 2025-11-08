@@ -98,13 +98,8 @@ jobs:
       - name: Generate Swagger code
         working-directory: ${{ env.API_CTX }}   # <— IMPORTANT
         run: |
-          # Either install swag binary...
-          # go install github.com/swaggo/swag/cmd/swag@latest
-          # $(go env GOPATH)/bin/swag init -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
-
-          # ...or use go run with version suffix (Go 1.20+):
-          go run -mod=mod github.com/swaggo/swag/cmd/swag@latest init \
-            -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
+          go run -mod=mod github.com/swaggo/swag/cmd/swag@latest init -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
+          -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
 
       - name: Build & push API (run tag)
         uses: docker/build-push-action@v6
