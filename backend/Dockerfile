@@ -1,10 +1,9 @@
 FROM golang:1.25-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
-RUN go mod tidy
-RUN go mod verify
 RUN go mod download
 COPY . .
+RUN go mod tidy && go mod verify && go mod download
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/server ./main.go
 
 FROM gcr.io/distroless/base-debian12
