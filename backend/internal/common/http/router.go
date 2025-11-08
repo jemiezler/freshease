@@ -18,6 +18,9 @@ import (
 	"freshease/backend/modules/meal_plan_items"
 	"freshease/backend/modules/meal_plans"
 	"freshease/backend/modules/notifications"
+	"freshease/backend/modules/order_items"
+	"freshease/backend/modules/orders"
+	"freshease/backend/modules/payments"
 	"freshease/backend/modules/permissions"
 	"freshease/backend/modules/product_categories"
 	"freshease/backend/modules/products"
@@ -59,31 +62,54 @@ func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	}
 	uploadsCtl := uploads.NewController(uploadsSvc)
 	uploads.Routes(api, uploadsCtl)
+	addresses.RegisterModuleWithEnt(api, client)
+	bundle_items.RegisterModuleWithEnt(api, client)
+	bundles.RegisterModuleWithEnt(api, client)
+	cart_items.RegisterModuleWithEnt(api, client)
+	carts.RegisterModuleWithEnt(api, client)
+	categories.RegisterModuleWithEnt(api, client)
+	deliveries.RegisterModuleWithEnt(api, client)
+	inventories.RegisterModuleWithEnt(api, client)
+	meal_plan_items.RegisterModuleWithEnt(api, client)
+	meal_plans.RegisterModuleWithEnt(api, client)
+	notifications.RegisterModuleWithEnt(api, client)
+	permissions.RegisterModuleWithEnt(api, client)
+	product_categories.RegisterModuleWithEnt(api, client)
+	products.RegisterModuleWithEnt(api, client, uploadsSvc)
+	recipe_items.RegisterModuleWithEnt(api, client)
+	recipes.RegisterModuleWithEnt(api, client)
+	reviews.RegisterModuleWithEnt(api, client)
+	roles.RegisterModuleWithEnt(api, client)
+	users.RegisterModuleWithEnt(api, client, uploadsSvc)
+	vendors.RegisterModuleWithEnt(api, client, uploadsSvc)
+	orders.RegisterModuleWithEnt(api, client)
+	order_items.RegisterModuleWithEnt(api, client)
+	payments.RegisterModuleWithEnt(api, client)
 
 	// 4) Secured area (everything below requires Authorization: Bearer <JWT>)
 	secured := api.Group("", middleware.RequireAuth())
 
 	// Mount protected modules on the secured router
-	addresses.RegisterModuleWithEnt(secured, client)
-	bundle_items.RegisterModuleWithEnt(secured, client)
-	bundles.RegisterModuleWithEnt(secured, client)
-	cart_items.RegisterModuleWithEnt(secured, client)
-	carts.RegisterModuleWithEnt(secured, client)
-	categories.RegisterModuleWithEnt(secured, client)
-	deliveries.RegisterModuleWithEnt(secured, client)
-	inventories.RegisterModuleWithEnt(secured, client)
-	meal_plan_items.RegisterModuleWithEnt(secured, client)
-	meal_plans.RegisterModuleWithEnt(secured, client)
-	notifications.RegisterModuleWithEnt(secured, client)
-	permissions.RegisterModuleWithEnt(secured, client)
-	product_categories.RegisterModuleWithEnt(secured, client)
-	products.RegisterModuleWithEnt(secured, client, uploadsSvc)
-	recipe_items.RegisterModuleWithEnt(secured, client)
-	recipes.RegisterModuleWithEnt(secured, client)
-	reviews.RegisterModuleWithEnt(secured, client)
-	roles.RegisterModuleWithEnt(secured, client)
-	users.RegisterModuleWithEnt(secured, client, uploadsSvc)
-	vendors.RegisterModuleWithEnt(secured, client, uploadsSvc)
+	// addresses.RegisterModuleWithEnt(secured, client)
+	// bundle_items.RegisterModuleWithEnt(secured, client)
+	// bundles.RegisterModuleWithEnt(secured, client)
+	// cart_items.RegisterModuleWithEnt(secured, client)
+	// carts.RegisterModuleWithEnt(secured, client)
+	// categories.RegisterModuleWithEnt(secured, client)
+	// deliveries.RegisterModuleWithEnt(secured, client)
+	// inventories.RegisterModuleWithEnt(secured, client)
+	// meal_plan_items.RegisterModuleWithEnt(secured, client)
+	// meal_plans.RegisterModuleWithEnt(secured, client)
+	// notifications.RegisterModuleWithEnt(secured, client)
+	// permissions.RegisterModuleWithEnt(secured, client)
+	// product_categories.RegisterModuleWithEnt(secured, client)
+	// products.RegisterModuleWithEnt(secured, client, uploadsSvc)
+	// recipe_items.RegisterModuleWithEnt(secured, client)
+	// recipes.RegisterModuleWithEnt(secured, client)
+	// reviews.RegisterModuleWithEnt(secured, client)
+	// roles.RegisterModuleWithEnt(secured, client)
+	// users.RegisterModuleWithEnt(secured, client, uploadsSvc)
+	// vendors.RegisterModuleWithEnt(secured, client, uploadsSvc)
 
 	secured.Get("/whoami", func(c *fiber.Ctx) error {
 		userID := c.Locals("user_id")
