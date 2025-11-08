@@ -61,6 +61,11 @@ jobs:
 
       - name: Configure Docker to use GAR
         run: gcloud auth configure-docker ${{ env.GAR }} -q
+      
+      - name: Decode .env.prod
+        run: |
+          echo "${{ secrets.ENV_PROD_BASE64 }}" | base64 -d > .env.prod
+
 
   build_api:
     name: Build & Push API
@@ -78,6 +83,12 @@ jobs:
         run: |
           if [ -f go.mod ]; then go test ./... || true; fi
           if [ -f requirements.txt ]; then pip install -r requirements.txt && pytest || true; fi
+
+      - name: Generate Ent code
+        run: go run -mod=mod entgo.io/ent/cmd/ent generate ./backend/ent/schema
+
+      - name: Generate Swagger code
+        run: go run -mod=mod github.com/swaggo/swag/cmd/swag init -g ./backend/main.go -d ./backend --parseDependency --parseInternal --output ./backend/internal/docs
 
       - name: Build & push API (run tag)
         uses: docker/build-push-action@v6
