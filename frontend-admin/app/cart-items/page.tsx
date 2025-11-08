@@ -2,36 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createResource } from "@/lib/resource";
-import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
-	ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	useReactTable,
-} from "@tanstack/react-table";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-
-type CartItem = { id: string; cart_id?: string; product_id?: string; quantity?: number };
-
-type CartItemPayload = { cart_id?: string; product_id?: string; quantity?: number };
+import DataTable from "./_components/cart-items-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { CreateCartItemDialog } from "./_components/create-cart-item-dialog";
+import { EditCartItemDialog } from "./_components/edit-cart-item-dialog";
+import type { CartItem, CartItemPayload } from "@/types/cart-item";
 
 const cartItems = createResource<CartItem, CartItemPayload, CartItemPayload>({
 	basePath: "/cart_items",
@@ -77,19 +55,22 @@ export default function CartItemsPage() {
 	const columns = useMemo<ColumnDef<CartItem>[]>(
 		() => [
 			{
-				accessorKey: "cart_id",
-				header: "Cart",
-				cell: ({ row }) => row.getValue("cart_id") ?? "-",
+				accessorKey: "name",
+				header: "Name",
+				cell: ({ row }) => row.getValue("name") ?? "-",
 			},
 			{
-				accessorKey: "product_id",
-				header: "Product",
-				cell: ({ row }) => row.getValue("product_id") ?? "-",
+				accessorKey: "description",
+				header: "Description",
+				cell: ({ row }) => {
+					const desc = row.getValue("description") as string | undefined;
+					return desc ? (desc.length > 50 ? desc.substring(0, 50) + "..." : desc) : "-";
+				},
 			},
 			{
-				accessorKey: "quantity",
-				header: "Qty",
-				cell: ({ row }) => row.getValue("quantity") ?? "-",
+				accessorKey: "cart",
+				header: "Cart ID",
+				cell: ({ row }) => row.getValue("cart") ?? "-",
 			},
 			{
 				id: "actions",
@@ -157,226 +138,5 @@ export default function CartItemsPage() {
 				/>
 			)}
 		</div>
-	);
-}
-
-function DataTable<TData, TValue>({
-	columns,
-	data,
-}: {
-	columns: ColumnDef<TData, TValue>[];
-	data: TData[];
-}) {
-	const table = useReactTable({
-		data,
-		columns,
-		getCoreRowModel: getCoreRowModel(),
-	});
-
-	return (
-		<div className="overflow-hidden rounded-md border">
-			<Table>
-				<TableHeader>
-					{table.getHeaderGroups().map((headerGroup) => (
-						<TableRow key={headerGroup.id}>
-							{headerGroup.headers.map((header) => (
-								<TableHead key={header.id}>
-									{header.isPlaceholder
-										? null
-										: flexRender(header.column.columnDef.header, header.getContext())}
-								</TableHead>
-							))}
-						</TableRow>
-					))}
-				</TableHeader>
-				<TableBody>
-					{table.getRowModel().rows?.length ? (
-						table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</TableCell>
-								))}
-							</TableRow>
-						))
-					) : (
-						<TableRow>
-							<TableCell colSpan={columns.length} className="h-24 text-center">
-								No results.
-							</TableCell>
-						</TableRow>
-					)}
-				</TableBody>
-			</Table>
-		</div>
-	);
-}
-
-function CreateCartItemDialog({
-	open,
-	onOpenChange,
-	onSaved,
-}: {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	onSaved: () => Promise<void>;
-}) {
-	const [cartId, setCartId] = useState("");
-	const [productId, setProductId] = useState("");
-	const [quantity, setQuantity] = useState<string>("");
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		setSubmitting(true);
-		setError(null);
-		try {
-			const payload: CartItemPayload = {
-				cart_id: cartId || undefined,
-				product_id: productId || undefined,
-				quantity: quantity ? Number(quantity) : undefined,
-			};
-			await cartItems.create(payload);
-			await onSaved();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to create");
-		} finally {
-			setSubmitting(false);
-		}
-	}
-
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>New Cart Item</DialogTitle>
-				</DialogHeader>
-				<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-					<Field>
-						<FieldLabel htmlFor="ci-cart">Cart ID</FieldLabel>
-						<Input id="ci-cart" value={cartId} onChange={(e) => setCartId(e.target.value)} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="ci-product">Product ID</FieldLabel>
-						<Input id="ci-product" value={productId} onChange={(e) => setProductId(e.target.value)} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="ci-qty">Quantity</FieldLabel>
-						<Input id="ci-qty" type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-					</Field>
-					{error && <p style={{ color: "red" }}>{error}</p>}
-					<DialogFooter>
-						<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-							Cancel
-						</Button>
-						<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-							{submitting && <Spinner className="size-4" />}
-							{submitting ? "Saving…" : "Create"}
-						</Button>
-					</DialogFooter>
-				</form>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-function EditCartItemDialog({
-	id,
-	onOpenChange,
-	onSaved,
-}: {
-	id: string;
-	onOpenChange: (open: boolean) => void;
-	onSaved: () => Promise<void>;
-}) {
-	const [cartId, setCartId] = useState("");
-	const [productId, setProductId] = useState("");
-	const [quantity, setQuantity] = useState<string>("");
-	const [loading, setLoading] = useState(true);
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			try {
-				const res = await cartItems.get(id);
-				const ci = res.data as CartItem | undefined;
-				if (!cancelled && ci) {
-					setCartId(ci.cart_id ?? "");
-					setProductId(ci.product_id ?? "");
-					setQuantity(ci.quantity != null ? String(ci.quantity) : "");
-				}
-			} catch (e) {
-				setError(e instanceof Error ? e.message : "Failed to load");
-			} finally {
-				if (!cancelled) setLoading(false);
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [id]);
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		setSubmitting(true);
-		setError(null);
-		try {
-			const payload: CartItemPayload = {
-				cart_id: cartId || undefined,
-				product_id: productId || undefined,
-				quantity: quantity ? Number(quantity) : undefined,
-			};
-			await cartItems.update(id, payload);
-			await onSaved();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to update");
-		} finally {
-			setSubmitting(false);
-		}
-	}
-
-	return (
-		<Dialog open onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Edit Cart Item</DialogTitle>
-				</DialogHeader>
-				{loading ? (
-					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<Spinner className="size-4" />
-						<span>Loading cart item…</span>
-					</div>
-				) : (
-					<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-						<Field>
-							<FieldLabel htmlFor="edit-ci-cart">Cart ID</FieldLabel>
-							<Input id="edit-ci-cart" value={cartId} onChange={(e) => setCartId(e.target.value)} />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="edit-ci-product">Product ID</FieldLabel>
-							<Input id="edit-ci-product" value={productId} onChange={(e) => setProductId(e.target.value)} />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="edit-ci-qty">Quantity</FieldLabel>
-							<Input id="edit-ci-qty" type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-						</Field>
-						{error && <p style={{ color: "red" }}>{error}</p>}
-						<DialogFooter>
-							<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-								Cancel
-							</Button>
-							<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-								{submitting && <Spinner className="size-4" />}
-								{submitting ? "Saving…" : "Save"}
-							</Button>
-						</DialogFooter>
-					</form>
-				)}
-			</DialogContent>
-		</Dialog>
 	);
 }

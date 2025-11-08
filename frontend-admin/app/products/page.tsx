@@ -17,6 +17,8 @@ import { CreateProductDialog } from "./_components/create-product-dialog";
 import { EditProductDialog } from "./_components/edit-product-dialog";
 import { CreateCategoryDialog } from "./_components/create-category-dialog";
 import { EditCategoryDialog } from "./_components/edit-catagory-dialog";
+import type { Product, ProductPayload } from "@/types/product";
+import type { Category, CategoryPayload } from "@/types/catagory";
 
 const categories = createResource<Category, CategoryPayload, CategoryPayload>({
   basePath: "/product_categories",
@@ -171,9 +173,9 @@ export default function ProductsPage() {
           <h1 style={{ fontSize: 20, fontWeight: 600 }}>Products</h1>
           <div className="flex gap-2">
             <Button onClick={() => setCreateCategoryOpen(true)}>
+              <PlusIcon className="size-4" />
               New Category
             </Button>
-            <Button onClick={() => setCreateOpen(true)}>New Product</Button>
           </div>
         </div>
         {(categoryError || error) && (

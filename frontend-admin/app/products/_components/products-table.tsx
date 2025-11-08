@@ -1,6 +1,5 @@
-import { TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "@/components/ui/table";
 import { ColumnDef, useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
-import { Table } from "lucide-react";
 
 export default function DataTable<TData, TValue>({
 	columns,

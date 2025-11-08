@@ -13,6 +13,7 @@ import (
 
 	"freshease/backend/ent/enttest"
 	"freshease/backend/ent/user"
+	"freshease/backend/internal/common/config"
 
 	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
@@ -53,7 +54,7 @@ func TestRegisterRoutes(t *testing.T) {
 
 		// This should not panic
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, client)
+			RegisterRoutes(app, client, config.Config{})
 		})
 
 		// Verify that routes are registered
@@ -66,7 +67,7 @@ func TestRegisterRoutes(t *testing.T) {
 		client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 		defer client.Close()
 
-		RegisterRoutes(app, client)
+		RegisterRoutes(app, client, config.Config{})
 
 		// Check that API routes are registered
 		routes := app.GetRoutes()
@@ -84,7 +85,7 @@ func TestRegisterRoutes(t *testing.T) {
 
 		// This should not panic even with nil client
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, nil)
+			RegisterRoutes(app, nil, config.Config{})
 		})
 	})
 }
@@ -466,7 +467,7 @@ func TestRouterEdgeCases(t *testing.T) {
 
 		// This should not panic
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, client)
+			RegisterRoutes(app, client, config.Config{})
 		})
 	})
 
@@ -481,19 +482,20 @@ func TestRouterEdgeCases(t *testing.T) {
 
 		// This should not panic
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, client)
+			RegisterRoutes(app, client, config.Config{})
 		})
 	})
 
 	t.Run("handles multiple route registrations", func(t *testing.T) {
 		app := fiber.New()
 		client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+		cfg := config.Config{}
 		defer client.Close()
 
 		// Register routes multiple times
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, client)
-			RegisterRoutes(app, client)
+			RegisterRoutes(app, client, cfg)
+			RegisterRoutes(app, client, cfg)
 		})
 	})
 }

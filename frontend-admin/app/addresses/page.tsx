@@ -2,36 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createResource } from "@/lib/resource";
-import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
-	ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	useReactTable,
-} from "@tanstack/react-table";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-
-type Address = { id: string; line1?: string; city?: string; country?: string };
-
-type AddressPayload = { line1?: string; city?: string; country?: string };
+import DataTable from "./_components/addresses-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { CreateAddressDialog } from "./_components/create-address-dialog";
+import { EditAddressDialog } from "./_components/edit-address-dialog";
+import type { Address, AddressPayload } from "@/types/address";
 
 const addresses = createResource<Address, AddressPayload, AddressPayload>({
 	basePath: "/addresses",
@@ -87,9 +65,24 @@ export default function AddressesPage() {
 				cell: ({ row }) => row.getValue("city") ?? "-",
 			},
 			{
+				accessorKey: "province",
+				header: "Province",
+				cell: ({ row }) => row.getValue("province") ?? "-",
+			},
+			{
 				accessorKey: "country",
 				header: "Country",
 				cell: ({ row }) => row.getValue("country") ?? "-",
+			},
+			{
+				accessorKey: "zip",
+				header: "Zip",
+				cell: ({ row }) => row.getValue("zip") ?? "-",
+			},
+			{
+				accessorKey: "is_default",
+				header: "Default",
+				cell: ({ row }) => (row.getValue("is_default") ? "Yes" : "No"),
 			},
 			{
 				id: "actions",
@@ -157,226 +150,5 @@ export default function AddressesPage() {
 				/>
 			)}
 		</div>
-	);
-}
-
-function DataTable<TData, TValue>({
-	columns,
-	data,
-}: {
-	columns: ColumnDef<TData, TValue>[];
-	data: TData[];
-}) {
-	const table = useReactTable({
-		data,
-		columns,
-		getCoreRowModel: getCoreRowModel(),
-	});
-
-	return (
-		<div className="overflow-hidden rounded-md border">
-			<Table>
-				<TableHeader>
-					{table.getHeaderGroups().map((headerGroup) => (
-						<TableRow key={headerGroup.id}>
-							{headerGroup.headers.map((header) => (
-								<TableHead key={header.id}>
-									{header.isPlaceholder
-										? null
-										: flexRender(header.column.columnDef.header, header.getContext())}
-								</TableHead>
-							))}
-						</TableRow>
-					))}
-				</TableHeader>
-				<TableBody>
-					{table.getRowModel().rows?.length ? (
-						table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</TableCell>
-								))}
-							</TableRow>
-						))
-					) : (
-						<TableRow>
-							<TableCell colSpan={columns.length} className="h-24 text-center">
-								No results.
-							</TableCell>
-						</TableRow>
-					)}
-				</TableBody>
-			</Table>
-		</div>
-	);
-}
-
-function CreateAddressDialog({
-	open,
-	onOpenChange,
-	onSaved,
-}: {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	onSaved: () => Promise<void>;
-}) {
-	const [line1, setLine1] = useState("");
-	const [city, setCity] = useState("");
-	const [country, setCountry] = useState("");
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		setSubmitting(true);
-		setError(null);
-		try {
-			const payload: AddressPayload = {
-				line1: line1 || undefined,
-				city: city || undefined,
-				country: country || undefined,
-			};
-			await addresses.create(payload);
-			await onSaved();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to create");
-		} finally {
-			setSubmitting(false);
-		}
-	}
-
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>New Address</DialogTitle>
-				</DialogHeader>
-				<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-					<Field>
-						<FieldLabel htmlFor="addr-line1">Line 1</FieldLabel>
-						<Input id="addr-line1" value={line1} onChange={(e) => setLine1(e.target.value)} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="addr-city">City</FieldLabel>
-						<Input id="addr-city" value={city} onChange={(e) => setCity(e.target.value)} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="addr-country">Country</FieldLabel>
-						<Input id="addr-country" value={country} onChange={(e) => setCountry(e.target.value)} />
-					</Field>
-					{error && <p style={{ color: "red" }}>{error}</p>}
-					<DialogFooter>
-						<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-							Cancel
-						</Button>
-						<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-							{submitting && <Spinner className="size-4" />}
-							{submitting ? "Saving…" : "Create"}
-						</Button>
-					</DialogFooter>
-				</form>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-function EditAddressDialog({
-	id,
-	onOpenChange,
-	onSaved,
-}: {
-	id: string;
-	onOpenChange: (open: boolean) => void;
-	onSaved: () => Promise<void>;
-}) {
-	const [line1, setLine1] = useState("");
-	const [city, setCity] = useState("");
-	const [country, setCountry] = useState("");
-	const [loading, setLoading] = useState(true);
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			try {
-				const res = await addresses.get(id);
-				const a = res.data as Address | undefined;
-				if (!cancelled && a) {
-					setLine1(a.line1 ?? "");
-					setCity(a.city ?? "");
-					setCountry(a.country ?? "");
-				}
-			} catch (e) {
-				setError(e instanceof Error ? e.message : "Failed to load");
-			} finally {
-				if (!cancelled) setLoading(false);
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [id]);
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		setSubmitting(true);
-		setError(null);
-		try {
-			const payload: AddressPayload = {
-				line1: line1 || undefined,
-				city: city || undefined,
-				country: country || undefined,
-			};
-			await addresses.update(id, payload);
-			await onSaved();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to update");
-		} finally {
-			setSubmitting(false);
-		}
-	}
-
-	return (
-		<Dialog open onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Edit Address</DialogTitle>
-				</DialogHeader>
-				{loading ? (
-					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<Spinner className="size-4" />
-						<span>Loading address…</span>
-					</div>
-				) : (
-					<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-						<Field>
-							<FieldLabel htmlFor="edit-addr-line1">Line 1</FieldLabel>
-							<Input id="edit-addr-line1" value={line1} onChange={(e) => setLine1(e.target.value)} />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="edit-addr-city">City</FieldLabel>
-							<Input id="edit-addr-city" value={city} onChange={(e) => setCity(e.target.value)} />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="edit-addr-country">Country</FieldLabel>
-							<Input id="edit-addr-country" value={country} onChange={(e) => setCountry(e.target.value)} />
-						</Field>
-						{error && <p style={{ color: "red" }}>{error}</p>}
-						<DialogFooter>
-							<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-								Cancel
-							</Button>
-							<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-								{submitting && <Spinner className="size-4" />}
-								{submitting ? "Saving…" : "Save"}
-							</Button>
-						</DialogFooter>
-					</form>
-				)}
-			</DialogContent>
-		</Dialog>
 	);
 }

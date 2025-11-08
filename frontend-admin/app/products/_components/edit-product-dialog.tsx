@@ -7,10 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { createResource } from "@/lib/resource";
 import { useState, useEffect } from "react";
+import type { Product, ProductPayload } from "@/types/product";
+import type { EditDialogProps } from "@/types/dialog";
 
 const products = createResource<Product, ProductPayload, ProductPayload>({ basePath: "/products" });
 
-export function EditProductDialog({ id, onOpenChange, onSaved }: { id: string; onOpenChange: (open: boolean) => void; onSaved: () => Promise<void> }) {
+export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps) {
 	const [name, setName] = useState("");
 	const [price, setPrice] = useState<string>("");
 	const [description, setDescription] = useState("");

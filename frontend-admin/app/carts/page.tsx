@@ -2,36 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createResource } from "@/lib/resource";
-import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
-	ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	useReactTable,
-} from "@tanstack/react-table";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-
-type Cart = { id: string; user_id?: string };
-
-type CartPayload = { user_id?: string };
+import DataTable from "./_components/carts-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { CreateCartDialog } from "./_components/create-cart-dialog";
+import { EditCartDialog } from "./_components/edit-cart-dialog";
+import type { Cart, CartPayload } from "@/types/cart";
 
 const carts = createResource<Cart, CartPayload, CartPayload>({
 	basePath: "/carts",
@@ -77,9 +55,17 @@ export default function CartsPage() {
 	const columns = useMemo<ColumnDef<Cart>[]>(
 		() => [
 			{
-				accessorKey: "user_id",
-				header: "User ID",
-				cell: ({ row }) => row.getValue("user_id") ?? "-",
+				accessorKey: "status",
+				header: "Status",
+				cell: ({ row }) => row.getValue("status") ?? "-",
+			},
+			{
+				accessorKey: "total",
+				header: "Total",
+				cell: ({ row }) => {
+					const total = row.getValue("total") as number | undefined;
+					return total != null ? total.toFixed(2) : "-";
+				},
 			},
 			{
 				id: "actions",
@@ -147,196 +133,5 @@ export default function CartsPage() {
 				/>
 			)}
 		</div>
-	);
-}
-
-function DataTable<TData, TValue>({
-	columns,
-	data,
-}: {
-	columns: ColumnDef<TData, TValue>[];
-	data: TData[];
-}) {
-	const table = useReactTable({
-		data,
-		columns,
-		getCoreRowModel: getCoreRowModel(),
-	});
-
-	return (
-		<div className="overflow-hidden rounded-md border">
-			<Table>
-				<TableHeader>
-					{table.getHeaderGroups().map((headerGroup) => (
-						<TableRow key={headerGroup.id}>
-							{headerGroup.headers.map((header) => (
-								<TableHead key={header.id}>
-									{header.isPlaceholder
-										? null
-										: flexRender(header.column.columnDef.header, header.getContext())}
-								</TableHead>
-							))}
-						</TableRow>
-					))}
-				</TableHeader>
-				<TableBody>
-					{table.getRowModel().rows?.length ? (
-						table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</TableCell>
-								))}
-							</TableRow>
-						))
-					) : (
-						<TableRow>
-							<TableCell colSpan={columns.length} className="h-24 text-center">
-								No results.
-							</TableCell>
-						</TableRow>
-					)}
-				</TableBody>
-			</Table>
-		</div>
-	);
-}
-
-function CreateCartDialog({
-	open,
-	onOpenChange,
-	onSaved,
-}: {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	onSaved: () => Promise<void>;
-}) {
-	const [userId, setUserId] = useState("");
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		setSubmitting(true);
-		setError(null);
-		try {
-			const payload: CartPayload = { user_id: userId || undefined };
-			await carts.create(payload);
-			await onSaved();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to create");
-		} finally {
-			setSubmitting(false);
-		}
-	}
-
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>New Cart</DialogTitle>
-				</DialogHeader>
-				<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-					<Field>
-						<FieldLabel htmlFor="cart-user-id">User ID</FieldLabel>
-						<Input id="cart-user-id" value={userId} onChange={(e) => setUserId(e.target.value)} />
-					</Field>
-					{error && <p style={{ color: "red" }}>{error}</p>}
-					<DialogFooter>
-						<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-							Cancel
-						</Button>
-						<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-							{submitting && <Spinner className="size-4" />}
-							{submitting ? "Saving…" : "Create"}
-						</Button>
-					</DialogFooter>
-				</form>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-function EditCartDialog({
-	id,
-	onOpenChange,
-	onSaved,
-}: {
-	id: string;
-	onOpenChange: (open: boolean) => void;
-	onSaved: () => Promise<void>;
-}) {
-	const [userId, setUserId] = useState("");
-	const [loading, setLoading] = useState(true);
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			try {
-				const res = await carts.get(id);
-				const c = res.data as Cart | undefined;
-				if (!cancelled && c) {
-					setUserId(c.user_id ?? "");
-				}
-			} catch (e) {
-				setError(e instanceof Error ? e.message : "Failed to load");
-			} finally {
-				if (!cancelled) setLoading(false);
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [id]);
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		setSubmitting(true);
-		setError(null);
-		try {
-			const payload: CartPayload = { user_id: userId || undefined };
-			await carts.update(id, payload);
-			await onSaved();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to update");
-		} finally {
-			setSubmitting(false);
-		}
-	}
-
-	return (
-		<Dialog open onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Edit Cart</DialogTitle>
-				</DialogHeader>
-				{loading ? (
-					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<Spinner className="size-4" />
-						<span>Loading cart…</span>
-					</div>
-				) : (
-					<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-						<Field>
-							<FieldLabel htmlFor="edit-cart-user-id">User ID</FieldLabel>
-							<Input id="edit-cart-user-id" value={userId} onChange={(e) => setUserId(e.target.value)} />
-						</Field>
-						{error && <p style={{ color: "red" }}>{error}</p>}
-						<DialogFooter>
-							<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-								Cancel
-							</Button>
-							<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-								{submitting && <Spinner className="size-4" />}
-								{submitting ? "Saving…" : "Save"}
-							</Button>
-						</DialogFooter>
-					</form>
-				)}
-			</DialogContent>
-		</Dialog>
 	);
 }

@@ -7,7 +7,6 @@ import { LayoutDashboard, Box, Tag, Boxes, Store, Users, Shield, Key, ShoppingCa
 const links = [
 	{ href: "/", label: "Dashboard", icon: LayoutDashboard },
 	{ href: "/products", label: "Products", icon: Box },
-	{ href: "/categories", label: "Categories", icon: Tag },
 	{ href: "/inventories", label: "Inventories", icon: Boxes },
 	{ href: "/vendors", label: "Vendors", icon: Store },
 	{ href: "/users", label: "Users", icon: Users },
@@ -21,7 +20,7 @@ const links = [
 export function Sidebar() {
 	const pathname = usePathname();
 	return (
-		<aside className="fixed inset-y-0 left-0 z-40 w-[220px] border-r bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+		<aside className="fixed inset-y-0 left-0 z-40 w-[220px] border-r bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/70">
 			<div className="px-3 py-3">
 				<div className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold text-zinc-800">
 					<div className="h-6 w-6 rounded bg-zinc-900" />

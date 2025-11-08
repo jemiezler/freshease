@@ -2,36 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createResource } from "@/lib/resource";
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-	ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	useReactTable,
-} from "@tanstack/react-table";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-
-type Inventory = { id: string; sku?: string; quantity?: number };
-
-type InventoryPayload = { sku?: string; quantity?: number };
+import DataTable from "./_components/inventories-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { CreateInventoryDialog } from "./_components/create-inventory-dialog";
+import { EditInventoryDialog } from "./_components/edit-inventory-dialog";
+import type { Inventory, InventoryPayload } from "@/types/inventory";
 
 const inventories = createResource<Inventory, InventoryPayload, InventoryPayload>({
 	basePath: "/inventories",
@@ -77,14 +55,14 @@ export default function InventoriesPage() {
 	const columns = useMemo<ColumnDef<Inventory>[]>(
 		() => [
 			{
-				accessorKey: "sku",
-				header: "SKU",
-				cell: ({ row }) => row.getValue("sku") ?? "-",
+				accessorKey: "quantity",
+				header: "Quantity",
+				cell: ({ row }) => row.getValue("quantity") ?? "-",
 			},
 			{
-				accessorKey: "quantity",
-				header: "Qty",
-				cell: ({ row }) => row.getValue("quantity") ?? "-",
+				accessorKey: "restock_amount",
+				header: "Restock Amount",
+				cell: ({ row }) => row.getValue("restock_amount") ?? "-",
 			},
 			{
 				id: "actions",
@@ -152,213 +130,5 @@ export default function InventoriesPage() {
 				/>
 			)}
 		</div>
-	);
-}
-
-function DataTable<TData, TValue>({
-	columns,
-	data,
-}: {
-	columns: ColumnDef<TData, TValue>[];
-	data: TData[];
-}) {
-	const table = useReactTable({
-		data,
-		columns,
-		getCoreRowModel: getCoreRowModel(),
-	});
-
-	return (
-		<div className="overflow-hidden rounded-md border">
-			<Table>
-				<TableHeader>
-					{table.getHeaderGroups().map((headerGroup) => (
-						<TableRow key={headerGroup.id}>
-							{headerGroup.headers.map((header) => (
-								<TableHead key={header.id}>
-									{header.isPlaceholder
-										? null
-										: flexRender(header.column.columnDef.header, header.getContext())}
-								</TableHead>
-							))}
-						</TableRow>
-					))}
-				</TableHeader>
-				<TableBody>
-					{table.getRowModel().rows?.length ? (
-						table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</TableCell>
-								))}
-							</TableRow>
-						))
-					) : (
-						<TableRow>
-							<TableCell colSpan={columns.length} className="h-24 text-center">
-								No results.
-							</TableCell>
-						</TableRow>
-					)}
-				</TableBody>
-			</Table>
-		</div>
-	);
-}
-
-function CreateInventoryDialog({
-	open,
-	onOpenChange,
-	onSaved,
-}: {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	onSaved: () => Promise<void>;
-}) {
-	const [sku, setSku] = useState("");
-	const [quantity, setQuantity] = useState<string>("");
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		setSubmitting(true);
-		setError(null);
-		try {
-			const payload: InventoryPayload = {
-				sku: sku || undefined,
-				quantity: quantity ? Number(quantity) : undefined,
-			};
-			await inventories.create(payload);
-			await onSaved();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to create");
-		} finally {
-			setSubmitting(false);
-		}
-	}
-
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>New Inventory</DialogTitle>
-				</DialogHeader>
-				<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-					<Field>
-						<FieldLabel htmlFor="inv-sku">SKU</FieldLabel>
-						<Input id="inv-sku" value={sku} onChange={(e) => setSku(e.target.value)} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="inv-qty">Quantity</FieldLabel>
-						<Input id="inv-qty" type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-					</Field>
-					{error && <p style={{ color: "red" }}>{error}</p>}
-					<DialogFooter>
-						<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-							Cancel
-						</Button>
-						<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-							{submitting && <Spinner className="size-4" />}
-							{submitting ? "Saving…" : "Create"}
-						</Button>
-					</DialogFooter>
-				</form>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-function EditInventoryDialog({
-	id,
-	onOpenChange,
-	onSaved,
-}: {
-	id: string;
-	onOpenChange: (open: boolean) => void;
-	onSaved: () => Promise<void>;
-}) {
-	const [sku, setSku] = useState("");
-	const [quantity, setQuantity] = useState<string>("");
-	const [loading, setLoading] = useState(true);
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			try {
-				const res = await inventories.get(id);
-				const inv = res.data as Inventory | undefined;
-				if (!cancelled && inv) {
-					setSku(inv.sku ?? "");
-					setQuantity(inv.quantity != null ? String(inv.quantity) : "");
-				}
-			} catch (e) {
-				setError(e instanceof Error ? e.message : "Failed to load");
-			} finally {
-				if (!cancelled) setLoading(false);
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [id]);
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		setSubmitting(true);
-		setError(null);
-		try {
-			const payload: InventoryPayload = {
-				sku: sku || undefined,
-				quantity: quantity ? Number(quantity) : undefined,
-			};
-			await inventories.update(id, payload);
-			await onSaved();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to update");
-		} finally {
-			setSubmitting(false);
-		}
-	}
-
-	return (
-		<Dialog open onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Edit Inventory</DialogTitle>
-				</DialogHeader>
-				{loading ? (
-					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<Spinner className="size-4" />
-						<span>Loading inventory…</span>
-					</div>
-				) : (
-					<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-						<Field>
-							<FieldLabel htmlFor="edit-inv-sku">SKU</FieldLabel>
-							<Input id="edit-inv-sku" value={sku} onChange={(e) => setSku(e.target.value)} />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="edit-inv-qty">Quantity</FieldLabel>
-							<Input id="edit-inv-qty" type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-						</Field>
-						{error && <p style={{ color: "red" }}>{error}</p>}
-						<DialogFooter>
-							<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-								Cancel
-							</Button>
-							<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-								{submitting && <Spinner className="size-4" />}
-								{submitting ? "Saving…" : "Save"}
-							</Button>
-						</DialogFooter>
-					</form>
-				)}
-			</DialogContent>
-		</Dialog>
 	);
 }

@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import type { Category, CategoryPayload } from "@/types/catagory";
+import type { EditDialogProps } from "@/types/dialog";
 
 const categories = createResource<Category, CategoryPayload, CategoryPayload>({ basePath: "/product_categories" });
 
@@ -13,11 +15,7 @@ export function EditCategoryDialog({
 	id,
 	onOpenChange,
 	onSaved,
-}: {
-	id: string;
-	onOpenChange: (open: boolean) => void;
-	onSaved: () => Promise<void>;
-}) {
+}: EditDialogProps) {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [slug, setSlug] = useState("");

@@ -57,6 +57,17 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetProductDTO, e
 }
 
 func (r *EntRepo) Create(ctx context.Context, dto *CreateProductDTO) (*GetProductDTO, error) {
+	// Create inventory first
+	inventory, err := r.c.Inventory.
+		Create().
+		SetQuantity(dto.Quantity).
+		SetRestockAmount(dto.RestockAmount).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create product with inventory
 	q := r.c.Product.
 		Create().
 		SetID(dto.ID).
@@ -67,7 +78,8 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateProductDTO) (*GetProduc
 		SetUnitLabel(dto.UnitLabel).
 		SetIsActive(dto.IsActive).
 		SetCreatedAt(dto.CreatedAt).
-		SetUpdatedAt(dto.UpdatedAt)
+		SetUpdatedAt(dto.UpdatedAt).
+		SetInventory(inventory)
 
 	if dto.DeletedAt != nil {
 		q.SetDeletedAt(*dto.DeletedAt)
@@ -75,6 +87,8 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateProductDTO) (*GetProduc
 
 	row, err := q.Save(ctx)
 	if err != nil {
+		// Clean up inventory if product creation fails
+		_ = r.c.Inventory.DeleteOneID(inventory.ID).Exec(ctx)
 		return nil, err
 	}
 
