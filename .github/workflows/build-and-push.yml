@@ -1,0 +1,156 @@
+name: Build & Push (Artifact Registry) + Optional Jenkins Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "What to build/deploy?"
+        required: true
+        default: "both"
+        type: choice
+        options: [api, admin, both]
+      trigger_jenkins:
+        description: "Trigger Jenkins deploy after push?"
+        required: true
+        default: "false"
+        type: choice
+        options: ["true", "false"]
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGION: asia-southeast1
+  GAR: ${{ secrets.GAR_HOST }}                       # e.g. asia-southeast1-docker.pkg.dev
+  PROJECT: ${{ secrets.GCP_PROJECT }}
+  API_CTX: apps/backend
+  ADMIN_CTX: apps/frontend-admin
+  API_REF: ${{ secrets.GAR_HOST }}/${{ secrets.GCP_PROJECT }}/freshease/api
+  ADMIN_REF: ${{ secrets.GAR_HOST }}/${{ secrets.GCP_PROJECT }}/freshease/admin
+  RUN_TAG: ${{ github.run_number }}                 # numeric, monotonic
+  LATEST_TAG: latest
+
+jobs:
+  setup:
+    name: Setup gcloud (auth)
+    runs-on: ubuntu-latest
+    outputs:
+      effective_target: ${{ steps.resolve_target.outputs.tgt }}
+      should_trigger_jenkins: ${{ steps.resolve_target.outputs.trig }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Resolve inputs for non-dispatch events
+      - id: resolve_target
+        run: |
+          tgt="${{ github.event_name == 'workflow_dispatch' && inputs.target || 'both' }}"
+          trig="${{ github.event_name == 'workflow_dispatch' && inputs.trigger_jenkins || 'false' }}"
+          echo "tgt=$tgt" >> "$GITHUB_OUTPUT"
+          echo "trig=$trig" >> "$GITHUB_OUTPUT"
+
+      - name: Set up gcloud (JSON key)
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Configure Docker to use GAR
+        run: gcloud auth configure-docker ${{ env.GAR }} -q
+
+  build_api:
+    name: Build & Push API
+    needs: setup
+    if: ${{ needs.setup.outputs.effective_target != 'admin' && !contains(github.event.head_commit.message, '[skip api]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Optional CI tests (best-effort)
+      - name: Go tests (best-effort)
+        working-directory: ${{ env.API_CTX }}
+        run: |
+          if [ -f go.mod ]; then go test ./... || true; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt && pytest || true; fi
+
+      - name: Build & push API (run tag)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.API_CTX }}
+          push: true
+          tags: |
+            ${{ env.API_REF }}:${{ env.RUN_TAG }}
+          cache-from: type=registry,ref=${{ env.API_REF }}:cache
+          cache-to: type=registry,ref=${{ env.API_REF }}:cache,mode=max
+
+      - name: Also tag :latest
+        run: |
+          docker pull ${{ env.API_REF }}:${{ env.RUN_TAG }}
+          docker tag  ${{ env.API_REF }}:${{ env.RUN_TAG }}  ${{ env.API_REF }}:${{ env.LATEST_TAG }}
+          docker push ${{ env.API_REF }}:${{ env.LATEST_TAG }}
+
+  build_admin:
+    name: Build & Push Admin (Next.js SSR)
+    needs: setup
+    if: ${{ needs.setup.outputs.effective_target != 'api' && !contains(github.event.head_commit.message, '[skip admin]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Lint best-effort
+      - name: Lint (best-effort)
+        working-directory: ${{ env.ADMIN_CTX }}
+        run: |
+          if [ -f package.json ]; then
+            npm ci || true
+            npm run lint || true
+          fi
+
+      - name: Build & push Admin (run tag)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.ADMIN_CTX }}
+          push: true
+          tags: |
+            ${{ env.ADMIN_REF }}:${{ env.RUN_TAG }}
+          cache-from: type=registry,ref=${{ env.ADMIN_REF }}:cache
+          cache-to: type=registry,ref=${{ env.ADMIN_REF }}:cache,mode=max
+
+      - name: Also tag :latest
+        run: |
+          docker pull ${{ env.ADMIN_REF }}:${{ env.RUN_TAG }}
+          docker tag  ${{ env.ADMIN_REF }}:${{ env.RUN_TAG }}  ${{ env.ADMIN_REF }}:${{ env.LATEST_TAG }}
+          docker push ${{ env.ADMIN_REF }}:${{ env.LATEST_TAG }}
+
+  trigger_jenkins:
+    name: Trigger Jenkins (optional)
+    needs: [setup, build_api, build_admin]
+    if: ${{ needs.setup.outputs.should_trigger_jenkins == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Jenkins remote build (TARGET=both by default)
+        env:
+          JENKINS_URL:  ${{ secrets.JENKINS_URL }}  # e.g. https://jenkins.your-tunnel.domain
+          JENKINS_JOB:  ${{ secrets.JENKINS_JOB }}  # Job name or folder/job notation
+          JENKINS_TOKEN:  ${{ secrets.JENKINS_TOKEN }} # Build Token (configure in Jenkins job)
+          TARGET:       ${{ needs.setup.outputs.effective_target }}
+        run: |
+          if [ -z "$JENKINS_URL" ] || [ -z "$JENKINS_JOB" ] || [ -z "$JENKINS_TOKEN" ]; then
+            echo "Jenkins secrets not set; skipping."
+            exit 0
+          fi
+
+          # URL-encode TARGET minimally (api/admin/both are safe)
+          TARGET="${TARGET:-both}"
+
+          # Jenkins freestyle/pipeline buildWithParameters endpoint
+          curl -sSf -X POST \
+            "$JENKINS_URL/job/$JENKINS_JOB/buildWithParameters?token=$JENKINS_TOKEN&TARGET=$TARGET"
