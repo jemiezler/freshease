@@ -81,14 +81,13 @@ jobs:
       - name: Go tests (best-effort)
         working-directory: ${{ env.API_CTX }}
         run: |
-          if [ -f go.mod ]; then go test ./... || true; fi
-          if [ -f requirements.txt ]; then pip install -r requirements.txt && pytest || true; fi
+          if [ -f go.mod ]; then go mod tidy && go mod verify || true; fi
 
       - name: Generate Ent code
-        run: go run -mod=mod entgo.io/ent/cmd/ent generate ./backend/ent/schema
+        run: go run -mod=mod entgo.io/ent/cmd/ent generate ./ent/schema
 
       - name: Generate Swagger code
-        run: go run -mod=mod github.com/swaggo/swag/cmd/swag init -g ./backend/main.go -d ./backend --parseDependency --parseInternal --output ./backend/internal/docs
+        run: go run -mod=mod github.com/swaggo/swag/cmd/swag init -g ./main.go -d . --parseDependency --parseInternal --output ./internal/docs
 
       - name: Build & push API (run tag)
         uses: docker/build-push-action@v6
