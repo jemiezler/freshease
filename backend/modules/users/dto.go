@@ -49,5 +49,5 @@ type GetUserDTO struct {
 	Goal        *string   `json:"goal"`
 	HeightCm    *float64  `json:"height_cm"`
 	WeightKg    *float64  `json:"weight_kg"`
-	Status      string    `json:"status"`
+	Status      *string   `json:"status,omitempty"`
 }

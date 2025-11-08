@@ -71,14 +71,16 @@ func TestController_ListCarts(t *testing.T) {
 						ID:        uuid.New(),
 						Status:    "pending",
 						Total:     100.50,
-						CreatedAt: time.Now(),
+						Subtotal:  100.50,
+						Discount:  0.0,
 						UpdatedAt: time.Now(),
 					},
 					{
 						ID:        uuid.New(),
 						Status:    "completed",
 						Total:     250.75,
-						CreatedAt: time.Now(),
+						Subtotal:  100.50,
+						Discount:  0.0,
 						UpdatedAt: time.Now(),
 					},
 				}
@@ -147,7 +149,8 @@ func TestController_GetCart(t *testing.T) {
 					ID:        id,
 					Status:    "pending",
 					Total:     150.25,
-					CreatedAt: time.Now(),
+					Subtotal:  100.50,
+					Discount:  0.0,
 					UpdatedAt: time.Now(),
 				}
 				mockSvc.On("Get", mock.Anything, id).Return(cart, nil)
@@ -234,7 +237,8 @@ func TestController_CreateCart(t *testing.T) {
 					ID:        uuid.New(),
 					Status:    *dto.Status,
 					Total:     *dto.Total,
-					CreatedAt: time.Now(),
+					Subtotal:  100.50,
+					Discount:  0.0,
 					UpdatedAt: time.Now(),
 				}
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateCartDTO) bool {
@@ -321,7 +325,8 @@ func TestController_UpdateCart(t *testing.T) {
 					ID:        id,
 					Status:    *dto.Status,
 					Total:     *dto.Total,
-					CreatedAt: time.Now(),
+					Subtotal:  100.50,
+					Discount:  0.0,
 					UpdatedAt: time.Now(),
 				}
 				mockSvc.On("Update", mock.Anything, id, mock.MatchedBy(func(actual UpdateCartDTO) bool {

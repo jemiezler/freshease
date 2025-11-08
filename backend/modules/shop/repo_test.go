@@ -3,7 +3,6 @@ package shop
 import (
 	"context"
 	"testing"
-	"time"
 
 	"freshease/backend/ent/enttest"
 
@@ -18,43 +17,46 @@ func TestEntRepo_GetActiveProducts(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Create test data
-	category := client.Product_category.Create().
+	// Create test data - need to create Category, Vendor, Product first
+	category := client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Fruits").
-		SetDescription("Fresh fruits").
 		SetSlug("fruits").
 		SaveX(context.Background())
 
 	vendor := client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Test Vendor").
-		SetEmail("vendor@test.com").
-		SetIsActive("active").
-		SetUpdatedAt(time.Now()).
+		SetContact("vendor@test.com").
 		SaveX(context.Background())
 
-	// Create inventory first
-	inventory := client.Inventory.Create().
-		SetID(uuid.New()).
-		SetQuantity(100).
-		SetRestockAmount(50).
-		SetUpdatedAt(time.Now()).
-		SaveX(context.Background())
-
-	// Create product with inventory
+	// Create product first
 	product := client.Product.Create().
 		SetID(uuid.New()).
 		SetName("Apple").
+		SetSku("APPLE-001").
 		SetPrice(2.99).
 		SetDescription("Fresh red apple").
-		SetImageURL("https://example.com/apple.jpg").
 		SetUnitLabel("kg").
-		SetIsActive("active").
-		SetUpdatedAt(time.Now()).
-		AddCatagory(category).
-		AddVendor(vendor).
-		SetInventory(inventory).
+		SetIsActive(true).
+		SetVendor(vendor).
+		SaveX(context.Background())
+
+	// Create product_category join
+	_, err := client.Product_category.Create().
+		SetID(uuid.New()).
+		SetProduct(product).
+		SetCategory(category).
+		Save(context.Background())
+	require.NoError(t, err)
+
+	// Create inventory
+	inventory := client.Inventory.Create().
+		SetID(uuid.New()).
+		SetQuantity(100).
+		SetReorderLevel(50).
+		SetProduct(product).
+		SetVendor(vendor).
 		SaveX(context.Background())
 
 	repo := NewEntRepo(client)
@@ -147,43 +149,46 @@ func TestEntRepo_GetProductByID(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Create test data
-	category := client.Product_category.Create().
+	// Create test data - need to create Category, Vendor, Product first
+	category := client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Fruits").
-		SetDescription("Fresh fruits").
 		SetSlug("fruits").
 		SaveX(context.Background())
 
 	vendor := client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Test Vendor").
-		SetEmail("vendor@test.com").
-		SetIsActive("active").
-		SetUpdatedAt(time.Now()).
+		SetContact("vendor@test.com").
 		SaveX(context.Background())
 
-	// Create inventory first
-	inventory := client.Inventory.Create().
-		SetID(uuid.New()).
-		SetQuantity(100).
-		SetRestockAmount(50).
-		SetUpdatedAt(time.Now()).
-		SaveX(context.Background())
-
-	// Create product with inventory
+	// Create product first
 	product := client.Product.Create().
 		SetID(uuid.New()).
 		SetName("Apple").
+		SetSku("APPLE-001").
 		SetPrice(2.99).
 		SetDescription("Fresh red apple").
-		SetImageURL("https://example.com/apple.jpg").
 		SetUnitLabel("kg").
-		SetIsActive("active").
-		SetUpdatedAt(time.Now()).
-		AddCatagory(category).
-		AddVendor(vendor).
-		SetInventory(inventory).
+		SetIsActive(true).
+		SetVendor(vendor).
+		SaveX(context.Background())
+
+	// Create product_category join
+	_, err := client.Product_category.Create().
+		SetID(uuid.New()).
+		SetProduct(product).
+		SetCategory(category).
+		Save(context.Background())
+	require.NoError(t, err)
+
+	// Create inventory
+	inventory := client.Inventory.Create().
+		SetID(uuid.New()).
+		SetQuantity(100).
+		SetReorderLevel(50).
+		SetProduct(product).
+		SetVendor(vendor).
 		SaveX(context.Background())
 
 	repo := NewEntRepo(client)
@@ -214,18 +219,16 @@ func TestEntRepo_GetActiveCategories(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Create test data
-	client.Product_category.Create().
+	// Create test data - create Category entities
+	client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Fruits").
-		SetDescription("Fresh fruits").
 		SetSlug("fruits").
 		SaveX(context.Background())
 
-	client.Product_category.Create().
+	client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Vegetables").
-		SetDescription("Fresh vegetables").
 		SetSlug("vegetables").
 		SaveX(context.Background())
 
@@ -246,30 +249,24 @@ func TestEntRepo_GetActiveVendors(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Create test data
+	// Create test data - create Vendor entities
 	client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Vendor A").
-		SetEmail("vendorA@test.com").
-		SetIsActive("active").
-		SetUpdatedAt(time.Now()).
+		SetContact("vendorA@test.com").
 		SaveX(context.Background())
 
 	client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Vendor B").
-		SetEmail("vendorB@test.com").
-		SetIsActive("active").
-		SetUpdatedAt(time.Now()).
+		SetContact("vendorB@test.com").
 		SaveX(context.Background())
 
-	// Create inactive vendor (should not be returned)
+	// Create another vendor
 	client.Vendor.Create().
 		SetID(uuid.New()).
-		SetName("Inactive Vendor").
-		SetEmail("inactive@test.com").
-		SetIsActive("inactive").
-		SetUpdatedAt(time.Now()).
+		SetName("Vendor C").
+		SetContact("vendorC@test.com").
 		SaveX(context.Background())
 
 	repo := NewEntRepo(client)
@@ -289,11 +286,10 @@ func TestEntRepo_GetCategoryByID(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Create test data
-	category := client.Product_category.Create().
+	// Create test data - create Category entity
+	category := client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Fruits").
-		SetDescription("Fresh fruits").
 		SetSlug("fruits").
 		SaveX(context.Background())
 
@@ -304,7 +300,7 @@ func TestEntRepo_GetCategoryByID(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, category.ID, result.ID)
 		assert.Equal(t, category.Name, result.Name)
-		assert.Equal(t, category.Description, result.Description)
+		assert.Equal(t, category.Slug, result.Description)
 	})
 
 	t.Run("get non-existing category", func(t *testing.T) {
@@ -319,13 +315,11 @@ func TestEntRepo_GetVendorByID(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Create test data
+	// Create test data - create Vendor entity
 	vendor := client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Test Vendor").
-		SetEmail("vendor@test.com").
-		SetIsActive("active").
-		SetUpdatedAt(time.Now()).
+		SetContact("vendor@test.com").
 		SaveX(context.Background())
 
 	repo := NewEntRepo(client)
@@ -335,8 +329,8 @@ func TestEntRepo_GetVendorByID(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, vendor.ID, result.ID)
 		assert.Equal(t, *vendor.Name, result.Name)
-		assert.Equal(t, *vendor.Email, result.Email)
-		assert.Equal(t, vendor.IsActive, result.IsActive)
+		// ShopVendorDTO only has Name, not Contact
+		assert.Equal(t, *vendor.Name, result.Name)
 	})
 
 	t.Run("get non-existing vendor", func(t *testing.T) {

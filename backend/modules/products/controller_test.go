@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -56,6 +57,16 @@ func (m *MockService) Delete(ctx context.Context, id uuid.UUID) error {
 	return args.Error(0)
 }
 
+func (m *MockService) UploadProductImage(ctx context.Context, file *multipart.FileHeader) (string, error) {
+	args := m.Called(ctx, file)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockService) GetProductImageURL(ctx context.Context, objectName string) (string, error) {
+	args := m.Called(ctx, objectName)
+	return args.String(0), args.Error(1)
+}
+
 func TestController_ListProducts(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -70,22 +81,22 @@ func TestController_ListProducts(t *testing.T) {
 					{
 						ID:          uuid.New(),
 						Name:        "Product One",
+						SKU:         "PROD-001",
 						Price:       99.99,
-						Description: "First product",
-						ImageURL:    "https://example.com/image1.jpg",
+						Description: stringPtr("First product"),
 						UnitLabel:   "kg",
-						IsActive:    "true",
+						IsActive:    true,
 						CreatedAt:   time.Now(),
 						UpdatedAt:   time.Now(),
 					},
 					{
 						ID:          uuid.New(),
 						Name:        "Product Two",
+						SKU:         "PROD-002",
 						Price:       149.99,
-						Description: "Second product",
-						ImageURL:    "https://example.com/image2.jpg",
+						Description: stringPtr("Second product"),
 						UnitLabel:   "piece",
-						IsActive:    "true",
+						IsActive:    true,
 						CreatedAt:   time.Now(),
 						UpdatedAt:   time.Now(),
 					},
@@ -154,11 +165,11 @@ func TestController_GetProduct(t *testing.T) {
 				expectedProduct := &GetProductDTO{
 					ID:          id,
 					Name:        "Test Product",
+					SKU:         "PROD-003",
 					Price:       99.99,
-					Description: "Test product description",
-					ImageURL:    "https://example.com/image.jpg",
+					Description: stringPtr("Test product description"),
 					UnitLabel:   "kg",
-					IsActive:    "true",
+					IsActive:    true,
 					CreatedAt:   time.Now(),
 					UpdatedAt:   time.Now(),
 				}
@@ -236,23 +247,25 @@ func TestController_CreateProduct(t *testing.T) {
 		{
 			name: "success - creates new product",
 			requestBody: CreateProductDTO{
-				ID:          uuid.New(),
-				Name:        "New Product",
-				Price:       199.99,
-				Description: "New product description",
-				ImageURL:    "https://example.com/new-image.jpg",
-				UnitLabel:   "kg",
-				IsActive:    "true",
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
+				ID:           uuid.New(),
+				Name:         "New Product",
+				SKU:          "PROD-004",
+				Price:        199.99,
+				Description:  stringPtr("New product description"),
+				UnitLabel:    "kg",
+				IsActive:     true,
+				Quantity:     100,
+				ReorderLevel: 50,
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateProductDTO) {
 				expectedProduct := &GetProductDTO{
 					ID:          dto.ID,
 					Name:        dto.Name,
+					SKU:         dto.SKU,
 					Price:       dto.Price,
 					Description: dto.Description,
-					ImageURL:    dto.ImageURL,
 					UnitLabel:   dto.UnitLabel,
 					IsActive:    dto.IsActive,
 					CreatedAt:   dto.CreatedAt,
@@ -261,9 +274,9 @@ func TestController_CreateProduct(t *testing.T) {
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateProductDTO) bool {
 					return actual.ID == dto.ID &&
 						actual.Name == dto.Name &&
+						actual.SKU == dto.SKU &&
 						actual.Price == dto.Price &&
-						actual.Description == dto.Description &&
-						actual.ImageURL == dto.ImageURL &&
+						((actual.Description == nil && dto.Description == nil) || (actual.Description != nil && dto.Description != nil && *actual.Description == *dto.Description)) &&
 						actual.UnitLabel == dto.UnitLabel &&
 						actual.IsActive == dto.IsActive
 				})).Return(expectedProduct, nil)
@@ -276,15 +289,17 @@ func TestController_CreateProduct(t *testing.T) {
 		{
 			name: "error - service returns error",
 			requestBody: CreateProductDTO{
-				ID:          uuid.New(),
-				Name:        "New Product",
-				Price:       199.99,
-				Description: "New product description",
-				ImageURL:    "https://example.com/new-image.jpg",
-				UnitLabel:   "kg",
-				IsActive:    "true",
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
+				ID:           uuid.New(),
+				Name:         "New Product",
+				SKU:          "PROD-004",
+				Price:        199.99,
+				Description:  stringPtr("New product description"),
+				UnitLabel:    "kg",
+				IsActive:     true,
+				Quantity:     100,
+				ReorderLevel: 50,
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateProductDTO) {
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateProductDTO) bool {
@@ -292,7 +307,6 @@ func TestController_CreateProduct(t *testing.T) {
 						actual.Name == dto.Name &&
 						actual.Price == dto.Price &&
 						actual.Description == dto.Description &&
-						actual.ImageURL == dto.ImageURL &&
 						actual.UnitLabel == dto.UnitLabel &&
 						actual.IsActive == dto.IsActive
 				})).Return((*GetProductDTO)(nil), errors.New("name already exists"))
@@ -360,10 +374,10 @@ func TestController_UpdateProduct(t *testing.T) {
 					ID:          id,
 					Name:        *dto.Name,
 					Price:       *dto.Price,
-					Description: *dto.Description,
-					ImageURL:    "https://example.com/image.jpg",
+					Description: dto.Description,
+					SKU:         "PROD-005",
 					UnitLabel:   "kg",
-					IsActive:    "true",
+					IsActive:    true,
 					CreatedAt:   time.Now(),
 					UpdatedAt:   time.Now(),
 				}
@@ -509,7 +523,7 @@ func TestController_DeleteProduct(t *testing.T) {
 	}
 }
 
-// Helper functions to create pointers
+// Helper functions
 func stringPtr(s string) *string {
 	return &s
 }

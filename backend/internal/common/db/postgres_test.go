@@ -218,7 +218,7 @@ func TestNewEntClientPGX_ContextHandling(t *testing.T) {
 		}()
 
 		dsn := "postgres://user:pass@localhost:5432/db?sslmode=disable"
-		client, closeFn, err := NewEntClientPGX(nil, dsn, false)
+		client, closeFn, err := NewEntClientPGX(context.TODO(), dsn, false)
 
 		// If it doesn't panic, it should return an error
 		if err == nil {

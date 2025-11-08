@@ -25,7 +25,8 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetCartDTO, error) {
 			ID:        v.ID,
 			Status:    v.Status,
 			Total:     v.Total,
-			CreatedAt: v.CreatedAt,
+			Subtotal: v.Subtotal,
+		Discount: v.Discount,
 			UpdatedAt: v.UpdatedAt,
 		})
 	}
@@ -41,7 +42,8 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetCartDTO, erro
 		ID:        v.ID,
 		Status:    v.Status,
 		Total:     v.Total,
-		CreatedAt: v.CreatedAt,
+		Subtotal: v.Subtotal,
+		Discount: v.Discount,
 		UpdatedAt: v.UpdatedAt,
 	}, nil
 }
@@ -64,8 +66,9 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateCartDTO) (*GetCartDTO, 
 	return &GetCartDTO{
 		ID:        row.ID,
 		Status:    row.Status,
+		Subtotal:  row.Subtotal,
+		Discount:  row.Discount,
 		Total:     row.Total,
-		CreatedAt: row.CreatedAt,
 		UpdatedAt: row.UpdatedAt,
 	}, nil
 }
@@ -92,8 +95,9 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateCartDTO) (*GetCartDTO, 
 	return &GetCartDTO{
 		ID:        row.ID,
 		Status:    row.Status,
+		Subtotal:  row.Subtotal,
+		Discount:  row.Discount,
 		Total:     row.Total,
-		CreatedAt: row.CreatedAt,
 		UpdatedAt: row.UpdatedAt,
 	}, nil
 }

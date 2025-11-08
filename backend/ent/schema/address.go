@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"time"
-
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -18,22 +16,23 @@ type Address struct {
 func (Address) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique().Immutable(),
-		field.String("line1").NotEmpty(),
-		field.String("line2").Optional().Nillable(),
-		field.String("city").NotEmpty(),
-		field.String("province").NotEmpty(),
-		field.String("country").NotEmpty(),
-		field.String("zip").NotEmpty(),
+		field.String("line1"),
+		field.String("line2").Nillable().Optional(),
+		field.String("city"),
+		field.String("province"),
+		field.String("postal_code"),
+		field.String("country"),
+		field.Float("lat").Nillable().Optional(),
+		field.Float("lng").Nillable().Optional(),
 		field.Bool("is_default").Default(false),
-		field.Time("created_at").Default(time.Now),
-		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
-		field.Time("deleted_at").Default(time.Now).UpdateDefault(time.Now),
 	}
 }
 
 // Edges of the Address.
 func (Address) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", User.Type).Ref("address").Required(),
+		edge.From("user", User.Type).Ref("addresses").Unique().Required(),
+		edge.To("shipping_orders", Order.Type),
+		edge.To("billing_orders", Order.Type),
 	}
 }

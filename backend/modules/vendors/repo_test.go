@@ -24,16 +24,14 @@ func TestRepository_List(t *testing.T) {
 	vendor1, err := client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Vendor 1").
-		SetEmail("vendor1@example.com").
-		SetIsActive("true").
+		SetContact("vendor1@example.com").
 		Save(ctx)
 	require.NoError(t, err)
 
 	vendor2, err := client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Vendor 2").
-		SetEmail("vendor2@example.com").
-		SetIsActive("true").
+		SetContact("vendor2@example.com").
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -46,9 +44,8 @@ func TestRepository_List(t *testing.T) {
 	foundIDs := make(map[uuid.UUID]bool)
 	for _, vendor := range result {
 		foundIDs[vendor.ID] = true
-		assert.NotEmpty(t, vendor.IsActive)
-		assert.False(t, vendor.CreatedAt.IsZero())
-		assert.False(t, vendor.UpdatedAt.IsZero())
+		assert.NotNil(t, vendor.Name)
+		assert.NotNil(t, vendor.Contact)
 	}
 
 	assert.True(t, foundIDs[vendor1.ID])
@@ -66,8 +63,7 @@ func TestRepository_FindByID(t *testing.T) {
 	createdVendor, err := client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Test Vendor").
-		SetEmail("test@example.com").
-		SetIsActive("true").
+		SetContact("test@example.com").
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -77,8 +73,7 @@ func TestRepository_FindByID(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, createdVendor.ID, result.ID)
 	assert.Equal(t, "Test Vendor", *result.Name)
-	assert.Equal(t, "test@example.com", *result.Email)
-	assert.Equal(t, "true", result.IsActive)
+	assert.Equal(t, "test@example.com", *result.Contact)
 
 	// Test FindByID - not found
 	nonExistentID := uuid.New()
@@ -94,26 +89,22 @@ func TestRepository_Create(t *testing.T) {
 	ctx := context.Background()
 
 	dto := &CreateVendorDTO{
-		ID:       uuid.New(),
-		Name:     stringPtr("Test Vendor"),
-		Email:    stringPtr("test@example.com"),
-		IsActive: "true",
+		ID:      uuid.New(),
+		Name:    stringPtr("Test Vendor"),
+		Contact: stringPtr("test@example.com"),
 	}
 
 	result, err := repo.Create(ctx, dto)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.NotEqual(t, uuid.Nil, result.ID) // ID should be generated
-	assert.Equal(t, dto.IsActive, result.IsActive)
-	assert.False(t, result.CreatedAt.IsZero())
-	assert.False(t, result.UpdatedAt.IsZero())
+	assert.Equal(t, dto.Contact, result.Contact)
 
 	// Verify it was actually created in the database
 	dbVendor, err := client.Vendor.Get(ctx, result.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "Test Vendor", *dbVendor.Name)
-	assert.Equal(t, "test@example.com", *dbVendor.Email)
-	assert.Equal(t, "true", dbVendor.IsActive)
+	assert.Equal(t, "test@example.com", *dbVendor.Contact)
 }
 
 func TestRepository_Update(t *testing.T) {
@@ -127,17 +118,15 @@ func TestRepository_Update(t *testing.T) {
 	createdVendor, err := client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Test Vendor").
-		SetEmail("test@example.com").
-		SetIsActive("true").
+		SetContact("test@example.com").
 		Save(ctx)
 	require.NoError(t, err)
 
 	// Test Update - full update
 	dto := &UpdateVendorDTO{
-		ID:       createdVendor.ID,
-		Name:     stringPtr("Updated Vendor"),
-		Email:    stringPtr("updated@example.com"),
-		IsActive: stringPtr("false"),
+		ID:      createdVendor.ID,
+		Name:    stringPtr("Updated Vendor"),
+		Contact: stringPtr("updated@example.com"),
 	}
 
 	result, err := repo.Update(ctx, dto)
@@ -145,15 +134,13 @@ func TestRepository_Update(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, createdVendor.ID, result.ID)
 	assert.Equal(t, "Updated Vendor", *result.Name)
-	assert.Equal(t, "updated@example.com", *result.Email)
-	assert.Equal(t, "false", result.IsActive)
+	assert.Equal(t, "updated@example.com", *result.Contact)
 
 	// Verify it was actually updated in the database
 	dbVendor, err := client.Vendor.Get(ctx, createdVendor.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Vendor", *dbVendor.Name)
-	assert.Equal(t, "updated@example.com", *dbVendor.Email)
-	assert.Equal(t, "false", dbVendor.IsActive)
+	assert.Equal(t, "updated@example.com", *dbVendor.Contact)
 
 	// Test Update - partial update (only name)
 	dto2 := &UpdateVendorDTO{
@@ -166,8 +153,7 @@ func TestRepository_Update(t *testing.T) {
 	assert.NotNil(t, result2)
 	assert.Equal(t, createdVendor.ID, result2.ID)
 	assert.Equal(t, "Partial Update", *result2.Name)
-	assert.Equal(t, "updated@example.com", *result2.Email) // Should remain unchanged
-	assert.Equal(t, "false", result2.IsActive)             // Should remain unchanged
+	assert.Equal(t, "updated@example.com", *result2.Contact) // Should remain unchanged
 
 	// Test Update - no fields to update
 	dto3 := &UpdateVendorDTO{
@@ -191,8 +177,7 @@ func TestRepository_Delete(t *testing.T) {
 	createdVendor, err := client.Vendor.Create().
 		SetID(uuid.New()).
 		SetName("Test Vendor").
-		SetEmail("test@example.com").
-		SetIsActive("true").
+		SetContact("test@example.com").
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -219,17 +204,15 @@ func TestRepository_Integration(t *testing.T) {
 
 	// Create multiple vendors
 	dto1 := &CreateVendorDTO{
-		ID:       uuid.New(),
-		Name:     stringPtr("Vendor 1"),
-		Email:    stringPtr("vendor1@example.com"),
-		IsActive: "true",
+		ID:      uuid.New(),
+		Name:    stringPtr("Vendor 1"),
+		Contact: stringPtr("vendor1@example.com"),
 	}
 
 	dto2 := &CreateVendorDTO{
-		ID:       uuid.New(),
-		Name:     stringPtr("Vendor 2"),
-		Email:    stringPtr("vendor2@example.com"),
-		IsActive: "true",
+		ID:      uuid.New(),
+		Name:    stringPtr("Vendor 2"),
+		Contact: stringPtr("vendor2@example.com"),
 	}
 
 	vendor1, err := repo.Create(ctx, dto1)
@@ -258,8 +241,7 @@ func TestRepository_Integration(t *testing.T) {
 	updatedVendor, err := repo.Update(ctx, updateDTO)
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Vendor 1", *updatedVendor.Name)
-	assert.Equal(t, dto1.Email, updatedVendor.Email)
-	assert.Equal(t, dto1.IsActive, updatedVendor.IsActive)
+	assert.Equal(t, dto1.Contact, updatedVendor.Contact)
 
 	// Delete one vendor
 	err = repo.Delete(ctx, vendor1.ID)

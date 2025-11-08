@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"freshease/backend/ent"
+	"freshease/backend/ent/category"
 	"freshease/backend/ent/product"
 	"freshease/backend/ent/product_category"
 	"freshease/backend/ent/vendor"
@@ -18,14 +19,14 @@ func NewEntRepo(client *ent.Client) Repository { return &EntRepo{c: client} }
 
 func (r *EntRepo) GetActiveProducts(ctx context.Context, filters ShopSearchFilters) ([]*ShopProductDTO, int, error) {
 	query := r.c.Product.Query().
-		Where(product.IsActive("active")).
+		Where(product.IsActive(true)).
 		WithVendor().
-		WithCatagory().
-		WithInventory()
+		WithProductCategories().
+		WithInventories()
 
 	// Apply filters
 	if filters.CategoryID != nil {
-		query = query.Where(product.HasCatagoryWith(product_category.ID(*filters.CategoryID)))
+		query = query.Where(product.HasProductCategoriesWith(product_category.ID(*filters.CategoryID)))
 	}
 	if filters.VendorID != nil {
 		query = query.Where(product.HasVendorWith(vendor.ID(*filters.VendorID)))
@@ -46,7 +47,7 @@ func (r *EntRepo) GetActiveProducts(ctx context.Context, filters ShopSearchFilte
 		)
 	}
 	if filters.InStock != nil && *filters.InStock {
-		query = query.Where(product.HasInventoryWith())
+		query = query.Where(product.HasInventoriesWith())
 	}
 
 	// Get total count for pagination
@@ -73,33 +74,40 @@ func (r *EntRepo) GetActiveProducts(ctx context.Context, filters ShopSearchFilte
 	result := make([]*ShopProductDTO, 0, len(products))
 	for _, p := range products {
 		dto := &ShopProductDTO{
-			ID:          p.ID,
-			Name:        p.Name,
-			Price:       p.Price,
-			Description: p.Description,
-			ImageURL:    p.ImageURL,
-			UnitLabel:   p.UnitLabel,
-			IsActive:    p.IsActive,
-			CreatedAt:   p.CreatedAt,
-			UpdatedAt:   p.UpdatedAt,
+			ID:        p.ID,
+			Name:      p.Name,
+			Price:     p.Price,
+			UnitLabel: p.UnitLabel,
+			IsActive:  boolToString(p.IsActive),
+			CreatedAt: p.CreatedAt,
+			UpdatedAt: p.UpdatedAt,
+		}
+		if p.Description != nil {
+			dto.Description = *p.Description
+		} else {
+			dto.Description = ""
 		}
 
 		// Add vendor info
-		if len(p.Edges.Vendor) > 0 {
-			dto.VendorID = p.Edges.Vendor[0].ID
-			dto.VendorName = getStringValue(p.Edges.Vendor[0].Name)
+		if p.Edges.Vendor != nil {
+			dto.VendorID = p.Edges.Vendor.ID
+			dto.VendorName = getStringValue(p.Edges.Vendor.Name)
 		}
 
-		// Add category info
-		if len(p.Edges.Catagory) > 0 {
-			dto.CategoryID = p.Edges.Catagory[0].ID
-			dto.CategoryName = p.Edges.Catagory[0].Name
+		// Add category info (product_categories is a many-to-many relationship)
+		if len(p.Edges.ProductCategories) > 0 {
+			// Get the first category
+			pc := p.Edges.ProductCategories[0]
+			if pc.Edges.Category != nil {
+				dto.CategoryID = pc.Edges.Category.ID
+				dto.CategoryName = pc.Edges.Category.Name
+			}
 		}
 
 		// Add inventory info
-		if p.Edges.Inventory != nil {
-			dto.StockQuantity = p.Edges.Inventory.Quantity
-			dto.IsInStock = p.Edges.Inventory.Quantity > 0
+		if len(p.Edges.Inventories) > 0 && p.Edges.Inventories[0] != nil {
+			dto.StockQuantity = p.Edges.Inventories[0].Quantity
+			dto.IsInStock = p.Edges.Inventories[0].Quantity > 0
 		}
 
 		result = append(result, dto)
@@ -110,51 +118,59 @@ func (r *EntRepo) GetActiveProducts(ctx context.Context, filters ShopSearchFilte
 
 func (r *EntRepo) GetProductByID(ctx context.Context, id uuid.UUID) (*ShopProductDTO, error) {
 	p, err := r.c.Product.Query().
-		Where(product.ID(id), product.IsActive("active")).
+		Where(product.ID(id), product.IsActive(true)).
 		WithVendor().
-		WithCatagory().
-		WithInventory().
+		WithProductCategories().
+		WithInventories().
 		First(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	dto := &ShopProductDTO{
-		ID:          p.ID,
-		Name:        p.Name,
-		Price:       p.Price,
-		Description: p.Description,
-		ImageURL:    p.ImageURL,
-		UnitLabel:   p.UnitLabel,
-		IsActive:    p.IsActive,
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
+		ID:        p.ID,
+		Name:      p.Name,
+		Price:     p.Price,
+		UnitLabel: p.UnitLabel,
+		IsActive:  boolToString(p.IsActive),
+		CreatedAt: p.CreatedAt,
+		UpdatedAt: p.UpdatedAt,
 	}
+	if p.Description != nil {
+		dto.Description = *p.Description
+	} else {
+		dto.Description = ""
+	}
+	dto.ImageURL = "" // ImageURL is handled by MinIO, not stored in Product
 
 	// Add vendor info
-	if len(p.Edges.Vendor) > 0 {
-		dto.VendorID = p.Edges.Vendor[0].ID
-		dto.VendorName = getStringValue(p.Edges.Vendor[0].Name)
+	if p.Edges.Vendor != nil {
+		dto.VendorID = p.Edges.Vendor.ID
+		dto.VendorName = getStringValue(p.Edges.Vendor.Name)
 	}
 
-	// Add category info
-	if len(p.Edges.Catagory) > 0 {
-		dto.CategoryID = p.Edges.Catagory[0].ID
-		dto.CategoryName = p.Edges.Catagory[0].Name
+	// Add category info (product_categories is a many-to-many relationship)
+	if len(p.Edges.ProductCategories) > 0 {
+		// Get the first category
+		pc := p.Edges.ProductCategories[0]
+		if pc.Edges.Category != nil {
+			dto.CategoryID = pc.Edges.Category.ID
+			dto.CategoryName = pc.Edges.Category.Name
+		}
 	}
 
 	// Add inventory info
-	if p.Edges.Inventory != nil {
-		dto.StockQuantity = p.Edges.Inventory.Quantity
-		dto.IsInStock = p.Edges.Inventory.Quantity > 0
+	if len(p.Edges.Inventories) > 0 && p.Edges.Inventories[0] != nil {
+		dto.StockQuantity = p.Edges.Inventories[0].Quantity
+		dto.IsInStock = p.Edges.Inventories[0].Quantity > 0
 	}
 
 	return dto, nil
 }
 
 func (r *EntRepo) GetActiveCategories(ctx context.Context) ([]*ShopCategoryDTO, error) {
-	categories, err := r.c.Product_category.Query().
-		Order(ent.Asc(product_category.FieldName)).
+	categories, err := r.c.Category.Query().
+		Order(ent.Asc(category.FieldName)).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -165,7 +181,7 @@ func (r *EntRepo) GetActiveCategories(ctx context.Context) ([]*ShopCategoryDTO, 
 		result = append(result, &ShopCategoryDTO{
 			ID:          c.ID,
 			Name:        c.Name,
-			Description: c.Description,
+			Description: c.Slug, // Using slug as description since DTO doesn't have slug field
 		})
 	}
 
@@ -174,7 +190,6 @@ func (r *EntRepo) GetActiveCategories(ctx context.Context) ([]*ShopCategoryDTO, 
 
 func (r *EntRepo) GetActiveVendors(ctx context.Context) ([]*ShopVendorDTO, error) {
 	vendors, err := r.c.Vendor.Query().
-		Where(vendor.IsActive("active")).
 		Order(ent.Asc(vendor.FieldName)).
 		All(ctx)
 	if err != nil {
@@ -184,21 +199,8 @@ func (r *EntRepo) GetActiveVendors(ctx context.Context) ([]*ShopVendorDTO, error
 	result := make([]*ShopVendorDTO, 0, len(vendors))
 	for _, v := range vendors {
 		result = append(result, &ShopVendorDTO{
-			ID:          v.ID,
-			Name:        getStringValue(v.Name),
-			Email:       getStringValue(v.Email),
-			Phone:       getStringValue(v.Phone),
-			Address:     getStringValue(v.Address),
-			City:        getStringValue(v.City),
-			State:       getStringValue(v.State),
-			Country:     getStringValue(v.Country),
-			PostalCode:  getStringValue(v.PostalCode),
-			Website:     getStringValue(v.Website),
-			LogoURL:     getStringValue(v.LogoURL),
-			Description: getStringValue(v.Description),
-			IsActive:    v.IsActive,
-			CreatedAt:   v.CreatedAt,
-			UpdatedAt:   v.UpdatedAt,
+			ID:   v.ID,
+			Name: getStringValue(v.Name),
 		})
 	}
 
@@ -206,7 +208,7 @@ func (r *EntRepo) GetActiveVendors(ctx context.Context) ([]*ShopVendorDTO, error
 }
 
 func (r *EntRepo) GetCategoryByID(ctx context.Context, id uuid.UUID) (*ShopCategoryDTO, error) {
-	c, err := r.c.Product_category.Get(ctx, id)
+	c, err := r.c.Category.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -214,34 +216,19 @@ func (r *EntRepo) GetCategoryByID(ctx context.Context, id uuid.UUID) (*ShopCateg
 	return &ShopCategoryDTO{
 		ID:          c.ID,
 		Name:        c.Name,
-		Description: c.Description,
+		Description: c.Slug, // Using slug as description since DTO doesn't have slug field
 	}, nil
 }
 
 func (r *EntRepo) GetVendorByID(ctx context.Context, id uuid.UUID) (*ShopVendorDTO, error) {
-	v, err := r.c.Vendor.Query().
-		Where(vendor.ID(id), vendor.IsActive("active")).
-		First(ctx)
+	v, err := r.c.Vendor.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ShopVendorDTO{
-		ID:          v.ID,
-		IsActive:    v.IsActive,
-		CreatedAt:   v.CreatedAt,
-		UpdatedAt:   v.UpdatedAt,
-		Name:        getStringValue(v.Name),
-		Email:       getStringValue(v.Email),
-		Phone:       getStringValue(v.Phone),
-		Address:     getStringValue(v.Address),
-		City:        getStringValue(v.City),
-		State:       getStringValue(v.State),
-		Country:     getStringValue(v.Country),
-		PostalCode:  getStringValue(v.PostalCode),
-		Website:     getStringValue(v.Website),
-		LogoURL:     getStringValue(v.LogoURL),
-		Description: getStringValue(v.Description),
+		ID:   v.ID,
+		Name: getStringValue(v.Name),
 	}, nil
 }
 
@@ -251,4 +238,12 @@ func getStringValue(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// Helper function to convert bool to string
+func boolToString(b bool) string {
+	if b {
+		return "active"
+	}
+	return "inactive"
 }

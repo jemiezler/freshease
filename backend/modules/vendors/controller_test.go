@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -59,6 +60,16 @@ func (m *MockService) Delete(ctx context.Context, id uuid.UUID) error {
 	return args.Error(0)
 }
 
+func (m *MockService) UploadVendorLogo(ctx context.Context, file *multipart.FileHeader) (string, error) {
+	args := m.Called(ctx, file)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockService) GetVendorImageURL(ctx context.Context, objectName string) (string, error) {
+	args := m.Called(ctx, objectName)
+	return args.String(0), args.Error(1)
+}
+
 // Helper functions to create pointers
 func stringPtr(s string) *string {
 	return &s
@@ -80,20 +91,14 @@ func TestController_ListVendors(t *testing.T) {
 			mockSetup: func(mockSvc *MockService) {
 				vendors := []*GetVendorDTO{
 					{
-						ID:        uuid.New(),
-						Name:      stringPtr("Vendor 1"),
-						Email:     stringPtr("vendor1@example.com"),
-						IsActive:  "true",
-						CreatedAt: time.Now(),
-						UpdatedAt: time.Now(),
+						ID:      uuid.New(),
+						Name:    stringPtr("Vendor 1"),
+						Contact: stringPtr("contact1@example.com"),
 					},
 					{
-						ID:        uuid.New(),
-						Name:      stringPtr("Vendor 2"),
-						Email:     stringPtr("vendor2@example.com"),
-						IsActive:  "true",
-						CreatedAt: time.Now(),
-						UpdatedAt: time.Now(),
+						ID:      uuid.New(),
+						Name:    stringPtr("Vendor 2"),
+						Contact: stringPtr("contact2@example.com"),
 					},
 				}
 				mockSvc.On("List", mock.Anything).Return(vendors, nil)
@@ -160,12 +165,9 @@ func TestController_GetVendor(t *testing.T) {
 			id:   uuid.New().String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
 				vendor := &GetVendorDTO{
-					ID:        id,
-					Name:      stringPtr("Test Vendor"),
-					Email:     stringPtr("test@example.com"),
-					IsActive:  "true",
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					ID:      id,
+					Name:    stringPtr("Test Vendor"),
+					Contact: stringPtr("test@example.com"),
 				}
 				mockSvc.On("Get", mock.Anything, id).Return(vendor, nil)
 			},
@@ -234,18 +236,18 @@ func TestController_CreateVendor(t *testing.T) {
 		{
 			name: "success - creates vendor",
 			requestBody: CreateVendorDTO{
-				ID:       uuid.New(),
-				IsActive: "true",
+				ID:      uuid.New(),
+				Name:    stringPtr("Test Vendor"),
+				Contact: stringPtr("contact@example.com"),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateVendorDTO) {
 				createdVendor := &GetVendorDTO{
-					ID:        dto.ID,
-					IsActive:  dto.IsActive,
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					ID:      dto.ID,
+					Name:    dto.Name,
+					Contact: dto.Contact,
 				}
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateVendorDTO) bool {
-					return actual.ID == dto.ID && actual.IsActive == dto.IsActive
+					return actual.ID == dto.ID && actual.Name != nil && actual.Contact != nil
 				})).Return(createdVendor, nil)
 			},
 			expectedStatus: http.StatusCreated,
@@ -254,12 +256,13 @@ func TestController_CreateVendor(t *testing.T) {
 		{
 			name: "error - service returns error",
 			requestBody: CreateVendorDTO{
-				ID:       uuid.New(),
-				IsActive: "true",
+				ID:      uuid.New(),
+				Name:    stringPtr("Test Vendor"),
+				Contact: stringPtr("contact@example.com"),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateVendorDTO) {
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateVendorDTO) bool {
-					return actual.ID == dto.ID && actual.IsActive == dto.IsActive
+					return actual.ID == dto.ID && actual.Name != nil && actual.Contact != nil
 				})).Return((*GetVendorDTO)(nil), errors.New("creation failed"))
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -312,20 +315,19 @@ func TestController_UpdateVendor(t *testing.T) {
 			name: "success - updates vendor",
 			id:   uuid.New().String(),
 			requestBody: UpdateVendorDTO{
-				Name:     stringPtr("Updated Vendor"),
-				IsActive: stringPtr("false"),
+				ID:      uuid.New(),
+				Name:    stringPtr("Updated Vendor"),
+				Contact: stringPtr("updated@example.com"),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateVendorDTO) {
 				updatedVendor := &GetVendorDTO{
-					ID:        id,
-					Name:      stringPtr("Updated Vendor"),
-					IsActive:  "false",
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					ID:      id,
+					Name:    stringPtr("Updated Vendor"),
+					Contact: stringPtr("updated@example.com"),
 				}
 				mockSvc.On("Update", mock.Anything, id, mock.MatchedBy(func(actual UpdateVendorDTO) bool {
 					return actual.Name != nil && *actual.Name == "Updated Vendor" &&
-						actual.IsActive != nil && *actual.IsActive == "false"
+						actual.Contact != nil && *actual.Contact == "updated@example.com"
 				})).Return(updatedVendor, nil)
 			},
 			expectedStatus: http.StatusCreated,

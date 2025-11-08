@@ -78,13 +78,13 @@ func TestController_ListInventories(t *testing.T) {
 					{
 						ID:            uuid.New(),
 						Quantity:      100,
-						RestockAmount: 50,
+						ReorderLevel: 50,
 						UpdatedAt:     time.Now(),
 					},
 					{
 						ID:            uuid.New(),
 						Quantity:      200,
-						RestockAmount: 75,
+						ReorderLevel: 75,
 						UpdatedAt:     time.Now(),
 					},
 				}
@@ -154,7 +154,7 @@ func TestController_GetInventory(t *testing.T) {
 				inventory := &GetInventoryDTO{
 					ID:            id,
 					Quantity:      150,
-					RestockAmount: 60,
+					ReorderLevel: 60,
 					UpdatedAt:     time.Now(),
 				}
 				mockSvc.On("Get", mock.Anything, id).Return(inventory, nil)
@@ -225,19 +225,19 @@ func TestController_CreateInventory(t *testing.T) {
 			name: "success - creates inventory",
 			requestBody: CreateInventoryDTO{
 				Quantity:      100,
-				RestockAmount: 50,
+				ReorderLevel: 50,
 				UpdatedAt:     time.Now(),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateInventoryDTO) {
 				createdInventory := &GetInventoryDTO{
 					ID:            uuid.New(),
 					Quantity:      dto.Quantity,
-					RestockAmount: dto.RestockAmount,
+					ReorderLevel: dto.ReorderLevel,
 					UpdatedAt:     time.Now(),
 				}
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateInventoryDTO) bool {
 					return actual.Quantity == dto.Quantity &&
-						actual.RestockAmount == dto.RestockAmount
+						actual.ReorderLevel == dto.ReorderLevel
 				})).Return(createdInventory, nil)
 			},
 			expectedStatus: http.StatusCreated,
@@ -247,13 +247,13 @@ func TestController_CreateInventory(t *testing.T) {
 			name: "error - service returns error",
 			requestBody: CreateInventoryDTO{
 				Quantity:      100,
-				RestockAmount: 50,
+				ReorderLevel: 50,
 				UpdatedAt:     time.Now(),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateInventoryDTO) {
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateInventoryDTO) bool {
 					return actual.Quantity == dto.Quantity &&
-						actual.RestockAmount == dto.RestockAmount
+						actual.ReorderLevel == dto.ReorderLevel
 				})).Return((*GetInventoryDTO)(nil), errors.New("creation failed"))
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -307,18 +307,18 @@ func TestController_UpdateInventory(t *testing.T) {
 			id:   uuid.New().String(),
 			requestBody: UpdateInventoryDTO{
 				Quantity:      intPtr(200),
-				RestockAmount: intPtr(75),
+				ReorderLevel: intPtr(75),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateInventoryDTO) {
 				updatedInventory := &GetInventoryDTO{
 					ID:            id,
 					Quantity:      200,
-					RestockAmount: 75,
+					ReorderLevel: 75,
 					UpdatedAt:     time.Now(),
 				}
 				mockSvc.On("Update", mock.Anything, id, mock.MatchedBy(func(actual UpdateInventoryDTO) bool {
 					return actual.Quantity != nil && *actual.Quantity == 200 &&
-						actual.RestockAmount != nil && *actual.RestockAmount == 75
+						actual.ReorderLevel != nil && *actual.ReorderLevel == 75
 				})).Return(updatedInventory, nil)
 			},
 			expectedStatus: http.StatusCreated,

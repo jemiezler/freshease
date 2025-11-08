@@ -71,13 +71,13 @@ func TestController_ListPermissions(t *testing.T) {
 				permissions := []*GetPermissionDTO{
 					{
 						ID:          uuid.New(),
-						Name:        "read_users",
-						Description: "Permission to read user data",
+						Code:        "read_users",
+						Description: stringPtr("Permission to read user data"),
 					},
 					{
 						ID:          uuid.New(),
-						Name:        "write_users",
-						Description: "Permission to write user data",
+					Code:        "write_users",
+					Description: stringPtr("Permission to write user data"),
 					},
 				}
 				mockSvc.On("List", mock.Anything).Return(permissions, nil)
@@ -145,8 +145,8 @@ func TestController_GetPermission(t *testing.T) {
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
 				permission := &GetPermissionDTO{
 					ID:          id,
-					Name:        "read_users",
-					Description: "Permission to read user data",
+					Code:        "read_users",
+					Description: stringPtr("Permission to read user data"),
 				}
 				mockSvc.On("Get", mock.Anything, id).Return(permission, nil)
 			},
@@ -216,18 +216,18 @@ func TestController_CreatePermission(t *testing.T) {
 			name: "success - creates permission",
 			requestBody: CreatePermissionDTO{
 				ID:          uuid.New(),
-				Name:        "read_users",
-				Description: "Permission to read user data",
+				Code:        "read_users",
+				Description: stringPtr("Permission to read user data"),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreatePermissionDTO) {
 				createdPermission := &GetPermissionDTO{
 					ID:          dto.ID,
-					Name:        dto.Name,
+					Code:        dto.Code,
 					Description: dto.Description,
 				}
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreatePermissionDTO) bool {
 					return actual.ID == dto.ID &&
-						actual.Name == dto.Name &&
+						actual.Code == dto.Code &&
 						actual.Description == dto.Description
 				})).Return(createdPermission, nil)
 			},
@@ -238,13 +238,13 @@ func TestController_CreatePermission(t *testing.T) {
 			name: "error - service returns error",
 			requestBody: CreatePermissionDTO{
 				ID:          uuid.New(),
-				Name:        "read_users",
-				Description: "Permission to read user data",
+				Code:        "read_users",
+				Description: stringPtr("Permission to read user data"),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreatePermissionDTO) {
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreatePermissionDTO) bool {
 					return actual.ID == dto.ID &&
-						actual.Name == dto.Name &&
+						actual.Code == dto.Code &&
 						actual.Description == dto.Description
 				})).Return((*GetPermissionDTO)(nil), errors.New("creation failed"))
 			},
@@ -298,17 +298,17 @@ func TestController_UpdatePermission(t *testing.T) {
 			name: "success - updates permission",
 			id:   uuid.New().String(),
 			requestBody: UpdatePermissionDTO{
-				Name:        stringPtr("updated_name"),
+				Code:        stringPtr("updated_code"),
 				Description: stringPtr("Updated description"),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdatePermissionDTO) {
 				updatedPermission := &GetPermissionDTO{
 					ID:          id,
-					Name:        "updated_name",
-					Description: "Updated description",
+					Code:        "updated_code",
+					Description: stringPtr("Updated description"),
 				}
 				mockSvc.On("Update", mock.Anything, id, mock.MatchedBy(func(actual UpdatePermissionDTO) bool {
-					return actual.Name != nil && *actual.Name == "updated_name" &&
+					return actual.Code != nil && *actual.Code == "updated_code" &&
 						actual.Description != nil && *actual.Description == "Updated description"
 				})).Return(updatedPermission, nil)
 			},
@@ -319,7 +319,7 @@ func TestController_UpdatePermission(t *testing.T) {
 			name: "error - invalid UUID",
 			id:   "invalid-uuid",
 			requestBody: UpdatePermissionDTO{
-				Name: stringPtr("updated_name"),
+				Code: stringPtr("updated_code"),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdatePermissionDTO) {
 				// No mock setup needed - should fail before service call
@@ -331,11 +331,11 @@ func TestController_UpdatePermission(t *testing.T) {
 			name: "error - service returns error",
 			id:   uuid.New().String(),
 			requestBody: UpdatePermissionDTO{
-				Name: stringPtr("updated_name"),
+				Code: stringPtr("updated_code"),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdatePermissionDTO) {
 				mockSvc.On("Update", mock.Anything, id, mock.MatchedBy(func(actual UpdatePermissionDTO) bool {
-					return actual.Name != nil && *actual.Name == "updated_name"
+					return actual.Code != nil && *actual.Code == "updated_code"
 				})).Return((*GetPermissionDTO)(nil), errors.New("update failed"))
 			},
 			expectedStatus: http.StatusBadRequest,

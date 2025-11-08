@@ -40,7 +40,7 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetUserDTO, error) {
 			Goal:        helpers.PtrIfNotNil(v.Goal),
 			HeightCm:    v.HeightCm,
 			WeightKg:    v.WeightKg,
-			Status:      v.Status,
+			Status:      helpers.PtrIfNotNil(v.Status),
 		})
 	}
 	return out, nil

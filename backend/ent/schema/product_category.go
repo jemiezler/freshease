@@ -1,25 +1,23 @@
 package schema
 
 import (
+	"github.com/google/uuid"
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
 )
 
 type Product_category struct{ ent.Schema }
 
 func (Product_category) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable(),
-		field.String("name").NotEmpty(),
-		field.String("description").NotEmpty(),
-		field.String("slug").NotEmpty(),
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique().Immutable(),
 	}
 }
 
 func (Product_category) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("product", Product.Type),
+		edge.From("product", Product.Type).Ref("product_categories").Unique().Required(),
+		edge.From("category", Category.Type).Ref("product_categories").Unique().Required(),
 	}
 }

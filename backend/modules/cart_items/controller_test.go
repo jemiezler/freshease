@@ -67,16 +67,20 @@ func TestController_ListCart_items(t *testing.T) {
 			mockSetup: func(mockSvc *MockService) {
 				expectedItems := []*GetCart_itemDTO{
 					{
-						ID:          uuid.New(),
-						Name:        "Apple",
-						Description: "Fresh red apples",
-						Cart:        uuid.New(),
+						ID:        uuid.New(),
+						Qty:       2,
+						UnitPrice: 1.99,
+						LineTotal: 3.98,
+						CartID:    uuid.New(),
+						ProductID: uuid.New(),
 					},
 					{
-						ID:          uuid.New(),
-						Name:        "Banana",
-						Description: "Yellow bananas",
-						Cart:        uuid.New(),
+						ID:        uuid.New(),
+						Qty:       3,
+						UnitPrice: 0.99,
+						LineTotal: 2.97,
+						CartID:    uuid.New(),
+						ProductID: uuid.New(),
 					},
 				}
 				mockSvc.On("List", mock.Anything).Return(expectedItems, nil)
@@ -84,16 +88,20 @@ func TestController_ListCart_items(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedBody: []*GetCart_itemDTO{
 				{
-					ID:          uuid.New(),
-					Name:        "Apple",
-					Description: "Fresh red apples",
-					Cart:        uuid.New(),
+					ID:        uuid.New(),
+					Qty:       2,
+					UnitPrice: 1.99,
+					LineTotal: 3.98,
+					CartID:    uuid.New(),
+					ProductID: uuid.New(),
 				},
 				{
-					ID:          uuid.New(),
-					Name:        "Banana",
-					Description: "Yellow bananas",
-					Cart:        uuid.New(),
+					ID:        uuid.New(),
+					Qty:       3,
+					UnitPrice: 0.99,
+					LineTotal: 2.97,
+					CartID:    uuid.New(),
+					ProductID: uuid.New(),
 				},
 			},
 		},
@@ -137,9 +145,17 @@ func TestController_ListCart_items(t *testing.T) {
 	}
 }
 
-// Helper function to create string pointers
+// Helper functions to create pointers
 func stringPtr(s string) *string {
 	return &s
+}
+
+func intPtr(i int) *int {
+	return &i
+}
+
+func float64Ptr(f float64) *float64 {
+	return &f
 }
 
 func TestController_GetCart_item(t *testing.T) {
@@ -155,19 +171,23 @@ func TestController_GetCart_item(t *testing.T) {
 			cartItemID: uuid.New().String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
 				expectedItem := &GetCart_itemDTO{
-					ID:          id,
-					Name:        "Apple",
-					Description: "Fresh red apples",
-					Cart:        uuid.New(),
+					ID:        id,
+					Qty:       2,
+					UnitPrice: 1.99,
+					LineTotal: 3.98,
+					CartID:    uuid.New(),
+					ProductID: uuid.New(),
 				}
 				mockSvc.On("Get", mock.Anything, id).Return(expectedItem, nil)
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody: &GetCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Apple",
-				Description: "Fresh red apples",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       2,
+				UnitPrice: 1.99,
+				LineTotal: 3.98,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 		},
 		{
@@ -231,35 +251,43 @@ func TestController_CreateCart_item(t *testing.T) {
 		{
 			name: "success - creates new cart item",
 			requestBody: CreateCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Orange",
-				Description: "Fresh oranges",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       5,
+				UnitPrice: 2.49,
+				LineTotal: 12.45,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateCart_itemDTO) {
 				expectedItem := &GetCart_itemDTO{
-					ID:          dto.ID,
-					Name:        dto.Name,
-					Description: dto.Description,
-					Cart:        dto.Cart,
+					ID:        dto.ID,
+					Qty:       dto.Qty,
+					UnitPrice: dto.UnitPrice,
+					LineTotal: dto.LineTotal,
+					CartID:    dto.CartID,
+					ProductID: dto.ProductID,
 				}
 				mockSvc.On("Create", mock.Anything, dto).Return(expectedItem, nil)
 			},
 			expectedStatus: http.StatusCreated,
 			expectedBody: &GetCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Orange",
-				Description: "Fresh oranges",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       5,
+				UnitPrice: 2.49,
+				LineTotal: 12.45,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 		},
 		{
 			name: "error - service returns error",
 			requestBody: CreateCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Orange",
-				Description: "Fresh oranges",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       5,
+				UnitPrice: 2.49,
+				LineTotal: 12.45,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateCart_itemDTO) {
 				mockSvc.On("Create", mock.Anything, dto).Return((*GetCart_itemDTO)(nil), errors.New("cart item already exists"))
@@ -314,25 +342,30 @@ func TestController_UpdateCart_item(t *testing.T) {
 			name:       "success - updates cart item",
 			cartItemID: uuid.New().String(),
 			requestBody: UpdateCart_itemDTO{
-				ID:          uuid.New(), // This will be overridden by the service
-				Name:        stringPtr("Updated Apple"),
-				Description: stringPtr("Updated description"),
+				ID:        uuid.New(), // This will be overridden by the service
+				Qty:       intPtr(10),
+				UnitPrice: float64Ptr(1.50),
+				LineTotal: float64Ptr(15.00),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateCart_itemDTO) {
 				expectedItem := &GetCart_itemDTO{
-					ID:          id,
-					Name:        *dto.Name,
-					Description: *dto.Description,
-					Cart:        uuid.New(),
+					ID:        id,
+					Qty:       *dto.Qty,
+					UnitPrice: *dto.UnitPrice,
+					LineTotal: *dto.LineTotal,
+					CartID:    uuid.New(),
+					ProductID: uuid.New(),
 				}
 				mockSvc.On("Update", mock.Anything, id, dto).Return(expectedItem, nil)
 			},
 			expectedStatus: http.StatusCreated,
 			expectedBody: &GetCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Updated Apple",
-				Description: "Updated description",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       10,
+				UnitPrice: 1.50,
+				LineTotal: 15.00,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 		},
 		{
@@ -347,8 +380,8 @@ func TestController_UpdateCart_item(t *testing.T) {
 			name:       "error - service returns error",
 			cartItemID: uuid.New().String(),
 			requestBody: UpdateCart_itemDTO{
-				ID:   uuid.New(),
-				Name: stringPtr("Updated Apple"),
+				ID:  uuid.New(),
+				Qty: intPtr(10),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateCart_itemDTO) {
 				mockSvc.On("Update", mock.Anything, id, dto).Return((*GetCart_itemDTO)(nil), errors.New("cart item not found"))

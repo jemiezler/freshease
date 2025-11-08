@@ -15,69 +15,101 @@ type EntRepo struct{ c *ent.Client }
 func NewEntRepo(client *ent.Client) Repository { return &EntRepo{c: client} }
 
 func (r *EntRepo) List(ctx context.Context) ([]*GetProductCategoryDTO, error) {
-	rows, err := r.c.Product_category.Query().Order(ent.Asc(product_category.FieldID)).All(ctx)
+	rows, err := r.c.Product_category.Query().
+		WithProduct().
+		WithCategory().
+		Order(ent.Asc(product_category.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]*GetProductCategoryDTO, 0, len(rows))
 	for _, v := range rows {
-		out = append(out, &GetProductCategoryDTO{
-			ID:          v.ID,
-			Name:        v.Name,
-			Description: v.Description,
-			Slug:        v.Slug,
-		})
+		dto := &GetProductCategoryDTO{
+			ID: v.ID,
+		}
+		if v.Edges.Product != nil {
+			dto.ProductID = v.Edges.Product.ID
+		}
+		if v.Edges.Category != nil {
+			dto.CategoryID = v.Edges.Category.ID
+		}
+		out = append(out, dto)
 	}
 	return out, nil
 }
 
 func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetProductCategoryDTO, error) {
-	v, err := r.c.Product_category.Get(ctx, id)
+	v, err := r.c.Product_category.Query().
+		WithProduct().
+		WithCategory().
+		Where(product_category.ID(id)).
+		Only(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &GetProductCategoryDTO{
-		ID:          v.ID,
-		Name:        v.Name,
-		Description: v.Description,
-		Slug:        v.Slug,
-	}, nil
+	dto := &GetProductCategoryDTO{
+		ID: v.ID,
+	}
+	if v.Edges.Product != nil {
+		dto.ProductID = v.Edges.Product.ID
+	}
+	if v.Edges.Category != nil {
+		dto.CategoryID = v.Edges.Category.ID
+	}
+	return dto, nil
 }
 
 func (r *EntRepo) Create(ctx context.Context, dto *CreateProductCategoryDTO) (*GetProductCategoryDTO, error) {
-	q := r.c.Product_category.
-		Create().
-		SetName(dto.Name).
-		SetDescription(dto.Description).
-		SetSlug(dto.Slug)
+	product, err := r.c.Product.Get(ctx, dto.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	category, err := r.c.Category.Get(ctx, dto.CategoryID)
+	if err != nil {
+		return nil, err
+	}
 
-	row, err := q.Save(ctx)
+	row, err := r.c.Product_category.
+		Create().
+		SetID(dto.ID).
+		SetProduct(product).
+		SetCategory(category).
+		Save(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &GetProductCategoryDTO{
-		ID:          row.ID,
-		Name:        row.Name,
-		Description: row.Description,
-		Slug:        row.Slug,
+		ID:         row.ID,
+		ProductID:  dto.ProductID,
+		CategoryID: dto.CategoryID,
 	}, nil
 }
 
 func (r *EntRepo) Update(ctx context.Context, dto *UpdateProductCategoryDTO) (*GetProductCategoryDTO, error) {
+	// Product_category is a join table with no fields to update
+	// Only edges can be updated
 	q := r.c.Product_category.UpdateOneID(dto.ID)
+	hasChanges := false
 
-	if dto.Name != nil {
-		q.SetName(*dto.Name)
+	if dto.ProductID != nil {
+		product, err := r.c.Product.Get(ctx, *dto.ProductID)
+		if err != nil {
+			return nil, err
+		}
+		q.SetProduct(product)
+		hasChanges = true
 	}
-	if dto.Description != nil {
-		q.SetDescription(*dto.Description)
-	}
-	if dto.Slug != nil {
-		q.SetSlug(*dto.Slug)
+	if dto.CategoryID != nil {
+		category, err := r.c.Category.Get(ctx, *dto.CategoryID)
+		if err != nil {
+			return nil, err
+		}
+		q.SetCategory(category)
+		hasChanges = true
 	}
 
-	if len(q.Mutation().Fields()) == 0 {
+	if !hasChanges {
 		return nil, errs.NoFieldsToUpdate
 	}
 
@@ -86,12 +118,26 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateProductCategoryDTO) (*G
 		return nil, err
 	}
 
-	return &GetProductCategoryDTO{
-		ID:          row.ID,
-		Name:        row.Name,
-		Description: row.Description,
-		Slug:        row.Slug,
-	}, nil
+	// Reload with edges
+	v, err := r.c.Product_category.Query().
+		WithProduct().
+		WithCategory().
+		Where(product_category.ID(row.ID)).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dtoOut := &GetProductCategoryDTO{
+		ID: v.ID,
+	}
+	if v.Edges.Product != nil {
+		dtoOut.ProductID = v.Edges.Product.ID
+	}
+	if v.Edges.Category != nil {
+		dtoOut.CategoryID = v.Edges.Category.ID
+	}
+	return dtoOut, nil
 }
 
 func (r *EntRepo) Delete(ctx context.Context, id uuid.UUID) error {

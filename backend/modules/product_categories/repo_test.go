@@ -20,20 +20,53 @@ func TestRepository_List(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
-	// Create test product categories
-	category1, err := client.Product_category.Create().
+	// Create test products and categories first
+	product1, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Apple").
+		SetSku("APPLE-001").
+		SetPrice(2.99).
+		SetUnitLabel("kg").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	product2, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Banana").
+		SetSku("BANANA-001").
+		SetPrice(1.99).
+		SetUnitLabel("kg").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	category1, err := client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Fruits").
-		SetDescription("Fresh fruits and vegetables").
 		SetSlug("fruits").
 		Save(ctx)
 	require.NoError(t, err)
 
-	category2, err := client.Product_category.Create().
+	category2, err := client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Vegetables").
-		SetDescription("Fresh vegetables").
 		SetSlug("vegetables").
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Create product_category joins
+	pc1, err := client.Product_category.Create().
+		SetID(uuid.New()).
+		SetProduct(product1).
+		SetCategory(category1).
+		Save(ctx)
+	require.NoError(t, err)
+
+	pc2, err := client.Product_category.Create().
+		SetID(uuid.New()).
+		SetProduct(product2).
+		SetCategory(category2).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -42,17 +75,16 @@ func TestRepository_List(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, result, 2)
 
-	// Verify results contain our created categories
+	// Verify results contain our created product categories
 	foundIDs := make(map[uuid.UUID]bool)
-	for _, cat := range result {
-		foundIDs[cat.ID] = true
-		assert.NotEmpty(t, cat.Name)
-		assert.NotEmpty(t, cat.Description)
-		assert.NotEmpty(t, cat.Slug)
+	for _, pc := range result {
+		foundIDs[pc.ID] = true
+		assert.NotEqual(t, uuid.Nil, pc.ProductID)
+		assert.NotEqual(t, uuid.Nil, pc.CategoryID)
 	}
 
-	assert.True(t, foundIDs[category1.ID])
-	assert.True(t, foundIDs[category2.ID])
+	assert.True(t, foundIDs[pc1.ID])
+	assert.True(t, foundIDs[pc2.ID])
 }
 
 func TestRepository_FindByID(t *testing.T) {
@@ -62,23 +94,39 @@ func TestRepository_FindByID(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
-	// Create test product category
-	createdCategory, err := client.Product_category.Create().
+	// Create test product and category first
+	product, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Apple").
+		SetSku("APPLE-001").
+		SetPrice(2.99).
+		SetUnitLabel("kg").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	category, err := client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Fruits").
-		SetDescription("Fresh fruits and vegetables").
 		SetSlug("fruits").
 		Save(ctx)
 	require.NoError(t, err)
 
+	// Create product_category join
+	createdPC, err := client.Product_category.Create().
+		SetID(uuid.New()).
+		SetProduct(product).
+		SetCategory(category).
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Test FindByID - success
-	result, err := repo.FindByID(ctx, createdCategory.ID)
+	result, err := repo.FindByID(ctx, createdPC.ID)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, createdCategory.ID, result.ID)
-	assert.Equal(t, "Fruits", result.Name)
-	assert.Equal(t, "Fresh fruits and vegetables", result.Description)
-	assert.Equal(t, "fruits", result.Slug)
+	assert.Equal(t, createdPC.ID, result.ID)
+	assert.Equal(t, product.ID, result.ProductID)
+	assert.Equal(t, category.ID, result.CategoryID)
 
 	// Test FindByID - not found
 	nonExistentID := uuid.New()
@@ -93,27 +141,41 @@ func TestRepository_Create(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test product and category first
+	product, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Apple").
+		SetSku("APPLE-001").
+		SetPrice(2.99).
+		SetUnitLabel("kg").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	category, err := client.Category.Create().
+		SetID(uuid.New()).
+		SetName("Fruits").
+		SetSlug("fruits").
+		Save(ctx)
+	require.NoError(t, err)
+
 	dto := &CreateProductCategoryDTO{
-		ID:          uuid.New(),
-		Name:        "Fruits",
-		Description: "Fresh fruits and vegetables",
-		Slug:        "fruits",
+		ID:         uuid.New(),
+		ProductID:  product.ID,
+		CategoryID: category.ID,
 	}
 
 	result, err := repo.Create(ctx, dto)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.NotEqual(t, uuid.Nil, result.ID) // ID should be generated
-	assert.Equal(t, dto.Name, result.Name)
-	assert.Equal(t, dto.Description, result.Description)
-	assert.Equal(t, dto.Slug, result.Slug)
+	assert.Equal(t, dto.ID, result.ID)
+	assert.Equal(t, dto.ProductID, result.ProductID)
+	assert.Equal(t, dto.CategoryID, result.CategoryID)
 
 	// Verify it was actually created in the database
-	dbCategory, err := client.Product_category.Get(ctx, result.ID)
+	dbPC, err := client.Product_category.Get(ctx, result.ID)
 	require.NoError(t, err)
-	assert.Equal(t, dto.Name, dbCategory.Name)
-	assert.Equal(t, dto.Description, dbCategory.Description)
-	assert.Equal(t, dto.Slug, dbCategory.Slug)
+	assert.Equal(t, dto.ID, dbPC.ID)
 }
 
 func TestRepository_Update(t *testing.T) {
@@ -123,55 +185,78 @@ func TestRepository_Update(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
-	// Create test product category
-	createdCategory, err := client.Product_category.Create().
+	// Create test products and categories first
+	product1, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Apple").
+		SetSku("APPLE-001").
+		SetPrice(2.99).
+		SetUnitLabel("kg").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	product2, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Banana").
+		SetSku("BANANA-001").
+		SetPrice(1.99).
+		SetUnitLabel("kg").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	category1, err := client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Fruits").
-		SetDescription("Fresh fruits and vegetables").
 		SetSlug("fruits").
 		Save(ctx)
 	require.NoError(t, err)
 
-	// Test Update - full update
+	category2, err := client.Category.Create().
+		SetID(uuid.New()).
+		SetName("Vegetables").
+		SetSlug("vegetables").
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Create product_category join
+	createdPC, err := client.Product_category.Create().
+		SetID(uuid.New()).
+		SetProduct(product1).
+		SetCategory(category1).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Test Update - update category
 	dto := &UpdateProductCategoryDTO{
-		ID:          createdCategory.ID,
-		Name:        stringPtr("Updated Fruits"),
-		Description: stringPtr("Updated description"),
-		Slug:        stringPtr("updated-fruits"),
+		ID:         createdPC.ID,
+		CategoryID: func() *uuid.UUID { id := category2.ID; return &id }(),
 	}
 
 	result, err := repo.Update(ctx, dto)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, createdCategory.ID, result.ID)
-	assert.Equal(t, "Updated Fruits", result.Name)
-	assert.Equal(t, "Updated description", result.Description)
-	assert.Equal(t, "updated-fruits", result.Slug)
+	assert.Equal(t, createdPC.ID, result.ID)
+	assert.Equal(t, product1.ID, result.ProductID)   // Product should remain unchanged
+	assert.Equal(t, category2.ID, result.CategoryID) // Category should be updated
 
-	// Verify it was actually updated in the database
-	dbCategory, err := client.Product_category.Get(ctx, createdCategory.ID)
-	require.NoError(t, err)
-	assert.Equal(t, "Updated Fruits", dbCategory.Name)
-	assert.Equal(t, "Updated description", dbCategory.Description)
-	assert.Equal(t, "updated-fruits", dbCategory.Slug)
-
-	// Test Update - partial update (only name)
+	// Test Update - update product
 	dto2 := &UpdateProductCategoryDTO{
-		ID:   createdCategory.ID,
-		Name: stringPtr("Partial Update"),
+		ID:        createdPC.ID,
+		ProductID: func() *uuid.UUID { id := product2.ID; return &id }(),
 	}
 
 	result2, err := repo.Update(ctx, dto2)
 	require.NoError(t, err)
 	assert.NotNil(t, result2)
-	assert.Equal(t, createdCategory.ID, result2.ID)
-	assert.Equal(t, "Partial Update", result2.Name)
-	assert.Equal(t, "Updated description", result2.Description) // Should remain unchanged
-	assert.Equal(t, "updated-fruits", result2.Slug)             // Should remain unchanged
+	assert.Equal(t, createdPC.ID, result2.ID)
+	assert.Equal(t, product2.ID, result2.ProductID)   // Product should be updated
+	assert.Equal(t, category2.ID, result2.CategoryID) // Category should remain unchanged
 
 	// Test Update - no fields to update
 	dto3 := &UpdateProductCategoryDTO{
-		ID: createdCategory.ID,
+		ID: createdPC.ID,
 		// No fields to update
 	}
 
@@ -187,21 +272,38 @@ func TestRepository_Delete(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
-	// Create test product category
-	createdCategory, err := client.Product_category.Create().
+	// Create test product and category first
+	product, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Apple").
+		SetSku("APPLE-001").
+		SetPrice(2.99).
+		SetUnitLabel("kg").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	category, err := client.Category.Create().
 		SetID(uuid.New()).
 		SetName("Fruits").
-		SetDescription("Fresh fruits and vegetables").
 		SetSlug("fruits").
 		Save(ctx)
 	require.NoError(t, err)
 
+	// Create product_category join
+	createdPC, err := client.Product_category.Create().
+		SetID(uuid.New()).
+		SetProduct(product).
+		SetCategory(category).
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Test Delete - success
-	err = repo.Delete(ctx, createdCategory.ID)
+	err = repo.Delete(ctx, createdPC.ID)
 	require.NoError(t, err)
 
 	// Verify it was actually deleted from the database
-	_, err = client.Product_category.Get(ctx, createdCategory.ID)
+	_, err = client.Product_category.Get(ctx, createdPC.ID)
 	assert.Error(t, err)
 
 	// Test Delete - non-existent ID
@@ -217,57 +319,90 @@ func TestRepository_Integration(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test products and categories first
+	product1, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Apple").
+		SetSku("APPLE-001").
+		SetPrice(2.99).
+		SetUnitLabel("kg").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	product2, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Banana").
+		SetSku("BANANA-001").
+		SetPrice(1.99).
+		SetUnitLabel("kg").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	category1, err := client.Category.Create().
+		SetID(uuid.New()).
+		SetName("Fruits").
+		SetSlug("fruits").
+		Save(ctx)
+	require.NoError(t, err)
+
+	category2, err := client.Category.Create().
+		SetID(uuid.New()).
+		SetName("Vegetables").
+		SetSlug("vegetables").
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Create multiple product categories
 	dto1 := &CreateProductCategoryDTO{
-		ID:          uuid.New(),
-		Name:        "Fruits",
-		Description: "Fresh fruits and vegetables",
-		Slug:        "fruits",
+		ID:         uuid.New(),
+		ProductID:  product1.ID,
+		CategoryID: category1.ID,
 	}
 
 	dto2 := &CreateProductCategoryDTO{
-		ID:          uuid.New(),
-		Name:        "Vegetables",
-		Description: "Fresh vegetables",
-		Slug:        "vegetables",
+		ID:         uuid.New(),
+		ProductID:  product2.ID,
+		CategoryID: category2.ID,
 	}
 
-	category1, err := repo.Create(ctx, dto1)
+	pc1, err := repo.Create(ctx, dto1)
 	require.NoError(t, err)
 
-	category2, err := repo.Create(ctx, dto2)
+	pc2, err := repo.Create(ctx, dto2)
 	require.NoError(t, err)
 
-	// List all categories
-	allCategories, err := repo.List(ctx)
+	// List all product categories
+	allPCs, err := repo.List(ctx)
 	require.NoError(t, err)
-	assert.Len(t, allCategories, 2)
+	assert.Len(t, allPCs, 2)
 
-	// Get specific category
-	retrievedCategory, err := repo.FindByID(ctx, category1.ID)
+	// Get specific product category
+	retrievedPC, err := repo.FindByID(ctx, pc1.ID)
 	require.NoError(t, err)
-	assert.Equal(t, category1.ID, retrievedCategory.ID)
-	assert.Equal(t, dto1.Name, retrievedCategory.Name)
+	assert.Equal(t, pc1.ID, retrievedPC.ID)
+	assert.Equal(t, dto1.ProductID, retrievedPC.ProductID)
+	assert.Equal(t, dto1.CategoryID, retrievedPC.CategoryID)
 
-	// Update category
+	// Update product category
 	updateDTO := &UpdateProductCategoryDTO{
-		ID:   category1.ID,
-		Name: stringPtr("Updated Fruits"),
+		ID:        pc1.ID,
+		ProductID: func() *uuid.UUID { id := product2.ID; return &id }(),
 	}
 
-	updatedCategory, err := repo.Update(ctx, updateDTO)
+	updatedPC, err := repo.Update(ctx, updateDTO)
 	require.NoError(t, err)
-	assert.Equal(t, "Updated Fruits", updatedCategory.Name)
-	assert.Equal(t, dto1.Description, updatedCategory.Description)
-	assert.Equal(t, dto1.Slug, updatedCategory.Slug)
+	assert.Equal(t, product2.ID, updatedPC.ProductID)
+	assert.Equal(t, dto1.CategoryID, updatedPC.CategoryID) // Category should remain unchanged
 
-	// Delete one category
-	err = repo.Delete(ctx, category1.ID)
+	// Delete one product category
+	err = repo.Delete(ctx, pc1.ID)
 	require.NoError(t, err)
 
-	// Verify only one category remains
-	remainingCategories, err := repo.List(ctx)
+	// Verify only one product category remains
+	remainingPCs, err := repo.List(ctx)
 	require.NoError(t, err)
-	assert.Len(t, remainingCategories, 1)
-	assert.Equal(t, category2.ID, remainingCategories[0].ID)
+	assert.Len(t, remainingPCs, 1)
+	assert.Equal(t, pc2.ID, remainingPCs[0].ID)
 }

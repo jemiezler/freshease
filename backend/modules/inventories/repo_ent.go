@@ -25,7 +25,7 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetInventoryDTO, error) {
 		out = append(out, &GetInventoryDTO{
 			ID:            v.ID,
 			Quantity:      v.Quantity,
-			RestockAmount: v.RestockAmount,
+			ReorderLevel: v.ReorderLevel,
 			UpdatedAt:     v.UpdatedAt,
 		})
 	}
@@ -40,7 +40,7 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetInventoryDTO,
 	return &GetInventoryDTO{
 		ID:            v.ID,
 		Quantity:      v.Quantity,
-		RestockAmount: v.RestockAmount,
+		ReorderLevel: v.ReorderLevel,
 		UpdatedAt:     v.UpdatedAt,
 	}, nil
 }
@@ -49,7 +49,7 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateInventoryDTO) (*GetInve
 	q := r.c.Inventory.
 		Create().
 		SetQuantity(dto.Quantity).
-		SetRestockAmount(dto.RestockAmount)
+		SetReorderLevel(dto.ReorderLevel)
 
 	row, err := q.Save(ctx)
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateInventoryDTO) (*GetInve
 	return &GetInventoryDTO{
 		ID:            row.ID,
 		Quantity:      row.Quantity,
-		RestockAmount: row.RestockAmount,
+		ReorderLevel: row.ReorderLevel,
 		UpdatedAt:     row.UpdatedAt,
 	}, nil
 }
@@ -70,8 +70,8 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateInventoryDTO) (*GetInve
 	if dto.Quantity != nil {
 		q.SetQuantity(*dto.Quantity)
 	}
-	if dto.RestockAmount != nil {
-		q.SetRestockAmount(*dto.RestockAmount)
+	if dto.ReorderLevel != nil {
+		q.SetReorderLevel(*dto.ReorderLevel)
 	}
 
 	if len(q.Mutation().Fields()) == 0 {
@@ -92,7 +92,7 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateInventoryDTO) (*GetInve
 	return &GetInventoryDTO{
 		ID:            row.ID,
 		Quantity:      row.Quantity,
-		RestockAmount: row.RestockAmount,
+		ReorderLevel: row.ReorderLevel,
 		UpdatedAt:     updatedAt,
 	}, nil
 }

@@ -58,9 +58,8 @@ func (m *MockService) Delete(ctx context.Context, id uuid.UUID) error {
 	return args.Error(0)
 }
 
-// Helper function to create string pointers
-func stringPtr(s string) *string {
-	return &s
+func uuidPtr(u uuid.UUID) *uuid.UUID {
+	return &u
 }
 
 func TestController_ListProduct_categories(t *testing.T) {
@@ -75,16 +74,14 @@ func TestController_ListProduct_categories(t *testing.T) {
 			mockSetup: func(mockSvc *MockService) {
 				categories := []*GetProductCategoryDTO{
 					{
-						ID:          uuid.New(),
-						Name:        "Fruits",
-						Description: "Fresh fruits and vegetables",
-						Slug:        "fruits",
+						ID:         uuid.New(),
+						ProductID:  uuid.New(),
+						CategoryID: uuid.New(),
 					},
 					{
-						ID:          uuid.New(),
-						Name:        "Vegetables",
-						Description: "Fresh vegetables",
-						Slug:        "vegetables",
+						ID:         uuid.New(),
+						ProductID:  uuid.New(),
+						CategoryID: uuid.New(),
 					},
 				}
 				mockSvc.On("List", mock.Anything).Return(categories, nil)
@@ -151,10 +148,9 @@ func TestController_GetProduct_category(t *testing.T) {
 			id:   uuid.New().String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
 				category := &GetProductCategoryDTO{
-					ID:          id,
-					Name:        "Fruits",
-					Description: "Fresh fruits and vegetables",
-					Slug:        "fruits",
+					ID:         id,
+					ProductID:  uuid.New(),
+					CategoryID: uuid.New(),
 				}
 				mockSvc.On("Get", mock.Anything, id).Return(category, nil)
 			},
@@ -223,23 +219,20 @@ func TestController_CreateProduct_category(t *testing.T) {
 		{
 			name: "success - creates product category",
 			requestBody: CreateProductCategoryDTO{
-				ID:          uuid.New(),
-				Name:        "Fruits",
-				Description: "Fresh fruits and vegetables",
-				Slug:        "fruits",
+				ID:         uuid.New(),
+				ProductID:  uuid.New(),
+				CategoryID: uuid.New(),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateProductCategoryDTO) {
 				createdCategory := &GetProductCategoryDTO{
-					ID:          dto.ID,
-					Name:        dto.Name,
-					Description: dto.Description,
-					Slug:        dto.Slug,
+					ID:         dto.ID,
+					ProductID:  dto.ProductID,
+					CategoryID: dto.CategoryID,
 				}
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateProductCategoryDTO) bool {
 					return actual.ID == dto.ID &&
-						actual.Name == dto.Name &&
-						actual.Description == dto.Description &&
-						actual.Slug == dto.Slug
+						actual.ProductID == dto.ProductID &&
+						actual.CategoryID == dto.CategoryID
 				})).Return(createdCategory, nil)
 			},
 			expectedStatus: http.StatusCreated,
@@ -248,17 +241,15 @@ func TestController_CreateProduct_category(t *testing.T) {
 		{
 			name: "error - service returns error",
 			requestBody: CreateProductCategoryDTO{
-				ID:          uuid.New(),
-				Name:        "Fruits",
-				Description: "Fresh fruits and vegetables",
-				Slug:        "fruits",
+				ID:         uuid.New(),
+				ProductID:  uuid.New(),
+				CategoryID: uuid.New(),
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateProductCategoryDTO) {
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateProductCategoryDTO) bool {
 					return actual.ID == dto.ID &&
-						actual.Name == dto.Name &&
-						actual.Description == dto.Description &&
-						actual.Slug == dto.Slug
+						actual.ProductID == dto.ProductID &&
+						actual.CategoryID == dto.CategoryID
 				})).Return((*GetProductCategoryDTO)(nil), errors.New("creation failed"))
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -311,21 +302,19 @@ func TestController_UpdateProduct_category(t *testing.T) {
 			name: "success - updates product category",
 			id:   uuid.New().String(),
 			requestBody: UpdateProductCategoryDTO{
-				Name:        stringPtr("Updated Fruits"),
-				Description: stringPtr("Updated description"),
-				Slug:        stringPtr("updated-fruits"),
+				ID:         uuid.New(),
+				ProductID:  uuidPtr(uuid.New()),
+				CategoryID: uuidPtr(uuid.New()),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateProductCategoryDTO) {
 				updatedCategory := &GetProductCategoryDTO{
-					ID:          id,
-					Name:        "Updated Fruits",
-					Description: "Updated description",
-					Slug:        "updated-fruits",
+					ID:         id,
+					ProductID:  uuid.New(),
+					CategoryID: uuid.New(),
 				}
 				mockSvc.On("Update", mock.Anything, id, mock.MatchedBy(func(actual UpdateProductCategoryDTO) bool {
-					return actual.Name != nil && *actual.Name == "Updated Fruits" &&
-						actual.Description != nil && *actual.Description == "Updated description" &&
-						actual.Slug != nil && *actual.Slug == "updated-fruits"
+					return actual.ID == dto.ID &&
+						actual.ProductID != nil && actual.CategoryID != nil
 				})).Return(updatedCategory, nil)
 			},
 			expectedStatus: http.StatusCreated,
@@ -335,7 +324,8 @@ func TestController_UpdateProduct_category(t *testing.T) {
 			name: "error - invalid UUID",
 			id:   "invalid-uuid",
 			requestBody: UpdateProductCategoryDTO{
-				Name: stringPtr("Updated Fruits"),
+				ID:        uuid.New(),
+				ProductID: uuidPtr(uuid.New()),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateProductCategoryDTO) {
 				// No mock setup needed - should fail before service call
@@ -347,11 +337,12 @@ func TestController_UpdateProduct_category(t *testing.T) {
 			name: "error - service returns error",
 			id:   uuid.New().String(),
 			requestBody: UpdateProductCategoryDTO{
-				Name: stringPtr("Updated Fruits"),
+				ID:        uuid.New(),
+				ProductID: uuidPtr(uuid.New()),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateProductCategoryDTO) {
 				mockSvc.On("Update", mock.Anything, id, mock.MatchedBy(func(actual UpdateProductCategoryDTO) bool {
-					return actual.Name != nil && *actual.Name == "Updated Fruits"
+					return actual.ID == dto.ID && actual.ProductID != nil
 				})).Return((*GetProductCategoryDTO)(nil), errors.New("update failed"))
 			},
 			expectedStatus: http.StatusBadRequest,

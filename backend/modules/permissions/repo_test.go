@@ -23,14 +23,14 @@ func TestRepository_List(t *testing.T) {
 	// Create test permissions
 	permission1, err := client.Permission.Create().
 		SetID(uuid.New()).
-		SetName("read_users").
+		SetCode("read_users").
 		SetDescription("Permission to read user data").
 		Save(ctx)
 	require.NoError(t, err)
 
 	permission2, err := client.Permission.Create().
 		SetID(uuid.New()).
-		SetName("write_users").
+		SetCode("write_users").
 		SetDescription("Permission to write user data").
 		Save(ctx)
 	require.NoError(t, err)
@@ -44,8 +44,7 @@ func TestRepository_List(t *testing.T) {
 	foundIDs := make(map[uuid.UUID]bool)
 	for _, perm := range result {
 		foundIDs[perm.ID] = true
-		assert.NotEmpty(t, perm.Name)
-		assert.NotEmpty(t, perm.Description)
+		assert.NotEmpty(t, perm.Code)
 	}
 
 	assert.True(t, foundIDs[permission1.ID])
@@ -62,7 +61,7 @@ func TestRepository_FindByID(t *testing.T) {
 	// Create test permission
 	createdPermission, err := client.Permission.Create().
 		SetID(uuid.New()).
-		SetName("read_users").
+		SetCode("read_users").
 		SetDescription("Permission to read user data").
 		Save(ctx)
 	require.NoError(t, err)
@@ -72,7 +71,7 @@ func TestRepository_FindByID(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, createdPermission.ID, result.ID)
-	assert.Equal(t, "read_users", result.Name)
+	assert.Equal(t, "read_users", result.Code)
 	assert.Equal(t, "Permission to read user data", result.Description)
 
 	// Test FindByID - not found
@@ -90,21 +89,21 @@ func TestRepository_Create(t *testing.T) {
 
 	dto := &CreatePermissionDTO{
 		ID:          uuid.New(),
-		Name:        "read_users",
-		Description: "Permission to read user data",
+		Code:        "read_users",
+		Description: stringPtr("Permission to read user data"),
 	}
 
 	result, err := repo.Create(ctx, dto)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.NotEqual(t, uuid.Nil, result.ID) // ID should be generated
-	assert.Equal(t, dto.Name, result.Name)
+	assert.Equal(t, dto.Code, result.Code)
 	assert.Equal(t, dto.Description, result.Description)
 
 	// Verify it was actually created in the database
 	dbPermission, err := client.Permission.Get(ctx, result.ID)
 	require.NoError(t, err)
-	assert.Equal(t, dto.Name, dbPermission.Name)
+	assert.Equal(t, dto.Code, dbPermission.Code)
 	assert.Equal(t, dto.Description, dbPermission.Description)
 }
 
@@ -118,7 +117,7 @@ func TestRepository_Update(t *testing.T) {
 	// Create test permission
 	createdPermission, err := client.Permission.Create().
 		SetID(uuid.New()).
-		SetName("read_users").
+		SetCode("read_users").
 		SetDescription("Permission to read user data").
 		Save(ctx)
 	require.NoError(t, err)
@@ -126,7 +125,7 @@ func TestRepository_Update(t *testing.T) {
 	// Test Update - full update
 	dto := &UpdatePermissionDTO{
 		ID:          createdPermission.ID,
-		Name:        stringPtr("updated_name"),
+		Code:        stringPtr("updated_code"),
 		Description: stringPtr("Updated description"),
 	}
 
@@ -134,26 +133,26 @@ func TestRepository_Update(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, createdPermission.ID, result.ID)
-	assert.Equal(t, "updated_name", result.Name)
+	assert.Equal(t, "updated_code", result.Code)
 	assert.Equal(t, "Updated description", result.Description)
 
 	// Verify it was actually updated in the database
 	dbPermission, err := client.Permission.Get(ctx, createdPermission.ID)
 	require.NoError(t, err)
-	assert.Equal(t, "updated_name", dbPermission.Name)
+	assert.Equal(t, "updated_code", dbPermission.Code)
 	assert.Equal(t, "Updated description", dbPermission.Description)
 
 	// Test Update - partial update (only name)
 	dto2 := &UpdatePermissionDTO{
 		ID:   createdPermission.ID,
-		Name: stringPtr("partial_update"),
+		Code: stringPtr("partial_update"),
 	}
 
 	result2, err := repo.Update(ctx, dto2)
 	require.NoError(t, err)
 	assert.NotNil(t, result2)
 	assert.Equal(t, createdPermission.ID, result2.ID)
-	assert.Equal(t, "partial_update", result2.Name)
+	assert.Equal(t, "partial_update", result2.Code)
 	assert.Equal(t, "Updated description", result2.Description) // Should remain unchanged
 
 	// Test Update - no fields to update
@@ -177,7 +176,7 @@ func TestRepository_Delete(t *testing.T) {
 	// Create test permission
 	createdPermission, err := client.Permission.Create().
 		SetID(uuid.New()).
-		SetName("read_users").
+		SetCode("read_users").
 		SetDescription("Permission to read user data").
 		Save(ctx)
 	require.NoError(t, err)
@@ -206,14 +205,14 @@ func TestRepository_Integration(t *testing.T) {
 	// Create multiple permissions
 	dto1 := &CreatePermissionDTO{
 		ID:          uuid.New(),
-		Name:        "read_users",
-		Description: "Permission to read user data",
+		Code:        "read_users",
+		Description: stringPtr("Permission to read user data"),
 	}
 
 	dto2 := &CreatePermissionDTO{
 		ID:          uuid.New(),
-		Name:        "write_users",
-		Description: "Permission to write user data",
+		Code:        "write_users",
+		Description: stringPtr("Permission to write user data"),
 	}
 
 	permission1, err := repo.Create(ctx, dto1)
@@ -231,17 +230,17 @@ func TestRepository_Integration(t *testing.T) {
 	retrievedPermission, err := repo.FindByID(ctx, permission1.ID)
 	require.NoError(t, err)
 	assert.Equal(t, permission1.ID, retrievedPermission.ID)
-	assert.Equal(t, dto1.Name, retrievedPermission.Name)
+	assert.Equal(t, dto1.Code, retrievedPermission.Code)
 
 	// Update permission
 	updateDTO := &UpdatePermissionDTO{
 		ID:   permission1.ID,
-		Name: stringPtr("updated_read_users"),
+		Code: stringPtr("updated_read_users"),
 	}
 
 	updatedPermission, err := repo.Update(ctx, updateDTO)
 	require.NoError(t, err)
-	assert.Equal(t, "updated_read_users", updatedPermission.Name)
+	assert.Equal(t, "updated_read_users", updatedPermission.Code)
 	assert.Equal(t, dto1.Description, updatedPermission.Description)
 
 	// Delete one permission

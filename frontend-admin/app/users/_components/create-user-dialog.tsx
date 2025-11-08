@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createResource } from "@/lib/resource";
+import { apiClient } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -34,6 +35,10 @@ export function CreateUserDialog({
 	const [bio, setBio] = useState("");
 	const [avatar, setAvatar] = useState("");
 	const [cover, setCover] = useState("");
+	const [avatarFile, setAvatarFile] = useState<File | null>(null);
+	const [coverFile, setCoverFile] = useState<File | null>(null);
+	const [uploadingAvatar, setUploadingAvatar] = useState(false);
+	const [uploadingCover, setUploadingCover] = useState(false);
 	const [dateOfBirth, setDateOfBirth] = useState("");
 	const [sex, setSex] = useState("");
 	const [goal, setGoal] = useState("");
@@ -42,6 +47,42 @@ export function CreateUserDialog({
 	const [status, setStatus] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		setUploadingAvatar(true);
+		setError(null);
+
+		try {
+			const data = await apiClient.uploadImage(file, "users/avatars");
+			setAvatar(data.url);
+			setAvatarFile(file);
+		} catch (e) {
+			setError(e instanceof Error ? e.message : "Failed to upload avatar");
+		} finally {
+			setUploadingAvatar(false);
+		}
+	}
+
+	async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		setUploadingCover(true);
+		setError(null);
+
+		try {
+			const data = await apiClient.uploadImage(file, "users/covers");
+			setCover(data.url);
+			setCoverFile(file);
+		} catch (e) {
+			setError(e instanceof Error ? e.message : "Failed to upload cover");
+		} finally {
+			setUploadingCover(false);
+		}
+	}
 
 	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -100,12 +141,66 @@ export function CreateUserDialog({
 						<Textarea id="user-bio" value={bio} onChange={(e) => setBio(e.target.value)} maxLength={500} />
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="user-avatar">Avatar URL</FieldLabel>
-						<Input id="user-avatar" type="url" value={avatar} onChange={(e) => setAvatar(e.target.value)} />
+						<FieldLabel htmlFor="user-avatar">Avatar</FieldLabel>
+						<Input
+							id="user-avatar"
+							type="file"
+							accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+							onChange={handleAvatarChange}
+							disabled={uploadingAvatar}
+						/>
+						{uploadingAvatar && (
+							<div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+								<Spinner className="size-4" />
+								<span>Uploading avatar...</span>
+							</div>
+						)}
+						{avatar && !uploadingAvatar && (
+							<div className="mt-2">
+								<img src={avatar} alt="Avatar preview" className="max-w-full h-32 object-contain border rounded" />
+								<p className="text-xs text-muted-foreground mt-1">Avatar uploaded</p>
+							</div>
+						)}
+						<p className="text-xs text-muted-foreground mt-1">Or enter URL manually:</p>
+						<Input
+							id="user-avatar-url"
+							type="url"
+							value={avatar}
+							onChange={(e) => setAvatar(e.target.value)}
+							placeholder="https://..."
+							className="mt-1"
+						/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="user-cover">Cover URL</FieldLabel>
-						<Input id="user-cover" type="url" value={cover} onChange={(e) => setCover(e.target.value)} />
+						<FieldLabel htmlFor="user-cover">Cover</FieldLabel>
+						<Input
+							id="user-cover"
+							type="file"
+							accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+							onChange={handleCoverChange}
+							disabled={uploadingCover}
+						/>
+						{uploadingCover && (
+							<div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+								<Spinner className="size-4" />
+								<span>Uploading cover...</span>
+							</div>
+						)}
+						{cover && !uploadingCover && (
+							<div className="mt-2">
+								<img src={cover} alt="Cover preview" className="max-w-full h-32 object-contain border rounded" />
+								<p className="text-xs text-muted-foreground mt-1">Cover uploaded</p>
+							</div>
+						)}
+						<p className="text-xs text-muted-foreground mt-1">Or enter URL manually:</p>
+						<Input
+							id="user-cover-url"
+							type="url"
+							value={cover}
+							onChange={(e) => setCover(e.target.value)}
+							placeholder="https://..."
+							className="mt-1"
+						/>
 					</Field>
 					<Field>
 						<FieldLabel htmlFor="user-date-of-birth">Date of Birth</FieldLabel>
@@ -154,9 +249,9 @@ export function CreateUserDialog({
 					{error && <p style={{ color: "red" }}>{error}</p>}
 					<DialogFooter>
 						<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-						<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-							{submitting && <Spinner className="size-4" />}
-							{submitting ? "Saving…" : "Create"}
+						<Button type="submit" disabled={submitting || uploadingAvatar || uploadingCover} className="flex items-center gap-2">
+							{(submitting || uploadingAvatar || uploadingCover) && <Spinner className="size-4" />}
+							{submitting || uploadingAvatar || uploadingCover ? "Saving…" : "Create"}
 						</Button>
 					</DialogFooter>
 				</form>

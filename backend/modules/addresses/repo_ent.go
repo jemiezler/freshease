@@ -26,14 +26,14 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetAddressDTO, error) {
 			line2 = *v.Line2
 		}
 		out = append(out, &GetAddressDTO{
-			ID:        v.ID,
-			Line1:     v.Line1,
-			Line2:     line2,
-			City:      v.City,
-			Province:  v.Province,
-			Country:   v.Country,
-			Zip:       v.Zip,
-			IsDefault: v.IsDefault,
+			ID:         v.ID,
+			Line1:      v.Line1,
+			Line2:      line2,
+			City:       v.City,
+			Province:   v.Province,
+			Country:    v.Country,
+			PostalCode: v.PostalCode,
+			IsDefault:  v.IsDefault,
 		})
 	}
 	return out, nil
@@ -49,14 +49,14 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetAddressDTO, e
 		line2 = *v.Line2
 	}
 	return &GetAddressDTO{
-		ID:        v.ID,
-		Line1:     v.Line1,
-		Line2:     line2,
-		City:      v.City,
-		Province:  v.Province,
-		Country:   v.Country,
-		Zip:       v.Zip,
-		IsDefault: v.IsDefault,
+		ID:         v.ID,
+		Line1:      v.Line1,
+		Line2:      line2,
+		City:       v.City,
+		Province:   v.Province,
+		Country:    v.Country,
+		PostalCode: v.PostalCode,
+		IsDefault:  v.IsDefault,
 	}, nil
 }
 
@@ -68,7 +68,7 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateAddressDTO) (*GetAddres
 		SetCity(dto.City).
 		SetProvince(dto.Province).
 		SetCountry(dto.Country).
-		SetZip(dto.Zip).
+		SetPostalCode(dto.PostalCode).
 		SetIsDefault(dto.IsDefault)
 
 	if dto.Line2 != nil {
@@ -86,14 +86,14 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateAddressDTO) (*GetAddres
 	}
 
 	return &GetAddressDTO{
-		ID:        row.ID,
-		Line1:     row.Line1,
-		Line2:     line2,
-		City:      row.City,
-		Province:  row.Province,
-		Country:   row.Country,
-		Zip:       row.Zip,
-		IsDefault: row.IsDefault,
+		ID:         row.ID,
+		Line1:      row.Line1,
+		Line2:      line2,
+		City:       row.City,
+		Province:   row.Province,
+		Country:    row.Country,
+		PostalCode: row.PostalCode,
+		IsDefault:  row.IsDefault,
 	}, nil
 }
 
@@ -115,8 +115,8 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateAddressDTO) (*GetAddres
 	if dto.Country != nil {
 		q.SetCountry(*dto.Country)
 	}
-	if dto.Zip != nil {
-		q.SetZip(*dto.Zip)
+	if dto.PostalCode != nil {
+		q.SetPostalCode(*dto.PostalCode)
 	}
 	if dto.IsDefault != nil {
 		q.SetIsDefault(*dto.IsDefault)
@@ -137,14 +137,14 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateAddressDTO) (*GetAddres
 	}
 
 	return &GetAddressDTO{
-		ID:        row.ID,
-		Line1:     row.Line1,
-		Line2:     line2,
-		City:      row.City,
-		Province:  row.Province,
-		Country:   row.Country,
-		Zip:       row.Zip,
-		IsDefault: row.IsDefault,
+		ID:         row.ID,
+		Line1:      row.Line1,
+		Line2:      line2,
+		City:       row.City,
+		Province:   row.Province,
+		Country:    row.Country,
+		PostalCode: row.PostalCode,
+		IsDefault:  row.IsDefault,
 	}, nil
 }
 

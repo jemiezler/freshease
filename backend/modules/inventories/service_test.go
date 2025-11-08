@@ -68,13 +68,13 @@ func TestService_List(t *testing.T) {
 					{
 						ID:            uuid.New(),
 						Quantity:      100,
-						RestockAmount: 50,
+						ReorderLevel: 50,
 						UpdatedAt:     time.Now(),
 					},
 					{
 						ID:            uuid.New(),
 						Quantity:      200,
-						RestockAmount: 75,
+						ReorderLevel: 75,
 						UpdatedAt:     time.Now(),
 					},
 				}
@@ -138,7 +138,7 @@ func TestService_Get(t *testing.T) {
 				inventory := &GetInventoryDTO{
 					ID:            id,
 					Quantity:      150,
-					RestockAmount: 60,
+					ReorderLevel: 60,
 					UpdatedAt:     time.Now(),
 				}
 				mockRepo.On("FindByID", mock.Anything, id).Return(inventory, nil)
@@ -190,19 +190,19 @@ func TestService_Create(t *testing.T) {
 			name: "success - creates inventory",
 			dto: CreateInventoryDTO{
 				Quantity:      100,
-				RestockAmount: 50,
+				ReorderLevel: 50,
 				UpdatedAt:     time.Now(),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateInventoryDTO) {
 				createdInventory := &GetInventoryDTO{
 					ID:            uuid.New(),
 					Quantity:      dto.Quantity,
-					RestockAmount: dto.RestockAmount,
+					ReorderLevel: dto.ReorderLevel,
 					UpdatedAt:     time.Now(),
 				}
 				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreateInventoryDTO) bool {
 					return actual.Quantity == dto.Quantity &&
-						actual.RestockAmount == dto.RestockAmount
+						actual.ReorderLevel == dto.ReorderLevel
 				})).Return(createdInventory, nil)
 			},
 			expectedError: false,
@@ -211,13 +211,13 @@ func TestService_Create(t *testing.T) {
 			name: "error - repository returns error",
 			dto: CreateInventoryDTO{
 				Quantity:      100,
-				RestockAmount: 50,
+				ReorderLevel: 50,
 				UpdatedAt:     time.Now(),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateInventoryDTO) {
 				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreateInventoryDTO) bool {
 					return actual.Quantity == dto.Quantity &&
-						actual.RestockAmount == dto.RestockAmount
+						actual.ReorderLevel == dto.ReorderLevel
 				})).Return((*GetInventoryDTO)(nil), errors.New("creation failed"))
 			},
 			expectedError: true,
@@ -241,7 +241,7 @@ func TestService_Create(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
 				assert.Equal(t, tt.dto.Quantity, result.Quantity)
-				assert.Equal(t, tt.dto.RestockAmount, result.RestockAmount)
+				assert.Equal(t, tt.dto.ReorderLevel, result.ReorderLevel)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -262,19 +262,19 @@ func TestService_Update(t *testing.T) {
 			id:   uuid.New(),
 			dto: UpdateInventoryDTO{
 				Quantity:      intPtr(200),
-				RestockAmount: intPtr(75),
+				ReorderLevel: intPtr(75),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateInventoryDTO) {
 				updatedInventory := &GetInventoryDTO{
 					ID:            id,
 					Quantity:      200,
-					RestockAmount: 75,
+					ReorderLevel: 75,
 					UpdatedAt:     time.Now(),
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdateInventoryDTO) bool {
 					return actual.ID == id &&
 						actual.Quantity != nil && *actual.Quantity == 200 &&
-						actual.RestockAmount != nil && *actual.RestockAmount == 75
+						actual.ReorderLevel != nil && *actual.ReorderLevel == 75
 				})).Return(updatedInventory, nil)
 			},
 			expectedError: false,
@@ -289,13 +289,13 @@ func TestService_Update(t *testing.T) {
 				updatedInventory := &GetInventoryDTO{
 					ID:            id,
 					Quantity:      300,
-					RestockAmount: 50, // unchanged
+					ReorderLevel: 50, // unchanged
 					UpdatedAt:     time.Now(),
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdateInventoryDTO) bool {
 					return actual.ID == id &&
 						actual.Quantity != nil && *actual.Quantity == 300 &&
-						actual.RestockAmount == nil
+						actual.ReorderLevel == nil
 				})).Return(updatedInventory, nil)
 			},
 			expectedError: false,

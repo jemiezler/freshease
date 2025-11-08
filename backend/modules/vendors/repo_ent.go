@@ -22,22 +22,9 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetVendorDTO, error) {
 	out := make([]*GetVendorDTO, 0, len(rows))
 	for _, v := range rows {
 		out = append(out, &GetVendorDTO{
-			ID:          v.ID,
-			Name:        v.Name,
-			Email:       v.Email,
-			Phone:       v.Phone,
-			Address:     v.Address,
-			City:        v.City,
-			State:       v.State,
-			Country:     v.Country,
-			PostalCode:  v.PostalCode,
-			Website:     v.Website,
-			LogoURL:     v.LogoURL,
-			Description: v.Description,
-			IsActive:    v.IsActive,
-			CreatedAt:   v.CreatedAt,
-			UpdatedAt:   v.UpdatedAt,
-			DeletedAt:   v.DeletedAt,
+			ID:      v.ID,
+			Name:    v.Name,
+			Contact: v.Contact,
 		})
 	}
 	return out, nil
@@ -49,22 +36,9 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetVendorDTO, er
 		return nil, err
 	}
 	return &GetVendorDTO{
-		ID:          v.ID,
-		Name:        v.Name,
-		Email:       v.Email,
-		Phone:       v.Phone,
-		Address:     v.Address,
-		City:        v.City,
-		State:       v.State,
-		Country:     v.Country,
-		PostalCode:  v.PostalCode,
-		Website:     v.Website,
-		LogoURL:     v.LogoURL,
-		Description: v.Description,
-		IsActive:    v.IsActive,
-		CreatedAt:   v.CreatedAt,
-		UpdatedAt:   v.UpdatedAt,
-		DeletedAt:   v.DeletedAt,
+		ID:      v.ID,
+		Name:    v.Name,
+		Contact: v.Contact,
 	}, nil
 }
 
@@ -77,28 +51,11 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateVendorDTO) (*GetVendorD
 	}
 
 	// Nillable fields
-	q.SetNillableName(dto.Name).
-		SetNillableEmail(dto.Email).
-		SetNillablePhone(dto.Phone).
-		SetNillableAddress(dto.Address).
-		SetNillableCity(dto.City).
-		SetNillableState(dto.State).
-		SetNillableCountry(dto.Country).
-		SetNillablePostalCode(dto.PostalCode).
-		SetNillableWebsite(dto.Website).
-		SetNillableLogoURL(dto.LogoURL).
-		SetNillableDescription(dto.Description).
-		SetNillableDeletedAt(dto.DeletedAt)
-
-	// Non-nillable required field
-	q.SetIsActive(dto.IsActive)
-
-	// Optional override for created/updated timestamps if provided
-	if dto.CreatedAt != nil {
-		q.SetCreatedAt(*dto.CreatedAt)
+	if dto.Name != nil {
+		q.SetName(*dto.Name)
 	}
-	if dto.UpdatedAt != nil {
-		q.SetUpdatedAt(*dto.UpdatedAt)
+	if dto.Contact != nil {
+		q.SetContact(*dto.Contact)
 	}
 
 	row, err := q.Save(ctx)
@@ -107,22 +64,9 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateVendorDTO) (*GetVendorD
 	}
 
 	return &GetVendorDTO{
-		ID:          row.ID,
-		Name:        row.Name,
-		Email:       row.Email,
-		Phone:       row.Phone,
-		Address:     row.Address,
-		City:        row.City,
-		State:       row.State,
-		Country:     row.Country,
-		PostalCode:  row.PostalCode,
-		Website:     row.Website,
-		LogoURL:     row.LogoURL,
-		Description: row.Description,
-		IsActive:    row.IsActive,
-		CreatedAt:   row.CreatedAt,
-		UpdatedAt:   row.UpdatedAt,
-		DeletedAt:   row.DeletedAt,
+		ID:      row.ID,
+		Name:    row.Name,
+		Contact: row.Contact,
 	}, nil
 }
 
@@ -130,43 +74,10 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateVendorDTO) (*GetVendorD
 	q := r.c.Vendor.UpdateOneID(dto.ID)
 
 	if dto.Name != nil {
-		q.SetNillableName(dto.Name)
+		q.SetName(*dto.Name)
 	}
-	if dto.Email != nil {
-		q.SetNillableEmail(dto.Email)
-	}
-	if dto.Phone != nil {
-		q.SetNillablePhone(dto.Phone)
-	}
-	if dto.Address != nil {
-		q.SetNillableAddress(dto.Address)
-	}
-	if dto.City != nil {
-		q.SetNillableCity(dto.City)
-	}
-	if dto.State != nil {
-		q.SetNillableState(dto.State)
-	}
-	if dto.Country != nil {
-		q.SetNillableCountry(dto.Country)
-	}
-	if dto.PostalCode != nil {
-		q.SetNillablePostalCode(dto.PostalCode)
-	}
-	if dto.Website != nil {
-		q.SetNillableWebsite(dto.Website)
-	}
-	if dto.LogoURL != nil {
-		q.SetNillableLogoURL(dto.LogoURL)
-	}
-	if dto.Description != nil {
-		q.SetNillableDescription(dto.Description)
-	}
-	if dto.IsActive != nil {
-		q.SetIsActive(*dto.IsActive)
-	}
-	if dto.DeletedAt != nil {
-		q.SetNillableDeletedAt(dto.DeletedAt)
+	if dto.Contact != nil {
+		q.SetContact(*dto.Contact)
 	}
 
 	if len(q.Mutation().Fields()) == 0 {
@@ -179,22 +90,9 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateVendorDTO) (*GetVendorD
 	}
 
 	return &GetVendorDTO{
-		ID:          row.ID,
-		Name:        row.Name,
-		Email:       row.Email,
-		Phone:       row.Phone,
-		Address:     row.Address,
-		City:        row.City,
-		State:       row.State,
-		Country:     row.Country,
-		PostalCode:  row.PostalCode,
-		Website:     row.Website,
-		LogoURL:     row.LogoURL,
-		Description: row.Description,
-		IsActive:    row.IsActive,
-		CreatedAt:   row.CreatedAt,
-		UpdatedAt:   row.UpdatedAt,
-		DeletedAt:   row.DeletedAt,
+		ID:      row.ID,
+		Name:    row.Name,
+		Contact: row.Contact,
 	}, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,8 +18,29 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3" // SQLite driver
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+// MockUploadsService is a mock implementation of uploads.Service for testing
+type MockUploadsService struct {
+	mock.Mock
+}
+
+func (m *MockUploadsService) UploadImage(ctx context.Context, file *multipart.FileHeader, folder string) (string, error) {
+	args := m.Called(ctx, file, folder)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockUploadsService) DeleteImage(ctx context.Context, objectName string) error {
+	args := m.Called(ctx, objectName)
+	return args.Error(0)
+}
+
+func (m *MockUploadsService) GetImageURL(ctx context.Context, objectName string) (string, error) {
+	args := m.Called(ctx, objectName)
+	return args.String(0), args.Error(1)
+}
 
 func TestUsersAPI_Integration(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&_fk=1")
@@ -27,7 +49,8 @@ func TestUsersAPI_Integration(t *testing.T) {
 	// Create test app with users module
 	app := fiber.New()
 	api := app.Group("/api")
-	users.RegisterModuleWithEnt(api, client)
+	mockUploads := new(MockUploadsService)
+	users.RegisterModuleWithEnt(api, client, mockUploads)
 
 	t.Run("Create and retrieve user", func(t *testing.T) {
 		// Create user
@@ -175,33 +198,21 @@ func TestProductsAPI_Integration(t *testing.T) {
 	// Create test app with products module
 	app := fiber.New()
 	api := app.Group("/api")
-	products.RegisterModuleWithEnt(api, client)
+	mockUploads := new(MockUploadsService)
+	products.RegisterModuleWithEnt(api, client, mockUploads)
 
 	t.Run("Create and retrieve product", func(t *testing.T) {
 		// First create a vendor
 		vendor, err := client.Vendor.Create().
 			SetName("Test Vendor").
-			SetEmail("vendor@test.com").
-			SetPhone("1234567890").
-			SetAddress("Test Address").
-			SetIsActive("active").
+			SetContact("vendor@test.com").
 			Save(context.Background())
 		require.NoError(t, err)
 
-		// Create a product category
-		category, err := client.Product_category.Create().
+		// Create a category
+		category, err := client.Category.Create().
 			SetName("Test Category").
-			SetDescription("Test category description").
 			SetSlug("test-category").
-			Save(context.Background())
-		require.NoError(t, err)
-
-		// Create inventory
-		inventory, err := client.Inventory.Create().
-			SetQuantity(100).
-			SetRestockAmount(50).
-			SetUpdatedAt(time.Now()).
-			AddVendor(vendor).
 			Save(context.Background())
 		require.NoError(t, err)
 
@@ -209,16 +220,31 @@ func TestProductsAPI_Integration(t *testing.T) {
 		product, err := client.Product.Create().
 			SetID(uuid.New()).
 			SetName("Integration Product").
+			SetSku("INT-PROD-001").
 			SetPrice(99.99).
 			SetDescription("Integration test product").
-			SetImageURL("https://example.com/image.jpg").
 			SetUnitLabel("kg").
-			SetIsActive("true").
+			SetIsActive(true).
 			SetCreatedAt(time.Now()).
 			SetUpdatedAt(time.Now()).
-			AddCatagory(category).
-			AddVendor(vendor).
-			SetInventory(inventory).
+			SetVendor(vendor).
+			Save(context.Background())
+		require.NoError(t, err)
+
+		// Create product_category join
+		_, err = client.Product_category.Create().
+			SetProduct(product).
+			SetCategory(category).
+			Save(context.Background())
+		require.NoError(t, err)
+
+		// Create inventory
+		_, err = client.Inventory.Create().
+			SetQuantity(100).
+			SetReorderLevel(50).
+			SetUpdatedAt(time.Now()).
+			SetProduct(product).
+			SetVendor(vendor).
 			Save(context.Background())
 		require.NoError(t, err)
 
@@ -254,27 +280,14 @@ func TestProductsAPI_Integration(t *testing.T) {
 		// First create a vendor
 		vendor, err := client.Vendor.Create().
 			SetName("Test Vendor 2").
-			SetEmail("vendor2@test.com").
-			SetPhone("1234567890").
-			SetAddress("Test Address 2").
-			SetIsActive("active").
+			SetContact("vendor2@test.com").
 			Save(context.Background())
 		require.NoError(t, err)
 
-		// Create a product category
-		category, err := client.Product_category.Create().
+		// Create a category
+		category, err := client.Category.Create().
 			SetName("Test Category 2").
-			SetDescription("Test category description 2").
 			SetSlug("test-category-2").
-			Save(context.Background())
-		require.NoError(t, err)
-
-		// Create inventory
-		inventory, err := client.Inventory.Create().
-			SetQuantity(100).
-			SetRestockAmount(50).
-			SetUpdatedAt(time.Now()).
-			AddVendor(vendor).
 			Save(context.Background())
 		require.NoError(t, err)
 
@@ -282,16 +295,31 @@ func TestProductsAPI_Integration(t *testing.T) {
 		product, err := client.Product.Create().
 			SetID(uuid.New()).
 			SetName("Original Product").
+			SetSku("ORIG-PROD-001").
 			SetPrice(99.99).
 			SetDescription("Original description").
-			SetImageURL("https://example.com/image.jpg").
 			SetUnitLabel("kg").
-			SetIsActive("true").
+			SetIsActive(true).
 			SetCreatedAt(time.Now()).
 			SetUpdatedAt(time.Now()).
-			AddCatagory(category).
-			AddVendor(vendor).
-			SetInventory(inventory).
+			SetVendor(vendor).
+			Save(context.Background())
+		require.NoError(t, err)
+
+		// Create product_category join
+		_, err = client.Product_category.Create().
+			SetProduct(product).
+			SetCategory(category).
+			Save(context.Background())
+		require.NoError(t, err)
+
+		// Create inventory
+		_, err = client.Inventory.Create().
+			SetQuantity(100).
+			SetReorderLevel(50).
+			SetUpdatedAt(time.Now()).
+			SetProduct(product).
+			SetVendor(vendor).
 			Save(context.Background())
 		require.NoError(t, err)
 
@@ -325,27 +353,14 @@ func TestProductsAPI_Integration(t *testing.T) {
 		// First create a vendor
 		vendor, err := client.Vendor.Create().
 			SetName("Test Vendor 3").
-			SetEmail("vendor3@test.com").
-			SetPhone("1234567890").
-			SetAddress("Test Address 3").
-			SetIsActive("active").
+			SetContact("vendor3@test.com").
 			Save(context.Background())
 		require.NoError(t, err)
 
-		// Create a product category
-		category, err := client.Product_category.Create().
+		// Create a category
+		category, err := client.Category.Create().
 			SetName("Test Category 3").
-			SetDescription("Test category description 3").
 			SetSlug("test-category-3").
-			Save(context.Background())
-		require.NoError(t, err)
-
-		// Create inventory
-		inventory, err := client.Inventory.Create().
-			SetQuantity(100).
-			SetRestockAmount(50).
-			SetUpdatedAt(time.Now()).
-			AddVendor(vendor).
 			Save(context.Background())
 		require.NoError(t, err)
 
@@ -353,16 +368,31 @@ func TestProductsAPI_Integration(t *testing.T) {
 		product, err := client.Product.Create().
 			SetID(uuid.New()).
 			SetName("Delete Product").
+			SetSku("DEL-PROD-001").
 			SetPrice(99.99).
 			SetDescription("Product to delete").
-			SetImageURL("https://example.com/image.jpg").
 			SetUnitLabel("kg").
-			SetIsActive("true").
+			SetIsActive(true).
 			SetCreatedAt(time.Now()).
 			SetUpdatedAt(time.Now()).
-			AddCatagory(category).
-			AddVendor(vendor).
-			SetInventory(inventory).
+			SetVendor(vendor).
+			Save(context.Background())
+		require.NoError(t, err)
+
+		// Create product_category join
+		_, err = client.Product_category.Create().
+			SetProduct(product).
+			SetCategory(category).
+			Save(context.Background())
+		require.NoError(t, err)
+
+		// Create inventory
+		_, err = client.Inventory.Create().
+			SetQuantity(100).
+			SetReorderLevel(50).
+			SetUpdatedAt(time.Now()).
+			SetProduct(product).
+			SetVendor(vendor).
 			Save(context.Background())
 		require.NoError(t, err)
 
@@ -396,7 +426,8 @@ func TestAPI_ErrorHandling(t *testing.T) {
 	// Create test app with users module
 	app := fiber.New()
 	api := app.Group("/api")
-	users.RegisterModuleWithEnt(api, client)
+	mockUploads := new(MockUploadsService)
+	users.RegisterModuleWithEnt(api, client, mockUploads)
 
 	t.Run("Invalid UUID format", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/users/invalid-uuid", nil)
@@ -460,7 +491,8 @@ func TestAPI_NotFoundHandling(t *testing.T) {
 	// Create test app with users module
 	app := fiber.New()
 	api := app.Group("/api")
-	users.RegisterModuleWithEnt(api, client)
+	mockUploads := new(MockUploadsService)
+	users.RegisterModuleWithEnt(api, client, mockUploads)
 
 	t.Run("Non-existent user", func(t *testing.T) {
 		nonExistentID := uuid.New().String()

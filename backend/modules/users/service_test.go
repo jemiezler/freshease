@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"errors"
+	"mime/multipart"
 	"testing"
 
 	"github.com/google/uuid"
@@ -49,6 +50,26 @@ func (m *MockRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return args.Error(0)
 }
 
+// MockUploadsService is a mock implementation of uploads.Service
+type MockUploadsService struct {
+	mock.Mock
+}
+
+func (m *MockUploadsService) UploadImage(ctx context.Context, file *multipart.FileHeader, folder string) (string, error) {
+	args := m.Called(ctx, file, folder)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockUploadsService) DeleteImage(ctx context.Context, objectName string) error {
+	args := m.Called(ctx, objectName)
+	return args.Error(0)
+}
+
+func (m *MockUploadsService) GetImageURL(ctx context.Context, objectName string) (string, error) {
+	args := m.Called(ctx, objectName)
+	return args.String(0), args.Error(1)
+}
+
 func TestService_List(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -64,13 +85,13 @@ func TestService_List(t *testing.T) {
 						ID:     uuid.New(),
 						Email:  "user1@example.com",
 						Name:   "User One",
-						Status: "active",
+						Status: stringPtr("active"),
 					},
 					{
 						ID:     uuid.New(),
 						Email:  "user2@example.com",
 						Name:   "User Two",
-						Status: "active",
+						Status: stringPtr("active"),
 					},
 				}
 				mockRepo.On("List", mock.Anything).Return(expectedUsers, nil)
@@ -80,13 +101,13 @@ func TestService_List(t *testing.T) {
 					ID:     uuid.New(),
 					Email:  "user1@example.com",
 					Name:   "User One",
-					Status: "active",
+					Status: stringPtr("active"),
 				},
 				{
 					ID:     uuid.New(),
 					Email:  "user2@example.com",
 					Name:   "User Two",
-					Status: "active",
+					Status: stringPtr("active"),
 				},
 			},
 			expectedError: nil,
@@ -104,9 +125,10 @@ func TestService_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			result, err := service.List(ctx)
@@ -142,7 +164,7 @@ func TestService_Get(t *testing.T) {
 					ID:     id,
 					Email:  "user@example.com",
 					Name:   "Test User",
-					Status: "active",
+					Status: stringPtr("active"),
 				}
 				mockRepo.On("FindByID", mock.Anything, id).Return(expectedUser, nil)
 			},
@@ -150,7 +172,7 @@ func TestService_Get(t *testing.T) {
 				ID:     uuid.New(),
 				Email:  "user@example.com",
 				Name:   "Test User",
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 			expectedError: nil,
 		},
@@ -168,9 +190,10 @@ func TestService_Get(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo, tt.userID)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			result, err := service.Get(ctx, tt.userID)
@@ -212,7 +235,7 @@ func TestService_Create(t *testing.T) {
 					ID:     dto.ID,
 					Email:  dto.Email,
 					Name:   dto.Name,
-					Status: *dto.Status,
+					Status: dto.Status,
 				}
 				mockRepo.On("Create", mock.Anything, &dto).Return(expectedUser, nil)
 			},
@@ -220,7 +243,7 @@ func TestService_Create(t *testing.T) {
 				ID:     uuid.New(),
 				Email:  "newuser@example.com",
 				Name:   "New User",
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 			expectedError: nil,
 		},
@@ -243,9 +266,10 @@ func TestService_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo, tt.createDTO)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			result, err := service.Create(ctx, tt.createDTO)
@@ -287,7 +311,7 @@ func TestService_Update(t *testing.T) {
 					ID:     id,
 					Email:  *dto.Email,
 					Name:   *dto.Name,
-					Status: "active",
+					Status: stringPtr("active"),
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(u *UpdateUserDTO) bool {
 					return u.ID == id && *u.Email == *dto.Email && *u.Name == *dto.Name
@@ -297,7 +321,7 @@ func TestService_Update(t *testing.T) {
 				ID:     uuid.New(),
 				Email:  "updated@example.com",
 				Name:   "Updated User",
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 			expectedError: nil,
 		},
@@ -318,9 +342,10 @@ func TestService_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo, tt.userID, tt.updateDTO)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			result, err := service.Update(ctx, tt.userID, tt.updateDTO)
@@ -368,9 +393,10 @@ func TestService_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo, tt.userID)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			err := service.Delete(ctx, tt.userID)

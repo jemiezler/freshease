@@ -2,6 +2,7 @@ package products
 
 import (
 	"freshease/backend/internal/common/middleware"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -11,9 +12,9 @@ type Controller struct{ svc Service }
 func NewController(s Service) *Controller { return &Controller{svc: s} }
 
 func (ctl *Controller) Register(r fiber.Router) {
-	r.Get("/",   ctl.ListProducts)
+	r.Get("/", ctl.ListProducts)
 	r.Get("/:id", ctl.GetProduct)
-	r.Post("/",  ctl.CreateProduct)
+	r.Post("/", ctl.CreateProduct)
 	r.Patch("/:id", ctl.UpdateProduct)
 	r.Delete("/:id", ctl.DeleteProduct)
 }
@@ -59,17 +60,50 @@ func (ctl *Controller) GetProduct(c *fiber.Ctx) error {
 // CreateProduct godoc
 // @Summary      Create product
 // @Tags         products
+// @Accept       multipart/form-data
 // @Accept       json
 // @Produce      json
-// @Param        payload body      CreateProductDTO true "Product payload"
+// @Param        image formData file false "Product image file"
+// @Param        payload formData string false "Product payload (JSON string)" example({"name":"Product","price":10.99,"description":"Description","unit_label":"kg","is_active":"active","quantity":100,"restock_amount":50})
 // @Success      201     {object}  GetProductDTO
 // @Failure      400     {object}  map[string]interface{}
 // @Router       /products [post]
 func (ctl *Controller) CreateProduct(c *fiber.Ctx) error {
 	var dto CreateProductDTO
-	if err := middleware.BindAndValidate(c, &dto); err != nil {
-		return err
+
+	// Check if this is multipart/form-data (file upload)
+	contentType := string(c.Request().Header.ContentType())
+	if len(contentType) > 0 && contentType[:19] == "multipart/form-data" {
+		// Handle file upload if present
+		file, err := c.FormFile("image")
+		if err == nil && file != nil {
+			// Upload image to MinIO
+			_, err = ctl.svc.UploadProductImage(c.Context(), file)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "failed to upload image", "error": err.Error()})
+			}
+			// Image is uploaded to MinIO, URL is handled by uploads service
+		}
+
+		// Parse other form fields - try JSON payload first, then individual fields
+		if jsonStr := c.FormValue("payload"); jsonStr != "" {
+			if err := c.App().Config().JSONDecoder([]byte(jsonStr), &dto); err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload", "error": err.Error()})
+			}
+		} else if err := c.BodyParser(&dto); err != nil {
+			// If BodyParser fails, try individual form fields
+			if name := c.FormValue("name"); name != "" {
+				dto.Name = name
+			}
+			// Image URL is handled by uploads service, not stored in product
+		}
+	} else {
+		// Standard JSON request
+		if err := middleware.BindAndValidate(c, &dto); err != nil {
+			return err
+		}
 	}
+
 	item, err := ctl.svc.Create(c.Context(), dto)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
@@ -80,9 +114,11 @@ func (ctl *Controller) CreateProduct(c *fiber.Ctx) error {
 // UpdateProduct godoc
 // @Summary      Update product
 // @Tags         products
+// @Accept       multipart/form-data
 // @Accept       json
 // @Produce      json
 // @Param        id      path      string           true "Product ID (UUID)"
+// @Param        image formData file false "Product image file"
 // @Param        payload body      UpdateProductDTO true "Partial/Full update"
 // @Success      201     {object}  GetProductDTO
 // @Failure      400     {object}  map[string]interface{}
@@ -94,9 +130,36 @@ func (ctl *Controller) UpdateProduct(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
 	}
 	var dto UpdateProductDTO
-	if err := middleware.BindAndValidate(c, &dto); err != nil {
-		return err
+
+	// Check if this is multipart/form-data (file upload)
+	contentType := string(c.Request().Header.ContentType())
+	if len(contentType) > 0 && contentType[:19] == "multipart/form-data" {
+		// Handle file upload if present
+		file, err := c.FormFile("image")
+		if err == nil && file != nil {
+			// Upload image to MinIO
+			_, err = ctl.svc.UploadProductImage(c.Context(), file)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "failed to upload image", "error": err.Error()})
+			}
+			// Image is uploaded to MinIO, URL is handled by uploads service
+		}
+
+		// Parse other form fields - try JSON payload first, then body parser
+		if jsonStr := c.FormValue("payload"); jsonStr != "" {
+			if err := c.App().Config().JSONDecoder([]byte(jsonStr), &dto); err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload", "error": err.Error()})
+			}
+		} else if err := c.BodyParser(&dto); err != nil {
+			// Image URL is handled by uploads service, not stored in product
+		}
+	} else {
+		// Standard JSON request
+		if err := middleware.BindAndValidate(c, &dto); err != nil {
+			return err
+		}
 	}
+
 	item, err := ctl.svc.Update(c.Context(), id, dto)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})

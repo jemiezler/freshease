@@ -7,13 +7,23 @@ import (
 	"freshease/backend/internal/common/middleware"
 	"freshease/backend/modules/addresses"
 	"freshease/backend/modules/auth/authoidc"
+	"freshease/backend/modules/bundle_items"
+	"freshease/backend/modules/bundles"
 	"freshease/backend/modules/cart_items"
 	"freshease/backend/modules/carts"
+	"freshease/backend/modules/categories"
+	"freshease/backend/modules/deliveries"
 	"freshease/backend/modules/genai"
 	"freshease/backend/modules/inventories"
+	"freshease/backend/modules/meal_plan_items"
+	"freshease/backend/modules/meal_plans"
+	"freshease/backend/modules/notifications"
 	"freshease/backend/modules/permissions"
 	"freshease/backend/modules/product_categories"
 	"freshease/backend/modules/products"
+	"freshease/backend/modules/recipe_items"
+	"freshease/backend/modules/recipes"
+	"freshease/backend/modules/reviews"
 	"freshease/backend/modules/roles"
 	"freshease/backend/modules/shop"
 	"freshease/backend/modules/uploads"
@@ -43,24 +53,37 @@ func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	shop.RegisterModuleWithEnt(api, client)
 
 	// 3) File uploads (public for now, can be secured later)
-	if err := uploads.RegisterModule(api, cfg.MinIO); err != nil {
-		log.Fatalf("[router] failed to register uploads module: %v", err)
+	uploadsSvc, err := uploads.NewService(cfg.MinIO)
+	if err != nil {
+		log.Fatalf("[router] failed to create uploads service: %v", err)
 	}
+	uploadsCtl := uploads.NewController(uploadsSvc)
+	uploads.Routes(api, uploadsCtl)
 
-	// mount protected modules on the secured router
-	addresses.RegisterModuleWithEnt(api, client)
-	cart_items.RegisterModuleWithEnt(api, client)
-	carts.RegisterModuleWithEnt(api, client)
-	inventories.RegisterModuleWithEnt(api, client)
-	permissions.RegisterModuleWithEnt(api, client)
-	products.RegisterModuleWithEnt(api, client)
-	product_categories.RegisterModuleWithEnt(api, client)
-	users.RegisterModuleWithEnt(api, client)
-	roles.RegisterModuleWithEnt(api, client)
-	vendors.RegisterModuleWithEnt(api, client)
-
-	// 2) Secured area (everything below requires Authorization: Bearer <JWT>)
+	// 4) Secured area (everything below requires Authorization: Bearer <JWT>)
 	secured := api.Group("", middleware.RequireAuth())
+
+	// Mount protected modules on the secured router
+	addresses.RegisterModuleWithEnt(secured, client)
+	bundle_items.RegisterModuleWithEnt(secured, client)
+	bundles.RegisterModuleWithEnt(secured, client)
+	cart_items.RegisterModuleWithEnt(secured, client)
+	carts.RegisterModuleWithEnt(secured, client)
+	categories.RegisterModuleWithEnt(secured, client)
+	deliveries.RegisterModuleWithEnt(secured, client)
+	inventories.RegisterModuleWithEnt(secured, client)
+	meal_plan_items.RegisterModuleWithEnt(secured, client)
+	meal_plans.RegisterModuleWithEnt(secured, client)
+	notifications.RegisterModuleWithEnt(secured, client)
+	permissions.RegisterModuleWithEnt(secured, client)
+	product_categories.RegisterModuleWithEnt(secured, client)
+	products.RegisterModuleWithEnt(secured, client, uploadsSvc)
+	recipe_items.RegisterModuleWithEnt(secured, client)
+	recipes.RegisterModuleWithEnt(secured, client)
+	reviews.RegisterModuleWithEnt(secured, client)
+	roles.RegisterModuleWithEnt(secured, client)
+	users.RegisterModuleWithEnt(secured, client, uploadsSvc)
+	vendors.RegisterModuleWithEnt(secured, client, uploadsSvc)
 
 	secured.Get("/whoami", func(c *fiber.Ctx) error {
 		userID := c.Locals("user_id")

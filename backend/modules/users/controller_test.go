@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -55,6 +56,21 @@ func (m *MockService) Delete(ctx context.Context, id uuid.UUID) error {
 	return args.Error(0)
 }
 
+func (m *MockService) UploadUserAvatar(ctx context.Context, file *multipart.FileHeader) (string, error) {
+	args := m.Called(ctx, file)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockService) UploadUserCover(ctx context.Context, file *multipart.FileHeader) (string, error) {
+	args := m.Called(ctx, file)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockService) GetUserImageURL(ctx context.Context, objectName string) (string, error) {
+	args := m.Called(ctx, objectName)
+	return args.String(0), args.Error(1)
+}
+
 func TestController_ListUsers(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -70,13 +86,13 @@ func TestController_ListUsers(t *testing.T) {
 						ID:     uuid.New(),
 						Email:  "user1@example.com",
 						Name:   "User One",
-						Status: "active",
+						Status: stringPtr("active"),
 					},
 					{
 						ID:     uuid.New(),
 						Email:  "user2@example.com",
 						Name:   "User Two",
-						Status: "active",
+						Status: stringPtr("active"),
 					},
 				}
 				mockSvc.On("List", mock.Anything).Return(expectedUsers, nil)
@@ -87,13 +103,13 @@ func TestController_ListUsers(t *testing.T) {
 					ID:     uuid.New(),
 					Email:  "user1@example.com",
 					Name:   "User One",
-					Status: "active",
+					Status: stringPtr("active"),
 				},
 				{
 					ID:     uuid.New(),
 					Email:  "user2@example.com",
 					Name:   "User Two",
-					Status: "active",
+					Status: stringPtr("active"),
 				},
 			},
 		},
@@ -153,7 +169,7 @@ func TestController_GetUser(t *testing.T) {
 					ID:     id,
 					Email:  "user@example.com",
 					Name:   "Test User",
-					Status: "active",
+					Status: stringPtr("active"),
 				}
 				mockSvc.On("Get", mock.Anything, id).Return(expectedUser, nil)
 			},
@@ -162,7 +178,7 @@ func TestController_GetUser(t *testing.T) {
 				ID:     uuid.New(),
 				Email:  "user@example.com",
 				Name:   "Test User",
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 		},
 		{
@@ -238,7 +254,7 @@ func TestController_CreateUser(t *testing.T) {
 					ID:     dto.ID,
 					Email:  dto.Email,
 					Name:   dto.Name,
-					Status: "active",
+					Status: stringPtr("active"),
 				}
 				mockSvc.On("Create", mock.Anything, dto).Return(expectedUser, nil)
 			},
@@ -247,7 +263,7 @@ func TestController_CreateUser(t *testing.T) {
 				ID:     uuid.New(),
 				Email:  "newuser@example.com",
 				Name:   "New User",
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 		},
 		{
@@ -316,7 +332,7 @@ func TestController_UpdateUser(t *testing.T) {
 				expectedUser := &GetUserDTO{
 					Email:  *dto.Email,
 					Name:   *dto.Name,
-					Status: "active",
+					Status: stringPtr("active"),
 				}
 				mockSvc.On("Update", mock.Anything, id, dto).Return(expectedUser, nil)
 			},
@@ -324,7 +340,7 @@ func TestController_UpdateUser(t *testing.T) {
 			expectedBody: &GetUserDTO{
 				Email:  "updated@example.com",
 				Name:   "Updated User",
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 		},
 		{

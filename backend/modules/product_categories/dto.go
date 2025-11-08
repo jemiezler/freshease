@@ -3,22 +3,19 @@ package product_categories
 import "github.com/google/uuid"
 
 type CreateProductCategoryDTO struct {
-	ID          uuid.UUID `json:"id" validate:"required"`
-	Name        string    `json:"name" validate:"required,min=2,max=60"`
-	Description string    `json:"description" validate:"required"`
-	Slug        string    `json:"slug" validate:"required"`
+	ID         uuid.UUID `json:"id" validate:"required"`
+	ProductID  uuid.UUID `json:"product_id" validate:"required"`
+	CategoryID uuid.UUID `json:"category_id" validate:"required"`
 }
 
 type UpdateProductCategoryDTO struct {
-	ID          uuid.UUID `json:"id" validate:"required"`
-	Name        *string   `json:"name" validate:"omitempty,min=2,max=60"`
-	Description *string   `json:"description" validate:"omitempty"`
-	Slug        *string   `json:"slug" validate:"omitempty"`
+	ID         uuid.UUID  `json:"id" validate:"required"`
+	ProductID  *uuid.UUID `json:"product_id,omitempty"`
+	CategoryID *uuid.UUID `json:"category_id,omitempty"`
 }
 
 type GetProductCategoryDTO struct {
-	ID          uuid.UUID `json:"id" validate:"required"`
-	Name        string    `json:"name" validate:"required,min=2,max=60"`
-	Description string    `json:"description" validate:"required"`
-	Slug        string    `json:"slug" validate:"required"`
+	ID         uuid.UUID `json:"id" validate:"required"`
+	ProductID  uuid.UUID `json:"product_id" validate:"required"`
+	CategoryID uuid.UUID `json:"category_id" validate:"required"`
 }

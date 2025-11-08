@@ -23,7 +23,7 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetPermissionDTO, error) {
 	for _, v := range rows {
 		out = append(out, &GetPermissionDTO{
 			ID:          v.ID,
-			Name:        v.Name,
+			Code:        v.Code,
 			Description: v.Description,
 		})
 	}
@@ -37,7 +37,7 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetPermissionDTO
 	}
 	return &GetPermissionDTO{
 		ID:          v.ID,
-		Name:        v.Name,
+		Code:        v.Code,
 		Description: v.Description,
 	}, nil
 }
@@ -45,26 +45,28 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetPermissionDTO
 func (r *EntRepo) Create(ctx context.Context, dto *CreatePermissionDTO) (*GetPermissionDTO, error) {
 	q := r.c.Permission.
 		Create().
-		SetName(dto.Name).
-		SetDescription(dto.Description)
+		SetCode(dto.Code)
+	if dto.Description != nil {
+		q.SetDescription(*dto.Description)
+	}
 
 	row, err := q.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &GetPermissionDTO{
-		ID:          row.ID,
-		Name:        row.Name,
-		Description: row.Description,
-	}, nil
+		return &GetPermissionDTO{
+			ID:          row.ID,
+			Code:        row.Code,
+			Description: row.Description,
+		}, nil
 }
 
 func (r *EntRepo) Update(ctx context.Context, dto *UpdatePermissionDTO) (*GetPermissionDTO, error) {
 	q := r.c.Permission.UpdateOneID(dto.ID)
 
-	if dto.Name != nil {
-		q.SetName(*dto.Name)
+	if dto.Code != nil {
+		q.SetCode(*dto.Code)
 	}
 	if dto.Description != nil {
 		q.SetDescription(*dto.Description)
@@ -79,11 +81,11 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdatePermissionDTO) (*GetPer
 		return nil, err
 	}
 
-	return &GetPermissionDTO{
-		ID:          row.ID,
-		Name:        row.Name,
-		Description: row.Description,
-	}, nil
+		return &GetPermissionDTO{
+			ID:          row.ID,
+			Code:        row.Code,
+			Description: row.Description,
+		}, nil
 }
 
 func (r *EntRepo) Delete(ctx context.Context, id uuid.UUID) error {

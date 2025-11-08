@@ -72,7 +72,7 @@ func TestController_ListAddresses(t *testing.T) {
 						City:      "New York",
 						Province:  "NY",
 						Country:   "USA",
-						Zip:       "10001",
+						PostalCode: "10001",
 						IsDefault: true,
 					},
 					{
@@ -82,7 +82,7 @@ func TestController_ListAddresses(t *testing.T) {
 						City:      "Los Angeles",
 						Province:  "CA",
 						Country:   "USA",
-						Zip:       "90210",
+						PostalCode: "90210",
 						IsDefault: false,
 					},
 				}
@@ -97,7 +97,7 @@ func TestController_ListAddresses(t *testing.T) {
 					City:      "New York",
 					Province:  "NY",
 					Country:   "USA",
-					Zip:       "10001",
+					PostalCode: "10001",
 					IsDefault: true,
 				},
 				{
@@ -107,7 +107,7 @@ func TestController_ListAddresses(t *testing.T) {
 					City:      "Los Angeles",
 					Province:  "CA",
 					Country:   "USA",
-					Zip:       "90210",
+					PostalCode: "90210",
 					IsDefault: false,
 				},
 			},
@@ -171,7 +171,7 @@ func TestController_GetAddress(t *testing.T) {
 					City:      "New York",
 					Province:  "NY",
 					Country:   "USA",
-					Zip:       "10001",
+					PostalCode: "10001",
 					IsDefault: true,
 				}
 				mockSvc.On("Get", mock.Anything, id).Return(expectedAddress, nil)
@@ -184,7 +184,7 @@ func TestController_GetAddress(t *testing.T) {
 				City:      "New York",
 				Province:  "NY",
 				Country:   "USA",
-				Zip:       "10001",
+				PostalCode: "10001",
 				IsDefault: true,
 			},
 		},
@@ -253,7 +253,7 @@ func TestController_CreateAddress(t *testing.T) {
 				City:      "Seattle",
 				Province:  "WA",
 				Country:   "USA",
-				Zip:       "98101",
+					PostalCode: "98101",
 				IsDefault: false,
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateAddressDTO) {
@@ -264,7 +264,7 @@ func TestController_CreateAddress(t *testing.T) {
 					City:      dto.City,
 					Province:  dto.Province,
 					Country:   dto.Country,
-					Zip:       dto.Zip,
+					PostalCode: dto.PostalCode,
 					IsDefault: dto.IsDefault,
 				}
 				mockSvc.On("Create", mock.Anything, dto).Return(expectedAddress, nil)
@@ -277,7 +277,7 @@ func TestController_CreateAddress(t *testing.T) {
 				City:      "Seattle",
 				Province:  "WA",
 				Country:   "USA",
-				Zip:       "98101",
+					PostalCode: "98101",
 				IsDefault: false,
 			},
 		},
@@ -289,7 +289,7 @@ func TestController_CreateAddress(t *testing.T) {
 				City:      "Seattle",
 				Province:  "WA",
 				Country:   "USA",
-				Zip:       "98101",
+					PostalCode: "98101",
 				IsDefault: false,
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateAddressDTO) {
@@ -356,7 +356,7 @@ func TestController_UpdateAddress(t *testing.T) {
 					City:      *dto.City,
 					Province:  "NY",
 					Country:   "USA",
-					Zip:       "10001",
+					PostalCode: "10001",
 					IsDefault: *dto.IsDefault,
 				}
 				mockSvc.On("Update", mock.Anything, id, dto).Return(expectedAddress, nil)
@@ -369,7 +369,7 @@ func TestController_UpdateAddress(t *testing.T) {
 				City:      "Updated City",
 				Province:  "NY",
 				Country:   "USA",
-				Zip:       "10001",
+				PostalCode: "10001",
 				IsDefault: true,
 			},
 		},

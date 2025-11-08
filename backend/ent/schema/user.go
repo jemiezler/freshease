@@ -19,31 +19,30 @@ type User struct {
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique().Immutable(),
+		field.String("name"),
 		field.String("email").Unique(),
-		field.String("password").Optional().Nillable().Sensitive(),
-		field.String("name").MinLen(2).MaxLen(100),
-		field.String("phone").MinLen(10).MaxLen(20).Nillable().Optional(),
-		field.String("bio").MinLen(10).MaxLen(500).Nillable().Optional(),
-		field.String("avatar").MinLen(10).MaxLen(200).Nillable().Optional(),
-		field.String("cover").MinLen(10).MaxLen(200).Nillable().Optional(),
+		field.String("password").Nillable().Optional().Sensitive(),
+		field.String("phone").Unique().Nillable().Optional(),
+		field.String("address").Nillable().Optional(),
+		field.String("bio").Nillable().Optional(),
+		field.String("avatar").Nillable().Optional(),
+		field.String("cover").Nillable().Optional(),
 		field.Time("date_of_birth").Nillable().Optional(),
-		field.String("sex").MaxLen(10).Nillable().Optional(),
-		field.String("goal").MaxLen(20).Nillable().Optional(),
+		field.String("sex").Nillable().Optional(),
+		field.String("goal").Nillable().Optional(),
 		field.Float("height_cm").Nillable().Optional(),
 		field.Float("weight_kg").Nillable().Optional(),
-		field.String("status").Default("active"),
+		field.String("status").Nillable().Optional(),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 		field.Time("deleted_at").Nillable().Optional(),
 	}
 }
 
-func Indexes() []ent.Index {
+func (User) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("email").Unique(),
 		index.Fields("phone").Unique(),
-		index.Fields("status").Unique(),
-		index.Fields("role").Unique(),
 	}
 }
 
@@ -51,8 +50,12 @@ func Indexes() []ent.Index {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("role", Role.Type).Ref("users").Unique(),
-		edge.To("address", Address.Type),
-		edge.To("role_permission", Role_Permission.Type),
+		edge.To("addresses", Address.Type),
+		edge.To("carts", Cart.Type),
+		edge.To("orders", Order.Type),
+		edge.To("notifications", Notification.Type),
+		edge.To("reviews", Review.Type),
+		edge.To("meal_plans", Meal_plan.Type),
 		edge.To("identities", Identity.Type),
 	}
 }

@@ -3,6 +3,7 @@ package products
 import (
 	"context"
 	"testing"
+	"time"
 
 	"freshease/backend/ent/enttest"
 
@@ -28,15 +29,12 @@ func TestRepository_List(t *testing.T) {
 	// Create required entities first
 	vendor, err := client.Vendor.Create().
 		SetName("Test Vendor").
-		SetEmail("vendor@example.com").
-		SetPhone("1234567890").
-		SetIsActive("true").
+		SetContact("vendor@example.com").
 		Save(ctx)
 	require.NoError(t, err)
 
-	category, err := client.Product_category.Create().
+	category, err := client.Category.Create().
 		SetName("Test Category").
-		SetDescription("Test category description").
 		SetSlug("test-category").
 		Save(ctx)
 	require.NoError(t, err)
@@ -44,15 +42,15 @@ func TestRepository_List(t *testing.T) {
 	// Create inventory entities
 	inventory1, err := client.Inventory.Create().
 		SetQuantity(100).
-		SetRestockAmount(50).
-		AddVendor(vendor).
+		SetReorderLevel(50).
+		SetVendor(vendor).
 		Save(ctx)
 	require.NoError(t, err)
 
 	inventory2, err := client.Inventory.Create().
 		SetQuantity(200).
-		SetRestockAmount(100).
-		AddVendor(vendor).
+		SetReorderLevel(100).
+		SetVendor(vendor).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -60,50 +58,84 @@ func TestRepository_List(t *testing.T) {
 	product1 := &CreateProductDTO{
 		ID:          uuid.New(),
 		Name:        "Apple",
+		SKU:         "APPLE-001",
 		Price:       1.99,
-		Description: "Fresh red apples",
-		ImageURL:    "https://example.com/apple.jpg",
+		Description: stringPtr("Fresh red apples"),
 		UnitLabel:   "kg",
-		IsActive:    "true",
+		IsActive:    true,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	product2 := &CreateProductDTO{
 		ID:          uuid.New(),
 		Name:        "Banana",
+		SKU:         "BANANA-001",
 		Price:       0.99,
-		Description: "Yellow bananas",
-		ImageURL:    "https://example.com/banana.jpg",
+		Description: stringPtr("Yellow bananas"),
 		UnitLabel:   "kg",
-		IsActive:    "true",
+		IsActive:    true,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	// Create products with relationships
-	_, err = client.Product.Create().
+	prod1, err := client.Product.Create().
 		SetID(product1.ID).
 		SetName(product1.Name).
+		SetSku(product1.SKU).
 		SetPrice(product1.Price).
-		SetDescription(product1.Description).
-		SetImageURL(product1.ImageURL).
 		SetUnitLabel(product1.UnitLabel).
 		SetIsActive(product1.IsActive).
-		AddCatagory(category).
-		AddVendor(vendor).
-		SetInventory(inventory1).
+		SetCreatedAt(product1.CreatedAt).
+		SetUpdatedAt(product1.UpdatedAt).
+		SetVendor(vendor).
 		Save(ctx)
 	require.NoError(t, err)
 
-	_, err = client.Product.Create().
+	if product1.Description != nil {
+		prod1, err = prod1.Update().SetDescription(*product1.Description).Save(ctx)
+		require.NoError(t, err)
+	}
+
+	// Create product_category join
+	_, err = client.Product_category.Create().
+		SetProduct(prod1).
+		SetCategory(category).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Update inventory to link to product
+	_, err = inventory1.Update().SetProduct(prod1).Save(ctx)
+	require.NoError(t, err)
+
+	prod2, err := client.Product.Create().
 		SetID(product2.ID).
 		SetName(product2.Name).
+		SetSku(product2.SKU).
 		SetPrice(product2.Price).
-		SetDescription(product2.Description).
-		SetImageURL(product2.ImageURL).
 		SetUnitLabel(product2.UnitLabel).
 		SetIsActive(product2.IsActive).
-		AddCatagory(category).
-		AddVendor(vendor).
-		SetInventory(inventory2).
+		SetCreatedAt(product2.CreatedAt).
+		SetUpdatedAt(product2.UpdatedAt).
+		SetVendor(vendor).
 		Save(ctx)
+	require.NoError(t, err)
+
+	if product2.Description != nil {
+		prod2, err = prod2.Update().SetDescription(*product2.Description).Save(ctx)
+		require.NoError(t, err)
+	}
+
+	// Create product_category join
+	_, err = client.Product_category.Create().
+		SetProduct(prod2).
+		SetCategory(category).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Update inventory to link to product
+	_, err = inventory2.Update().SetProduct(prod2).Save(ctx)
 	require.NoError(t, err)
 
 	// Test populated list
@@ -136,15 +168,12 @@ func TestRepository_FindByID(t *testing.T) {
 	// Create required entities first
 	vendor, err := client.Vendor.Create().
 		SetName("Test Vendor").
-		SetEmail("vendor@example.com").
-		SetPhone("1234567890").
-		SetIsActive("true").
+		SetContact("vendor@example.com").
 		Save(ctx)
 	require.NoError(t, err)
 
-	category, err := client.Product_category.Create().
+	category, err := client.Category.Create().
 		SetName("Test Category").
-		SetDescription("Test category description").
 		SetSlug("test-category").
 		Save(ctx)
 	require.NoError(t, err)
@@ -152,8 +181,8 @@ func TestRepository_FindByID(t *testing.T) {
 	// Create inventory entity
 	inventory, err := client.Inventory.Create().
 		SetQuantity(150).
-		SetRestockAmount(75).
-		AddVendor(vendor).
+		SetReorderLevel(75).
+		SetVendor(vendor).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -161,26 +190,43 @@ func TestRepository_FindByID(t *testing.T) {
 	createDTO := &CreateProductDTO{
 		ID:          uuid.New(),
 		Name:        "Orange",
+		SKU:         "ORANGE-001",
 		Price:       2.49,
-		Description: "Fresh oranges",
-		ImageURL:    "https://example.com/orange.jpg",
+		Description: stringPtr("Fresh oranges"),
 		UnitLabel:   "kg",
-		IsActive:    "true",
+		IsActive:    true,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	// Create product with relationships
-	_, err = client.Product.Create().
+	prod, err := client.Product.Create().
 		SetID(createDTO.ID).
 		SetName(createDTO.Name).
+		SetSku(createDTO.SKU).
 		SetPrice(createDTO.Price).
-		SetDescription(createDTO.Description).
-		SetImageURL(createDTO.ImageURL).
 		SetUnitLabel(createDTO.UnitLabel).
 		SetIsActive(createDTO.IsActive).
-		AddCatagory(category).
-		AddVendor(vendor).
-		SetInventory(inventory).
+		SetCreatedAt(createDTO.CreatedAt).
+		SetUpdatedAt(createDTO.UpdatedAt).
+		SetVendor(vendor).
 		Save(ctx)
+	require.NoError(t, err)
+
+	if createDTO.Description != nil {
+		prod, err = prod.Update().SetDescription(*createDTO.Description).Save(ctx)
+		require.NoError(t, err)
+	}
+
+	// Create product_category join
+	_, err = client.Product_category.Create().
+		SetProduct(prod).
+		SetCategory(category).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Update inventory to link to product
+	_, err = inventory.Update().SetProduct(prod).Save(ctx)
 	require.NoError(t, err)
 
 	// Test finding existing product
@@ -188,9 +234,11 @@ func TestRepository_FindByID(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, createDTO.ID, foundProduct.ID)
 	assert.Equal(t, createDTO.Name, foundProduct.Name)
+	assert.Equal(t, createDTO.SKU, foundProduct.SKU)
 	assert.Equal(t, createDTO.Price, foundProduct.Price)
-	assert.Equal(t, createDTO.Description, foundProduct.Description)
-	assert.Equal(t, createDTO.ImageURL, foundProduct.ImageURL)
+	if createDTO.Description != nil {
+		assert.Equal(t, *createDTO.Description, *foundProduct.Description)
+	}
 	assert.Equal(t, createDTO.UnitLabel, foundProduct.UnitLabel)
 	assert.Equal(t, createDTO.IsActive, foundProduct.IsActive)
 }

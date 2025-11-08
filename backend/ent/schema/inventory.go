@@ -14,15 +14,15 @@ type Inventory struct{ ent.Schema }
 func (Inventory) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable(),
-		field.Int("quantity").Positive(),
-		field.Int("restock_amount").Positive(),
+		field.Int("quantity").Default(0),
+		field.Int("reorder_level").Default(0),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}
 }
 
 func (Inventory) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("product", Product.Type).Ref("inventory"),
-		edge.From("vendor", Vendor.Type).Ref("inventory"),
+		edge.From("product", Product.Type).Ref("inventories").Unique().Required(),
+		edge.From("vendor", Vendor.Type).Ref("inventories").Unique().Required(),
 	}
 }

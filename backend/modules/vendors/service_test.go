@@ -3,8 +3,8 @@ package vendors
 import (
 	"context"
 	"errors"
+	"mime/multipart"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -54,6 +54,26 @@ func (m *MockRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return args.Error(0)
 }
 
+// MockUploadsService is a mock implementation of uploads.Service
+type MockUploadsService struct {
+	mock.Mock
+}
+
+func (m *MockUploadsService) UploadImage(ctx context.Context, file *multipart.FileHeader, folder string) (string, error) {
+	args := m.Called(ctx, file, folder)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockUploadsService) DeleteImage(ctx context.Context, objectName string) error {
+	args := m.Called(ctx, objectName)
+	return args.Error(0)
+}
+
+func (m *MockUploadsService) GetImageURL(ctx context.Context, objectName string) (string, error) {
+	args := m.Called(ctx, objectName)
+	return args.String(0), args.Error(1)
+}
+
 func TestService_List(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -68,18 +88,12 @@ func TestService_List(t *testing.T) {
 					{
 						ID:        uuid.New(),
 						Name:      stringPtr("Vendor 1"),
-						Email:     stringPtr("vendor1@example.com"),
-						IsActive:  "true",
-						CreatedAt: time.Now(),
-						UpdatedAt: time.Now(),
+					Contact: stringPtr("vendor1@example.com"),
 					},
 					{
 						ID:        uuid.New(),
 						Name:      stringPtr("Vendor 2"),
-						Email:     stringPtr("vendor2@example.com"),
-						IsActive:  "true",
-						CreatedAt: time.Now(),
-						UpdatedAt: time.Now(),
+					Contact: stringPtr("vendor2@example.com"),
 					},
 				}
 				mockRepo.On("List", mock.Anything).Return(vendors, nil)
@@ -108,9 +122,10 @@ func TestService_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			result, err := service.List(ctx)
@@ -142,10 +157,7 @@ func TestService_Get(t *testing.T) {
 				vendor := &GetVendorDTO{
 					ID:        id,
 					Name:      stringPtr("Test Vendor"),
-					Email:     stringPtr("test@example.com"),
-					IsActive:  "true",
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					Contact: stringPtr("test@example.com"),
 				}
 				mockRepo.On("FindByID", mock.Anything, id).Return(vendor, nil)
 			},
@@ -164,9 +176,10 @@ func TestService_Get(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo, tt.id)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			result, err := service.Get(ctx, tt.id)
@@ -196,17 +209,15 @@ func TestService_Create(t *testing.T) {
 			name: "success - creates vendor with minimal data",
 			dto: CreateVendorDTO{
 				ID:       uuid.New(),
-				IsActive: "true",
+				Contact: stringPtr("test@example.com"),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateVendorDTO) {
 				createdVendor := &GetVendorDTO{
 					ID:        dto.ID,
-					IsActive:  dto.IsActive,
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					Contact: dto.Contact,
 				}
 				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreateVendorDTO) bool {
-					return actual.ID == dto.ID && actual.IsActive == dto.IsActive
+					return actual.ID == dto.ID && actual.Contact != nil
 				})).Return(createdVendor, nil)
 			},
 			expectedError: false,
@@ -214,40 +225,18 @@ func TestService_Create(t *testing.T) {
 		{
 			name: "success - creates vendor with full data",
 			dto: CreateVendorDTO{
-				ID:          uuid.New(),
-				Name:        stringPtr("Test Vendor"),
-				Email:       stringPtr("test@example.com"),
-				Phone:       stringPtr("123-456-7890"),
-				Address:     stringPtr("123 Main St"),
-				City:        stringPtr("Test City"),
-				State:       stringPtr("Test State"),
-				Country:     stringPtr("Test Country"),
-				PostalCode:  stringPtr("12345"),
-				Website:     stringPtr("https://test.com"),
-				LogoURL:     stringPtr("https://test.com/logo.png"),
-				Description: stringPtr("Test vendor description"),
-				IsActive:    "true",
+				ID:      uuid.New(),
+				Name:    stringPtr("Test Vendor"),
+				Contact: stringPtr("test@example.com"),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateVendorDTO) {
 				createdVendor := &GetVendorDTO{
-					ID:          dto.ID,
-					Name:        dto.Name,
-					Email:       dto.Email,
-					Phone:       dto.Phone,
-					Address:     dto.Address,
-					City:        dto.City,
-					State:       dto.State,
-					Country:     dto.Country,
-					PostalCode:  dto.PostalCode,
-					Website:     dto.Website,
-					LogoURL:     dto.LogoURL,
-					Description: dto.Description,
-					IsActive:    dto.IsActive,
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
+					ID:      dto.ID,
+					Name:    dto.Name,
+					Contact: dto.Contact,
 				}
 				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreateVendorDTO) bool {
-					return actual.ID == dto.ID && actual.IsActive == dto.IsActive
+					return actual.ID == dto.ID && actual.Contact != nil
 				})).Return(createdVendor, nil)
 			},
 			expectedError: false,
@@ -256,11 +245,11 @@ func TestService_Create(t *testing.T) {
 			name: "error - repository returns error",
 			dto: CreateVendorDTO{
 				ID:       uuid.New(),
-				IsActive: "true",
+				Contact: stringPtr("test@example.com"),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateVendorDTO) {
 				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreateVendorDTO) bool {
-					return actual.ID == dto.ID && actual.IsActive == dto.IsActive
+					return actual.ID == dto.ID && actual.Contact != nil
 				})).Return((*GetVendorDTO)(nil), errors.New("creation failed"))
 			},
 			expectedError: true,
@@ -270,9 +259,10 @@ func TestService_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo, tt.dto)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			result, err := service.Create(ctx, tt.dto)
@@ -284,7 +274,7 @@ func TestService_Create(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
 				assert.Equal(t, tt.dto.ID, result.ID)
-				assert.Equal(t, tt.dto.IsActive, result.IsActive)
+				assert.Equal(t, tt.dto.Contact, result.Contact)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -305,23 +295,18 @@ func TestService_Update(t *testing.T) {
 			id:   uuid.New(),
 			dto: UpdateVendorDTO{
 				Name:     stringPtr("Updated Vendor"),
-				Email:    stringPtr("updated@example.com"),
-				IsActive: stringPtr("false"),
+				Contact: stringPtr("updated@example.com"),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateVendorDTO) {
 				updatedVendor := &GetVendorDTO{
 					ID:        id,
 					Name:      stringPtr("Updated Vendor"),
-					Email:     stringPtr("updated@example.com"),
-					IsActive:  "false",
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					Contact: stringPtr("updated@example.com"),
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdateVendorDTO) bool {
 					return actual.ID == id &&
 						actual.Name != nil && *actual.Name == "Updated Vendor" &&
-						actual.Email != nil && *actual.Email == "updated@example.com" &&
-						actual.IsActive != nil && *actual.IsActive == "false"
+						actual.Contact != nil && *actual.Contact == "updated@example.com"
 				})).Return(updatedVendor, nil)
 			},
 			expectedError: false,
@@ -336,15 +321,12 @@ func TestService_Update(t *testing.T) {
 				updatedVendor := &GetVendorDTO{
 					ID:        id,
 					Name:      stringPtr("Updated Vendor"),
-					IsActive:  "true", // unchanged
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					Contact: stringPtr("test@example.com"), // unchanged
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdateVendorDTO) bool {
 					return actual.ID == id &&
 						actual.Name != nil && *actual.Name == "Updated Vendor" &&
-						actual.Email == nil &&
-						actual.IsActive == nil
+						actual.Contact == nil
 				})).Return(updatedVendor, nil)
 			},
 			expectedError: false,
@@ -368,9 +350,10 @@ func TestService_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo, tt.id, tt.dto)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			result, err := service.Update(ctx, tt.id, tt.dto)
@@ -417,9 +400,10 @@ func TestService_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
 			tt.mockSetup(mockRepo, tt.id)
 
-			service := NewService(mockRepo)
+			service := NewService(mockRepo, mockUploads)
 			ctx := context.Background()
 
 			err := service.Delete(ctx, tt.id)

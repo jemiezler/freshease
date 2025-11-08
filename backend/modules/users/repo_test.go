@@ -111,7 +111,7 @@ func TestEntRepo_FindByID(t *testing.T) {
 				Bio:    stringPtr("This is a longer test bio that meets the minimum length requirement"),
 				Avatar: stringPtr("https://example.com/avatar.jpg"),
 				Cover:  stringPtr("https://example.com/cover.jpg"),
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 		},
 		{
@@ -202,7 +202,7 @@ func TestEntRepo_Create(t *testing.T) {
 				Bio:    stringPtr("New user bio"),
 				Avatar: stringPtr("https://example.com/avatar.jpg"),
 				Cover:  stringPtr("https://example.com/cover.jpg"),
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 		},
 		{
@@ -217,7 +217,7 @@ func TestEntRepo_Create(t *testing.T) {
 			expectedUser: &GetUserDTO{
 				Email:  "minimal@example.com",
 				Name:   "Minimal User",
-				Status: "active", // Default status
+				Status: stringPtr("active"), // Default status
 			},
 		},
 		{
@@ -325,7 +325,7 @@ func TestEntRepo_Update(t *testing.T) {
 				Name:   "Updated User",
 				Phone:  stringPtr("+9876543210"),
 				Bio:    stringPtr("Updated bio"),
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 		},
 		{
@@ -349,7 +349,7 @@ func TestEntRepo_Update(t *testing.T) {
 			expectedUser: &GetUserDTO{
 				Email:  "updated@example.com",
 				Name:   "Original User", // Should remain unchanged
-				Status: "active",
+				Status: stringPtr("active"),
 			},
 		},
 		{

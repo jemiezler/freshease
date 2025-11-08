@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { createResource } from "@/lib/resource";
+import { apiClient } from "@/lib/api";
 import type { Product, ProductPayload } from "@/types/product";
 import type { Category, CategoryPayload } from "@/types/catagory";
 import type { DialogProps } from "@/types/dialog";
@@ -48,30 +49,8 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 		setError(null);
 
 		try {
-			const formData = new FormData();
-			formData.append("file", file);
-			formData.append("folder", "products");
-
-			const token = localStorage.getItem("admin_token");
-			const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api";
-			const headers: HeadersInit = {};
-			if (token) {
-				headers["Authorization"] = `Bearer ${token}`;
-			}
-
-			const response = await fetch(`${baseUrl}/uploads/images`, {
-				method: "POST",
-				headers,
-				body: formData,
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({ message: "Upload failed" }));
-				throw new Error(errorData.message || "Failed to upload image");
-			}
-
-			const data = await response.json();
-			setImageUrl(data.url || data.object_name);
+			const data = await apiClient.uploadImage(file, "products");
+			setImageUrl(data.url);
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to upload image");
 		} finally {

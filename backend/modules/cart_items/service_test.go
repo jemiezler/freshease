@@ -61,32 +61,40 @@ func TestService_List(t *testing.T) {
 			mockSetup: func(mockRepo *MockRepository) {
 				expectedItems := []*GetCart_itemDTO{
 					{
-						ID:          uuid.New(),
-						Name:        "Apple",
-						Description: "Fresh red apples",
-						Cart:        uuid.New(),
+						ID:        uuid.New(),
+						Qty:       2,
+						UnitPrice: 1.99,
+						LineTotal: 3.98,
+						CartID:    uuid.New(),
+						ProductID: uuid.New(),
 					},
 					{
-						ID:          uuid.New(),
-						Name:        "Banana",
-						Description: "Yellow bananas",
-						Cart:        uuid.New(),
+						ID:        uuid.New(),
+						Qty:       3,
+						UnitPrice: 0.99,
+						LineTotal: 2.97,
+						CartID:    uuid.New(),
+						ProductID: uuid.New(),
 					},
 				}
 				mockRepo.On("List", mock.Anything).Return(expectedItems, nil)
 			},
 			expectedResult: []*GetCart_itemDTO{
 				{
-					ID:          uuid.New(),
-					Name:        "Apple",
-					Description: "Fresh red apples",
-					Cart:        uuid.New(),
+					ID:        uuid.New(),
+					Qty:       2,
+					UnitPrice: 1.99,
+					LineTotal: 3.98,
+					CartID:    uuid.New(),
+					ProductID: uuid.New(),
 				},
 				{
-					ID:          uuid.New(),
-					Name:        "Banana",
-					Description: "Yellow bananas",
-					Cart:        uuid.New(),
+					ID:        uuid.New(),
+					Qty:       3,
+					UnitPrice: 0.99,
+					LineTotal: 2.97,
+					CartID:    uuid.New(),
+					ProductID: uuid.New(),
 				},
 			},
 			expectedError: nil,
@@ -139,18 +147,22 @@ func TestService_Get(t *testing.T) {
 			cartItemID: uuid.New(),
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID) {
 				expectedItem := &GetCart_itemDTO{
-					ID:          id,
-					Name:        "Apple",
-					Description: "Fresh red apples",
-					Cart:        uuid.New(),
+					ID:        id,
+					Qty:       2,
+					UnitPrice: 1.99,
+					LineTotal: 3.98,
+					CartID:    uuid.New(),
+					ProductID: uuid.New(),
 				}
 				mockRepo.On("FindByID", mock.Anything, id).Return(expectedItem, nil)
 			},
 			expectedResult: &GetCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Apple",
-				Description: "Fresh red apples",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       2,
+				UnitPrice: 1.99,
+				LineTotal: 3.98,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 			expectedError: nil,
 		},
@@ -201,35 +213,43 @@ func TestService_Create(t *testing.T) {
 		{
 			name: "success - creates new cart item",
 			createDTO: CreateCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Orange",
-				Description: "Fresh oranges",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       5,
+				UnitPrice: 2.49,
+				LineTotal: 12.45,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateCart_itemDTO) {
 				expectedItem := &GetCart_itemDTO{
-					ID:          dto.ID,
-					Name:        dto.Name,
-					Description: dto.Description,
-					Cart:        dto.Cart,
+					ID:        dto.ID,
+					Qty:       dto.Qty,
+					UnitPrice: dto.UnitPrice,
+					LineTotal: dto.LineTotal,
+					CartID:    dto.CartID,
+					ProductID: dto.ProductID,
 				}
 				mockRepo.On("Create", mock.Anything, &dto).Return(expectedItem, nil)
 			},
 			expectedResult: &GetCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Orange",
-				Description: "Fresh oranges",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       5,
+				UnitPrice: 2.49,
+				LineTotal: 12.45,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 			expectedError: nil,
 		},
 		{
 			name: "error - repository returns error",
 			createDTO: CreateCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Orange",
-				Description: "Fresh oranges",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       5,
+				UnitPrice: 2.49,
+				LineTotal: 12.45,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateCart_itemDTO) {
 				mockRepo.On("Create", mock.Anything, &dto).Return((*GetCart_itemDTO)(nil), errors.New("cart item already exists"))
@@ -256,8 +276,9 @@ func TestService_Create(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
-				assert.Equal(t, tt.createDTO.Name, result.Name)
-				assert.Equal(t, tt.createDTO.Description, result.Description)
+				assert.Equal(t, tt.createDTO.Qty, result.Qty)
+				assert.Equal(t, tt.createDTO.UnitPrice, result.UnitPrice)
+				assert.Equal(t, tt.createDTO.LineTotal, result.LineTotal)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -278,25 +299,30 @@ func TestService_Update(t *testing.T) {
 			name:       "success - updates cart item",
 			cartItemID: uuid.New(),
 			updateDTO: UpdateCart_itemDTO{
-				Name:        stringPtr("Updated Apple"),
-				Description: stringPtr("Updated description"),
+				Qty:       intPtr(10),
+				UnitPrice: float64Ptr(1.50),
+				LineTotal: float64Ptr(15.00),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateCart_itemDTO) {
 				expectedItem := &GetCart_itemDTO{
-					ID:          id,
-					Name:        *dto.Name,
-					Description: *dto.Description,
-					Cart:        uuid.New(),
+					ID:        id,
+					Qty:       *dto.Qty,
+					UnitPrice: *dto.UnitPrice,
+					LineTotal: *dto.LineTotal,
+					CartID:    uuid.New(),
+					ProductID: uuid.New(),
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(u *UpdateCart_itemDTO) bool {
-					return u.ID == id && *u.Name == *dto.Name && *u.Description == *dto.Description
+					return u.ID == id && *u.Qty == *dto.Qty && *u.UnitPrice == *dto.UnitPrice
 				})).Return(expectedItem, nil)
 			},
 			expectedResult: &GetCart_itemDTO{
-				ID:          uuid.New(),
-				Name:        "Updated Apple",
-				Description: "Updated description",
-				Cart:        uuid.New(),
+				ID:        uuid.New(),
+				Qty:       10,
+				UnitPrice: 1.50,
+				LineTotal: 15.00,
+				CartID:    uuid.New(),
+				ProductID: uuid.New(),
 			},
 			expectedError: nil,
 		},
@@ -304,7 +330,7 @@ func TestService_Update(t *testing.T) {
 			name:       "error - repository returns error",
 			cartItemID: uuid.New(),
 			updateDTO: UpdateCart_itemDTO{
-				Name: stringPtr("Updated Apple"),
+				Qty: intPtr(10),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateCart_itemDTO) {
 				mockRepo.On("Update", mock.Anything, mock.Anything).Return((*GetCart_itemDTO)(nil), errors.New("cart item not found"))

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createResource } from "@/lib/resource";
+import { apiClient } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -36,6 +37,8 @@ export function EditVendorDialog({
 	const [postalCode, setPostalCode] = useState("");
 	const [website, setWebsite] = useState("");
 	const [logoUrl, setLogoUrl] = useState("");
+	const [logoFile, setLogoFile] = useState<File | null>(null);
+	const [uploadingLogo, setUploadingLogo] = useState(false);
 	const [description, setDescription] = useState("");
 	const [isActive, setIsActive] = useState("active");
 	const [loading, setLoading] = useState(true);
@@ -72,6 +75,24 @@ export function EditVendorDialog({
 			cancelled = true;
 		};
 	}, [id]);
+
+	async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		setUploadingLogo(true);
+		setError(null);
+
+		try {
+			const data = await apiClient.uploadImage(file, "vendors/logos");
+			setLogoUrl(data.url);
+			setLogoFile(file);
+		} catch (e) {
+			setError(e instanceof Error ? e.message : "Failed to upload logo");
+		} finally {
+			setUploadingLogo(false);
+		}
+	}
 
 	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -151,8 +172,35 @@ export function EditVendorDialog({
 							<Input id="edit-vendor-website" type="url" value={website} onChange={(e) => setWebsite(e.target.value)} />
 						</Field>
 						<Field>
-							<FieldLabel htmlFor="edit-vendor-logo-url">Logo URL</FieldLabel>
-							<Input id="edit-vendor-logo-url" type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
+							<FieldLabel htmlFor="edit-vendor-logo">Logo</FieldLabel>
+							<Input
+								id="edit-vendor-logo"
+								type="file"
+								accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+								onChange={handleLogoChange}
+								disabled={uploadingLogo}
+							/>
+							{uploadingLogo && (
+								<div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+									<Spinner className="size-4" />
+									<span>Uploading logo...</span>
+								</div>
+							)}
+							{logoUrl && !uploadingLogo && (
+								<div className="mt-2">
+									<img src={logoUrl} alt="Logo preview" className="max-w-full h-32 object-contain border rounded" />
+									<p className="text-xs text-muted-foreground mt-1">Current logo</p>
+								</div>
+							)}
+							<p className="text-xs text-muted-foreground mt-1">Or enter URL manually:</p>
+							<Input
+								id="edit-vendor-logo-url"
+								type="url"
+								value={logoUrl}
+								onChange={(e) => setLogoUrl(e.target.value)}
+								placeholder="https://..."
+								className="mt-1"
+							/>
 						</Field>
 						<Field>
 							<FieldLabel htmlFor="edit-vendor-description">Description</FieldLabel>
@@ -175,10 +223,10 @@ export function EditVendorDialog({
 							<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
 								Cancel
 							</Button>
-							<Button type="submit" disabled={submitting} className="flex items-center gap-2">
-								{submitting && <Spinner className="size-4" />}
-								{submitting ? "Saving…" : "Save"}
-							</Button>
+						<Button type="submit" disabled={submitting || uploadingLogo} className="flex items-center gap-2">
+							{(submitting || uploadingLogo) && <Spinner className="size-4" />}
+							{submitting || uploadingLogo ? "Saving…" : "Save"}
+						</Button>
 						</DialogFooter>
 					</form>
 				)}

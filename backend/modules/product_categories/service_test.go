@@ -65,16 +65,14 @@ func TestService_List(t *testing.T) {
 			mockSetup: func(mockRepo *MockRepository) {
 				categories := []*GetProductCategoryDTO{
 					{
-						ID:          uuid.New(),
-						Name:        "Fruits",
-						Description: "Fresh fruits and vegetables",
-						Slug:        "fruits",
+						ID:         uuid.New(),
+						ProductID:  uuid.New(),
+						CategoryID: uuid.New(),
 					},
 					{
-						ID:          uuid.New(),
-						Name:        "Vegetables",
-						Description: "Fresh vegetables",
-						Slug:        "vegetables",
+						ID:         uuid.New(),
+						ProductID:  uuid.New(),
+						CategoryID: uuid.New(),
 					},
 				}
 				mockRepo.On("List", mock.Anything).Return(categories, nil)
@@ -135,10 +133,9 @@ func TestService_Get(t *testing.T) {
 			id:   uuid.New(),
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID) {
 				category := &GetProductCategoryDTO{
-					ID:          id,
-					Name:        "Fruits",
-					Description: "Fresh fruits and vegetables",
-					Slug:        "fruits",
+					ID:         id,
+					ProductID:  uuid.New(),
+					CategoryID: uuid.New(),
 				}
 				mockRepo.On("FindByID", mock.Anything, id).Return(category, nil)
 			},
@@ -188,23 +185,20 @@ func TestService_Create(t *testing.T) {
 		{
 			name: "success - creates product category",
 			dto: CreateProductCategoryDTO{
-				ID:          uuid.New(),
-				Name:        "Fruits",
-				Description: "Fresh fruits and vegetables",
-				Slug:        "fruits",
+				ID:         uuid.New(),
+				ProductID:  uuid.New(),
+				CategoryID: uuid.New(),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateProductCategoryDTO) {
 				createdCategory := &GetProductCategoryDTO{
-					ID:          dto.ID,
-					Name:        dto.Name,
-					Description: dto.Description,
-					Slug:        dto.Slug,
+					ID:         dto.ID,
+					ProductID:  dto.ProductID,
+					CategoryID: dto.CategoryID,
 				}
 				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreateProductCategoryDTO) bool {
 					return actual.ID == dto.ID &&
-						actual.Name == dto.Name &&
-						actual.Description == dto.Description &&
-						actual.Slug == dto.Slug
+						actual.ProductID == dto.ProductID &&
+						actual.CategoryID == dto.CategoryID
 				})).Return(createdCategory, nil)
 			},
 			expectedError: false,
@@ -212,17 +206,15 @@ func TestService_Create(t *testing.T) {
 		{
 			name: "error - repository returns error",
 			dto: CreateProductCategoryDTO{
-				ID:          uuid.New(),
-				Name:        "Fruits",
-				Description: "Fresh fruits and vegetables",
-				Slug:        "fruits",
+				ID:         uuid.New(),
+				ProductID:  uuid.New(),
+				CategoryID: uuid.New(),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateProductCategoryDTO) {
 				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreateProductCategoryDTO) bool {
 					return actual.ID == dto.ID &&
-						actual.Name == dto.Name &&
-						actual.Description == dto.Description &&
-						actual.Slug == dto.Slug
+						actual.ProductID == dto.ProductID &&
+						actual.CategoryID == dto.CategoryID
 				})).Return((*GetProductCategoryDTO)(nil), errors.New("creation failed"))
 			},
 			expectedError: true,
@@ -246,9 +238,8 @@ func TestService_Create(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
 				assert.Equal(t, tt.dto.ID, result.ID)
-				assert.Equal(t, tt.dto.Name, result.Name)
-				assert.Equal(t, tt.dto.Description, result.Description)
-				assert.Equal(t, tt.dto.Slug, result.Slug)
+				assert.Equal(t, tt.dto.ProductID, result.ProductID)
+				assert.Equal(t, tt.dto.CategoryID, result.CategoryID)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -268,22 +259,19 @@ func TestService_Update(t *testing.T) {
 			name: "success - updates product category",
 			id:   uuid.New(),
 			dto: UpdateProductCategoryDTO{
-				Name:        stringPtr("Updated Fruits"),
-				Description: stringPtr("Updated description"),
-				Slug:        stringPtr("updated-fruits"),
+				ID:         uuid.New(),
+				ProductID:  func() *uuid.UUID { id := uuid.New(); return &id }(),
+				CategoryID: func() *uuid.UUID { id := uuid.New(); return &id }(),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateProductCategoryDTO) {
 				updatedCategory := &GetProductCategoryDTO{
-					ID:          id,
-					Name:        "Updated Fruits",
-					Description: "Updated description",
-					Slug:        "updated-fruits",
+					ID:         id,
+					ProductID:  uuid.New(),
+					CategoryID: uuid.New(),
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdateProductCategoryDTO) bool {
 					return actual.ID == id &&
-						actual.Name != nil && *actual.Name == "Updated Fruits" &&
-						actual.Description != nil && *actual.Description == "Updated description" &&
-						actual.Slug != nil && *actual.Slug == "updated-fruits"
+						actual.ProductID != nil && actual.CategoryID != nil
 				})).Return(updatedCategory, nil)
 			},
 			expectedError: false,
@@ -292,20 +280,18 @@ func TestService_Update(t *testing.T) {
 			name: "success - partial update",
 			id:   uuid.New(),
 			dto: UpdateProductCategoryDTO{
-				Name: stringPtr("Updated Fruits"),
+				ID:        uuid.New(),
+				ProductID: func() *uuid.UUID { id := uuid.New(); return &id }(),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateProductCategoryDTO) {
 				updatedCategory := &GetProductCategoryDTO{
-					ID:          id,
-					Name:        "Updated Fruits",
-					Description: "Original description", // unchanged
-					Slug:        "original-slug",        // unchanged
+					ID:         id,
+					ProductID:  uuid.New(),
+					CategoryID: uuid.New(),
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdateProductCategoryDTO) bool {
 					return actual.ID == id &&
-						actual.Name != nil && *actual.Name == "Updated Fruits" &&
-						actual.Description == nil &&
-						actual.Slug == nil
+						actual.ProductID != nil && actual.CategoryID == nil
 				})).Return(updatedCategory, nil)
 			},
 			expectedError: false,
@@ -314,12 +300,13 @@ func TestService_Update(t *testing.T) {
 			name: "error - repository returns error",
 			id:   uuid.New(),
 			dto: UpdateProductCategoryDTO{
-				Name: stringPtr("Updated Fruits"),
+				ID:        uuid.New(),
+				ProductID: func() *uuid.UUID { id := uuid.New(); return &id }(),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateProductCategoryDTO) {
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdateProductCategoryDTO) bool {
 					return actual.ID == id &&
-						actual.Name != nil && *actual.Name == "Updated Fruits"
+						actual.ProductID != nil
 				})).Return((*GetProductCategoryDTO)(nil), errors.New("update failed"))
 			},
 			expectedError: true,

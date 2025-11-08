@@ -71,13 +71,13 @@ func TestService_List(t *testing.T) {
 				permissions := []*GetPermissionDTO{
 					{
 						ID:          uuid.New(),
-						Name:        "read_users",
-						Description: "Permission to read user data",
+						Code:        "read_users",
+						Description: stringPtr("Permission to read user data"),
 					},
 					{
 						ID:          uuid.New(),
-						Name:        "write_users",
-						Description: "Permission to write user data",
+					Code:        "write_users",
+					Description: stringPtr("Permission to write user data"),
 					},
 				}
 				mockRepo.On("List", mock.Anything).Return(permissions, nil)
@@ -139,8 +139,8 @@ func TestService_Get(t *testing.T) {
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID) {
 				permission := &GetPermissionDTO{
 					ID:          id,
-					Name:        "read_users",
-					Description: "Permission to read user data",
+					Code:        "read_users",
+					Description: stringPtr("Permission to read user data"),
 				}
 				mockRepo.On("FindByID", mock.Anything, id).Return(permission, nil)
 			},
@@ -191,18 +191,18 @@ func TestService_Create(t *testing.T) {
 			name: "success - creates permission",
 			dto: CreatePermissionDTO{
 				ID:          uuid.New(),
-				Name:        "read_users",
-				Description: "Permission to read user data",
+				Code:        "read_users",
+				Description: stringPtr("Permission to read user data"),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreatePermissionDTO) {
 				createdPermission := &GetPermissionDTO{
 					ID:          dto.ID,
-					Name:        dto.Name,
+					Code:        dto.Code,
 					Description: dto.Description,
 				}
 				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreatePermissionDTO) bool {
 					return actual.ID == dto.ID &&
-						actual.Name == dto.Name &&
+						actual.Code == dto.Code &&
 						actual.Description == dto.Description
 				})).Return(createdPermission, nil)
 			},
@@ -212,13 +212,13 @@ func TestService_Create(t *testing.T) {
 			name: "error - repository returns error",
 			dto: CreatePermissionDTO{
 				ID:          uuid.New(),
-				Name:        "read_users",
-				Description: "Permission to read user data",
+				Code:        "read_users",
+				Description: stringPtr("Permission to read user data"),
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreatePermissionDTO) {
 				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreatePermissionDTO) bool {
 					return actual.ID == dto.ID &&
-						actual.Name == dto.Name &&
+						actual.Code == dto.Code &&
 						actual.Description == dto.Description
 				})).Return((*GetPermissionDTO)(nil), errors.New("creation failed"))
 			},
@@ -243,7 +243,7 @@ func TestService_Create(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
 				assert.Equal(t, tt.dto.ID, result.ID)
-				assert.Equal(t, tt.dto.Name, result.Name)
+				assert.Equal(t, tt.dto.Code, result.Code)
 				assert.Equal(t, tt.dto.Description, result.Description)
 			}
 
@@ -264,18 +264,18 @@ func TestService_Update(t *testing.T) {
 			name: "success - updates permission",
 			id:   uuid.New(),
 			dto: UpdatePermissionDTO{
-				Name:        stringPtr("updated_name"),
+				Code:        stringPtr("updated_code"),
 				Description: stringPtr("Updated description"),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdatePermissionDTO) {
 				updatedPermission := &GetPermissionDTO{
 					ID:          id,
-					Name:        "updated_name",
-					Description: "Updated description",
+					Code:        "updated_code",
+					Description: stringPtr("Updated description"),
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdatePermissionDTO) bool {
 					return actual.ID == id &&
-						actual.Name != nil && *actual.Name == "updated_name" &&
+						actual.Code != nil && *actual.Code == "updated_code" &&
 						actual.Description != nil && *actual.Description == "Updated description"
 				})).Return(updatedPermission, nil)
 			},
@@ -285,17 +285,17 @@ func TestService_Update(t *testing.T) {
 			name: "success - partial update",
 			id:   uuid.New(),
 			dto: UpdatePermissionDTO{
-				Name: stringPtr("updated_name"),
+				Code: stringPtr("updated_code"),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdatePermissionDTO) {
 				updatedPermission := &GetPermissionDTO{
 					ID:          id,
-					Name:        "updated_name",
-					Description: "Original description", // unchanged
+					Code:        "updated_code",
+					Description: stringPtr("Original description"), // unchanged
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdatePermissionDTO) bool {
 					return actual.ID == id &&
-						actual.Name != nil && *actual.Name == "updated_name" &&
+						actual.Code != nil && *actual.Code == "updated_code" &&
 						actual.Description == nil
 				})).Return(updatedPermission, nil)
 			},
@@ -305,12 +305,12 @@ func TestService_Update(t *testing.T) {
 			name: "error - repository returns error",
 			id:   uuid.New(),
 			dto: UpdatePermissionDTO{
-				Name: stringPtr("updated_name"),
+				Code: stringPtr("updated_code"),
 			},
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdatePermissionDTO) {
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdatePermissionDTO) bool {
 					return actual.ID == id &&
-						actual.Name != nil && *actual.Name == "updated_name"
+						actual.Code != nil && *actual.Code == "updated_code"
 				})).Return((*GetPermissionDTO)(nil), errors.New("update failed"))
 			},
 			expectedError: true,

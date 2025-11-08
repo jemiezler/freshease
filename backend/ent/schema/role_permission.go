@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"time"
-
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -18,17 +16,13 @@ type Role_Permission struct {
 func (Role_Permission) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique().Immutable(),
-		field.Time("created_at").Default(time.Now),
-		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
-		field.Time("deleted_at").Default(time.Now).UpdateDefault(time.Now),
 	}
 }
 
 // Edges of the Role_Permission.
 func (Role_Permission) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("users", Role.Type).Ref("role_permission"),
-		edge.From("permission", Permission.Type).Ref("role_permission"),
-		edge.From("granted_by", User.Type).Ref("role_permission"),
+		edge.From("role", Role.Type).Ref("role_permissions").Unique().Required(),
+		edge.From("permission", Permission.Type).Ref("role_permissions").Unique().Required(),
 	}
 }

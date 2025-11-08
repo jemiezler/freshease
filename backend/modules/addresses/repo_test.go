@@ -2,9 +2,9 @@ package addresses
 
 import (
 	"context"
-	"testing"
-
 	"freshease/backend/ent/enttest"
+	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -29,30 +29,36 @@ func TestRepository_List(t *testing.T) {
 	user, err := client.User.Create().
 		SetEmail("test@example.com").
 		SetName("Test User").
-		SetPassword("password123").
+		SetPhone("1234567890").
+		SetBio("This is a test bio").
+		SetPassword("password1234567890").
+		SetStatus("active").
+		SetCreatedAt(time.Now()).
+		SetUpdatedAt(time.Now()).
+		SetDeletedAt(time.Now()).
 		Save(ctx)
 	require.NoError(t, err)
 
 	// Create test addresses
 	address1 := &CreateAddressDTO{
-		ID:        uuid.New(),
-		Line1:     "123 Main St",
-		Line2:     stringPtr("Apt 4B"),
-		City:      "New York",
-		Province:  "NY",
-		Country:   "USA",
-		Zip:       "10001",
-		IsDefault: true,
+		ID:         uuid.New(),
+		Line1:      "123 Main St",
+		Line2:      stringPtr("Apt 4B"),
+		City:       "New York",
+		Province:   "NY",
+		Country:    "USA",
+		PostalCode: "10001",
+		IsDefault:  true,
 	}
 
 	address2 := &CreateAddressDTO{
-		ID:        uuid.New(),
-		Line1:     "456 Oak Ave",
-		City:      "Los Angeles",
-		Province:  "CA",
-		Country:   "USA",
-		Zip:       "90210",
-		IsDefault: false,
+		ID:         uuid.New(),
+		Line1:      "456 Oak Ave",
+		City:       "Los Angeles",
+		Province:   "CA",
+		Country:    "USA",
+		PostalCode: "90210",
+		IsDefault:  false,
 	}
 
 	// Create addresses with user relationship
@@ -63,9 +69,9 @@ func TestRepository_List(t *testing.T) {
 		SetCity(address1.City).
 		SetProvince(address1.Province).
 		SetCountry(address1.Country).
-		SetZip(address1.Zip).
+		SetPostalCode(address1.PostalCode).
 		SetIsDefault(address1.IsDefault).
-		AddUser(user).
+		SetUserID(user.ID).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -75,9 +81,9 @@ func TestRepository_List(t *testing.T) {
 		SetCity(address2.City).
 		SetProvince(address2.Province).
 		SetCountry(address2.Country).
-		SetZip(address2.Zip).
+		SetPostalCode(address2.PostalCode).
 		SetIsDefault(address2.IsDefault).
-		AddUser(user).
+		SetUserID(user.ID).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -112,20 +118,21 @@ func TestRepository_FindByID(t *testing.T) {
 	user, err := client.User.Create().
 		SetEmail("test@example.com").
 		SetName("Test User").
-		SetPassword("password123").
+		SetPhone("1234567890").
+		SetBio("This is a test bio").
 		Save(ctx)
 	require.NoError(t, err)
 
 	// Create test address
 	createDTO := &CreateAddressDTO{
-		ID:        uuid.New(),
-		Line1:     "789 Pine St",
-		Line2:     stringPtr("Unit 2"),
-		City:      "Seattle",
-		Province:  "WA",
-		Country:   "USA",
-		Zip:       "98101",
-		IsDefault: false,
+		ID:         uuid.New(),
+		Line1:      "789 Pine St",
+		Line2:      stringPtr("Unit 2"),
+		City:       "Seattle",
+		Province:   "WA",
+		Country:    "USA",
+		PostalCode: "98101",
+		IsDefault:  false,
 	}
 
 	// Create address with user relationship
@@ -136,9 +143,9 @@ func TestRepository_FindByID(t *testing.T) {
 		SetCity(createDTO.City).
 		SetProvince(createDTO.Province).
 		SetCountry(createDTO.Country).
-		SetZip(createDTO.Zip).
+		SetPostalCode(createDTO.PostalCode).
 		SetIsDefault(createDTO.IsDefault).
-		AddUser(user).
+		SetUserID(user.ID).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -151,7 +158,7 @@ func TestRepository_FindByID(t *testing.T) {
 	assert.Equal(t, createDTO.City, foundAddress.City)
 	assert.Equal(t, createDTO.Province, foundAddress.Province)
 	assert.Equal(t, createDTO.Country, foundAddress.Country)
-	assert.Equal(t, createDTO.Zip, foundAddress.Zip)
+	assert.Equal(t, createDTO.PostalCode, foundAddress.PostalCode)
 	assert.Equal(t, createDTO.IsDefault, foundAddress.IsDefault)
 }
 

@@ -67,7 +67,7 @@ func TestService_List(t *testing.T) {
 						City:      "New York",
 						Province:  "NY",
 						Country:   "USA",
-						Zip:       "10001",
+						PostalCode: "10001",
 						IsDefault: true,
 					},
 					{
@@ -77,7 +77,7 @@ func TestService_List(t *testing.T) {
 						City:      "Los Angeles",
 						Province:  "CA",
 						Country:   "USA",
-						Zip:       "90210",
+						PostalCode: "90210",
 						IsDefault: false,
 					},
 				}
@@ -91,7 +91,7 @@ func TestService_List(t *testing.T) {
 					City:      "New York",
 					Province:  "NY",
 					Country:   "USA",
-					Zip:       "10001",
+					PostalCode: "10001",
 					IsDefault: true,
 				},
 				{
@@ -101,7 +101,7 @@ func TestService_List(t *testing.T) {
 					City:      "Los Angeles",
 					Province:  "CA",
 					Country:   "USA",
-					Zip:       "90210",
+					PostalCode: "90210",
 					IsDefault: false,
 				},
 			},
@@ -161,7 +161,7 @@ func TestService_Get(t *testing.T) {
 					City:      "New York",
 					Province:  "NY",
 					Country:   "USA",
-					Zip:       "10001",
+					PostalCode: "10001",
 					IsDefault: true,
 				}
 				mockRepo.On("FindByID", mock.Anything, id).Return(expectedAddress, nil)
@@ -173,7 +173,7 @@ func TestService_Get(t *testing.T) {
 				City:      "New York",
 				Province:  "NY",
 				Country:   "USA",
-				Zip:       "10001",
+				PostalCode: "10001",
 				IsDefault: true,
 			},
 			expectedError: nil,
@@ -231,7 +231,7 @@ func TestService_Create(t *testing.T) {
 				City:      "Seattle",
 				Province:  "WA",
 				Country:   "USA",
-				Zip:       "98101",
+				PostalCode: "98101",
 				IsDefault: false,
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateAddressDTO) {
@@ -242,7 +242,7 @@ func TestService_Create(t *testing.T) {
 					City:      dto.City,
 					Province:  dto.Province,
 					Country:   dto.Country,
-					Zip:       dto.Zip,
+					PostalCode: dto.PostalCode,
 					IsDefault: dto.IsDefault,
 				}
 				mockRepo.On("Create", mock.Anything, &dto).Return(expectedAddress, nil)
@@ -254,7 +254,7 @@ func TestService_Create(t *testing.T) {
 				City:      "Seattle",
 				Province:  "WA",
 				Country:   "USA",
-				Zip:       "98101",
+				PostalCode: "98101",
 				IsDefault: false,
 			},
 			expectedError: nil,
@@ -267,7 +267,7 @@ func TestService_Create(t *testing.T) {
 				City:      "Seattle",
 				Province:  "WA",
 				Country:   "USA",
-				Zip:       "98101",
+				PostalCode: "98101",
 				IsDefault: false,
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateAddressDTO) {
@@ -329,7 +329,7 @@ func TestService_Update(t *testing.T) {
 					City:      *dto.City,
 					Province:  "NY",
 					Country:   "USA",
-					Zip:       "10001",
+					PostalCode: "10001",
 					IsDefault: *dto.IsDefault,
 				}
 				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(u *UpdateAddressDTO) bool {
@@ -343,7 +343,7 @@ func TestService_Update(t *testing.T) {
 				City:      "Updated City",
 				Province:  "NY",
 				Country:   "USA",
-				Zip:       "10001",
+				PostalCode: "10001",
 				IsDefault: true,
 			},
 			expectedError: nil,

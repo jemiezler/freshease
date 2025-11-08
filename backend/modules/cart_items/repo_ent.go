@@ -15,86 +15,129 @@ type EntRepo struct{ c *ent.Client }
 func NewEntRepo(client *ent.Client) Repository { return &EntRepo{c: client} }
 
 func (r *EntRepo) List(ctx context.Context) ([]*GetCart_itemDTO, error) {
-	rows, err := r.c.Cart_item.Query().Order(ent.Asc(cart_item.FieldID)).WithCart().All(ctx)
+	rows, err := r.c.Cart_item.Query().
+		WithCart().
+		WithProduct().
+		Order(ent.Asc(cart_item.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]*GetCart_itemDTO, 0, len(rows))
 	for _, v := range rows {
-		var cartID uuid.UUID
-		if v.Edges.Cart != nil {
-			cartID = v.Edges.Cart.ID
+		dto := &GetCart_itemDTO{
+			ID:        v.ID,
+			Qty:       v.Qty,
+			UnitPrice: v.UnitPrice,
+			LineTotal: v.LineTotal,
 		}
-		out = append(out, &GetCart_itemDTO{
-			ID:          v.ID,
-			Name:        v.Name,
-			Description: v.Description,
-			Cart:        cartID,
-		})
+		if v.Edges.Cart != nil {
+			dto.CartID = v.Edges.Cart.ID
+		}
+		if v.Edges.Product != nil {
+			dto.ProductID = v.Edges.Product.ID
+		}
+		out = append(out, dto)
 	}
 	return out, nil
 }
 
 func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetCart_itemDTO, error) {
-	v, err := r.c.Cart_item.Query().Where(cart_item.IDEQ(id)).WithCart().Only(ctx)
+	v, err := r.c.Cart_item.Query().
+		WithCart().
+		WithProduct().
+		Where(cart_item.IDEQ(id)).
+		Only(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var cartID uuid.UUID
-	if v.Edges.Cart != nil {
-		cartID = v.Edges.Cart.ID
+	dto := &GetCart_itemDTO{
+		ID:        v.ID,
+		Qty:       v.Qty,
+		UnitPrice: v.UnitPrice,
+		LineTotal: v.LineTotal,
 	}
-	return &GetCart_itemDTO{
-		ID:          v.ID,
-		Name:        v.Name,
-		Description: v.Description,
-		Cart:        cartID,
-	}, nil
+	if v.Edges.Cart != nil {
+		dto.CartID = v.Edges.Cart.ID
+	}
+	if v.Edges.Product != nil {
+		dto.ProductID = v.Edges.Product.ID
+	}
+	return dto, nil
 }
 
 func (r *EntRepo) Create(ctx context.Context, dto *CreateCart_itemDTO) (*GetCart_itemDTO, error) {
-	q := r.c.Cart_item.
+	cart, err := r.c.Cart.Get(ctx, dto.CartID)
+	if err != nil {
+		return nil, err
+	}
+	product, err := r.c.Product.Get(ctx, dto.ProductID)
+	if err != nil {
+		return nil, err
+	}
+
+	row, err := r.c.Cart_item.
 		Create().
 		SetID(dto.ID).
-		SetName(dto.Name).
-		SetDescription(dto.Description).
-		SetCartID(dto.Cart)
-
-	row, err := q.Save(ctx)
+		SetQty(dto.Qty).
+		SetUnitPrice(dto.UnitPrice).
+		SetLineTotal(dto.LineTotal).
+		SetCart(cart).
+		SetProduct(product).
+		Save(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// reload with cart edge populated
-	v, err := r.c.Cart_item.Query().Where(cart_item.IDEQ(row.ID)).WithCart().Only(ctx)
+	// reload with edges populated
+	v, err := r.c.Cart_item.Query().
+		WithCart().
+		WithProduct().
+		Where(cart_item.IDEQ(row.ID)).
+		Only(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var cartID uuid.UUID
+	dtoOut := &GetCart_itemDTO{
+		ID:        v.ID,
+		Qty:       v.Qty,
+		UnitPrice: v.UnitPrice,
+		LineTotal: v.LineTotal,
+	}
 	if v.Edges.Cart != nil {
-		cartID = v.Edges.Cart.ID
+		dtoOut.CartID = v.Edges.Cart.ID
 	}
-
-	return &GetCart_itemDTO{
-		ID:          v.ID,
-		Name:        v.Name,
-		Description: v.Description,
-		Cart:        cartID,
-	}, nil
+	if v.Edges.Product != nil {
+		dtoOut.ProductID = v.Edges.Product.ID
+	}
+	return dtoOut, nil
 }
 
 func (r *EntRepo) Update(ctx context.Context, dto *UpdateCart_itemDTO) (*GetCart_itemDTO, error) {
 	q := r.c.Cart_item.UpdateOneID(dto.ID)
 
-	if dto.Name != nil {
-		q.SetName(*dto.Name)
+	if dto.Qty != nil {
+		q.SetQty(*dto.Qty)
 	}
-	if dto.Description != nil {
-		q.SetDescription(*dto.Description)
+	if dto.UnitPrice != nil {
+		q.SetUnitPrice(*dto.UnitPrice)
 	}
-	if dto.Cart != nil {
-		q.SetCartID(*dto.Cart)
+	if dto.LineTotal != nil {
+		q.SetLineTotal(*dto.LineTotal)
+	}
+	if dto.CartID != nil {
+		cart, err := r.c.Cart.Get(ctx, *dto.CartID)
+		if err != nil {
+			return nil, err
+		}
+		q.SetCart(cart)
+	}
+	if dto.ProductID != nil {
+		product, err := r.c.Product.Get(ctx, *dto.ProductID)
+		if err != nil {
+			return nil, err
+		}
+		q.SetProduct(product)
 	}
 
 	if len(q.Mutation().Fields()) == 0 {
@@ -106,23 +149,29 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateCart_itemDTO) (*GetCart
 		return nil, err
 	}
 
-	// reload with cart edge populated
-	v, err := r.c.Cart_item.Query().Where(cart_item.IDEQ(row.ID)).WithCart().Only(ctx)
+	// reload with edges populated
+	v, err := r.c.Cart_item.Query().
+		WithCart().
+		WithProduct().
+		Where(cart_item.IDEQ(row.ID)).
+		Only(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var cartID uuid.UUID
-	if v.Edges.Cart != nil {
-		cartID = v.Edges.Cart.ID
+	dtoOut := &GetCart_itemDTO{
+		ID:        v.ID,
+		Qty:       v.Qty,
+		UnitPrice: v.UnitPrice,
+		LineTotal: v.LineTotal,
 	}
-
-	return &GetCart_itemDTO{
-		ID:          v.ID,
-		Name:        v.Name,
-		Description: v.Description,
-		Cart:        cartID,
-	}, nil
+	if v.Edges.Cart != nil {
+		dtoOut.CartID = v.Edges.Cart.ID
+	}
+	if v.Edges.Product != nil {
+		dtoOut.ProductID = v.Edges.Product.ID
+	}
+	return dtoOut, nil
 }
 
 func (r *EntRepo) Delete(ctx context.Context, id uuid.UUID) error {

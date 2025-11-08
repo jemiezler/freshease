@@ -37,6 +37,6 @@ func (Role) Indexes() []ent.Index {
 func (Role) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("users", User.Type),
-		edge.To("role_permission", Role_Permission.Type),
+		edge.To("role_permissions", Role_Permission.Type),
 	}
 }

@@ -24,14 +24,13 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetProductDTO, error) {
 		out = append(out, &GetProductDTO{
 			ID:          v.ID,
 			Name:        v.Name,
+			SKU:         v.Sku,
 			Price:       v.Price,
 			Description: v.Description,
-			ImageURL:    v.ImageURL,
 			UnitLabel:   v.UnitLabel,
 			IsActive:    v.IsActive,
 			CreatedAt:   v.CreatedAt,
 			UpdatedAt:   v.UpdatedAt,
-			DeletedAt:   v.DeletedAt,
 		})
 	}
 	return out, nil
@@ -45,64 +44,51 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetProductDTO, e
 	return &GetProductDTO{
 		ID:          v.ID,
 		Name:        v.Name,
+		SKU:         v.Sku,
 		Price:       v.Price,
 		Description: v.Description,
-		ImageURL:    v.ImageURL,
 		UnitLabel:   v.UnitLabel,
 		IsActive:    v.IsActive,
 		CreatedAt:   v.CreatedAt,
 		UpdatedAt:   v.UpdatedAt,
-		DeletedAt:   v.DeletedAt,
 	}, nil
 }
 
 func (r *EntRepo) Create(ctx context.Context, dto *CreateProductDTO) (*GetProductDTO, error) {
-	// Create inventory first
-	inventory, err := r.c.Inventory.
-		Create().
-		SetQuantity(dto.Quantity).
-		SetRestockAmount(dto.RestockAmount).
-		Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create product with inventory
+	// Create product first
 	q := r.c.Product.
 		Create().
 		SetID(dto.ID).
 		SetName(dto.Name).
+		SetSku(dto.SKU).
 		SetPrice(dto.Price).
-		SetDescription(dto.Description).
-		SetImageURL(dto.ImageURL).
 		SetUnitLabel(dto.UnitLabel).
 		SetIsActive(dto.IsActive).
 		SetCreatedAt(dto.CreatedAt).
-		SetUpdatedAt(dto.UpdatedAt).
-		SetInventory(inventory)
+		SetUpdatedAt(dto.UpdatedAt)
 
-	if dto.DeletedAt != nil {
-		q.SetDeletedAt(*dto.DeletedAt)
+	if dto.Description != nil {
+		q.SetDescription(*dto.Description)
 	}
 
 	row, err := q.Save(ctx)
 	if err != nil {
-		// Clean up inventory if product creation fails
-		_ = r.c.Inventory.DeleteOneID(inventory.ID).Exec(ctx)
 		return nil, err
 	}
+
+	// Note: Inventory creation requires product and vendor IDs
+	// This should be handled separately or passed in the DTO
 
 	return &GetProductDTO{
 		ID:          row.ID,
 		Name:        row.Name,
+		SKU:         row.Sku,
 		Price:       row.Price,
 		Description: row.Description,
-		ImageURL:    row.ImageURL,
 		UnitLabel:   row.UnitLabel,
 		IsActive:    row.IsActive,
 		CreatedAt:   row.CreatedAt,
 		UpdatedAt:   row.UpdatedAt,
-		DeletedAt:   row.DeletedAt,
 	}, nil
 }
 
@@ -112,23 +98,20 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateProductDTO) (*GetProduc
 	if dto.Name != nil {
 		q.SetName(*dto.Name)
 	}
+	if dto.SKU != nil {
+		q.SetSku(*dto.SKU)
+	}
 	if dto.Price != nil {
 		q.SetPrice(*dto.Price)
 	}
 	if dto.Description != nil {
 		q.SetDescription(*dto.Description)
 	}
-	if dto.ImageURL != nil {
-		q.SetImageURL(*dto.ImageURL)
-	}
 	if dto.UnitLabel != nil {
 		q.SetUnitLabel(*dto.UnitLabel)
 	}
 	if dto.IsActive != nil {
 		q.SetIsActive(*dto.IsActive)
-	}
-	if dto.DeletedAt != nil {
-		q.SetDeletedAt(*dto.DeletedAt)
 	}
 
 	if len(q.Mutation().Fields()) == 0 {
@@ -143,14 +126,13 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateProductDTO) (*GetProduc
 	return &GetProductDTO{
 		ID:          row.ID,
 		Name:        row.Name,
+		SKU:         row.Sku,
 		Price:       row.Price,
 		Description: row.Description,
-		ImageURL:    row.ImageURL,
 		UnitLabel:   row.UnitLabel,
 		IsActive:    row.IsActive,
 		CreatedAt:   row.CreatedAt,
 		UpdatedAt:   row.UpdatedAt,
-		DeletedAt:   row.DeletedAt,
 	}, nil
 }
 
