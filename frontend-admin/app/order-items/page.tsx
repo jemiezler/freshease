@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createResource } from "@/lib/resource";
 import { Button } from "@/components/ui/button";
-import { PencilIcon, TrashIcon, PlusIcon } from "lucide-react";
+import { TrashIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import DataTable from "./_components/order-items-table";
 import { ColumnDef } from "@tanstack/react-table";

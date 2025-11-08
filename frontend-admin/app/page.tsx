@@ -123,33 +123,23 @@ export default function Home() {
 
 	const loadStats = useCallback(async () => {
 		const loadCount = async <T,>(
-			resource: ReturnType<typeof createResource<T, any, any>>,
-			key: keyof typeof stats
+			resource: (params?: Record<string, string | number | boolean | undefined>) => Promise<{ data?: T[] | undefined; }>,
+			key: keyof typeof stats,
 		) => {
-			try {
-				const res = await resource.list();
-				setStats((prev) => ({
-					...prev,
-					[key]: { count: res.data?.length ?? 0, loading: false },
-				}));
-			} catch (e) {
-				setStats((prev) => ({
-					...prev,
-					[key]: { count: 0, loading: false },
-				}));
-			}
+			const res = await resource({});
+			return res.data?.length ?? 0;
 		};
 
 		await Promise.all([
-			loadCount(users, "users"),
-			loadCount(products, "products"),
-			loadCount(vendors, "vendors"),
-			loadCount(carts, "carts"),
-			loadCount(inventories, "inventories"),
-			loadCount(roles, "roles"),
-			loadCount(permissions, "permissions"),
-			loadCount(addresses, "addresses"),
-			loadCount(cartItems, "cartItems"),
+			loadCount(users.list, "users"),
+			loadCount(products.list, "products"),
+			loadCount(vendors.list, "vendors"),
+			loadCount(carts.list, "carts"),
+			loadCount(inventories.list, "inventories"),
+			loadCount(roles.list, "roles"),
+			loadCount(permissions.list, "permissions"),
+			loadCount(addresses.list, "addresses"),
+			loadCount(cartItems.list, "cartItems"),
 		]);
 	}, []);
 
@@ -162,7 +152,7 @@ export default function Home() {
 			<div>
 				<h1 className="text-3xl font-bold text-zinc-900">Dashboard</h1>
 				<p className="mt-2 text-sm text-zinc-600">
-					Welcome to Freshease Admin. Here's an overview of your system.
+					Welcome to Freshease Admin. Here&apos;s an overview of your system.
 				</p>
 			</div>
 

@@ -68,7 +68,7 @@ export function EditBundleDialog({
 				price: Number(price),
 				is_active: isActive,
 			};
-			await bundles.update(id, payload);
+			await bundles.update(id, payload as BundlePayload);
 			await onSaved();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to update");

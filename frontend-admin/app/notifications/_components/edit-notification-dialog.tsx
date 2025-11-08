@@ -68,7 +68,7 @@ export function EditNotificationDialog({
 				channel,
 				status,
 			};
-			await notifications.update(id, payload);
+			await notifications.update(id, payload as NotificationPayload);
 			await onSaved();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to update");

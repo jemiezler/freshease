@@ -62,7 +62,7 @@ export function EditReviewDialog({
 				rating: rating ? Number(rating) : undefined,
 				comment: comment || null,
 			};
-			await reviews.update(id, payload);
+			await reviews.update(id, payload as ReviewPayload);
 			await onSaved();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to update");

@@ -26,9 +26,11 @@ export function EditCartItemDialog({
 	onOpenChange,
 	onSaved,
 }: EditDialogProps) {
-	const [name, setName] = useState("");
-	const [description, setDescription] = useState("");
+	const [qty, setQty] = useState<number>(0);
+	const [unitPrice, setUnitPrice] = useState<number>(0);
+	const [lineTotal, setLineTotal] = useState<number>(0);
 	const [cart, setCart] = useState("");
+	const [product, setProduct] = useState("");
 	const [loading, setLoading] = useState(true);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -40,9 +42,11 @@ export function EditCartItemDialog({
 				const res = await cartItems.get(id);
 				const ci = res.data as CartItem | undefined;
 				if (!cancelled && ci) {
-					setName(ci.name ?? "");
-					setDescription(ci.description ?? "");
+					setQty(ci.qty ?? 0);
+					setUnitPrice(ci.unit_price ?? 0);
+					setLineTotal(ci.line_total ?? 0);
 					setCart(ci.cart ?? "");
+					setProduct(ci.product ?? "");
 				}
 			} catch (e) {
 				setError(e instanceof Error ? e.message : "Failed to load");
@@ -61,9 +65,11 @@ export function EditCartItemDialog({
 		setError(null);
 		try {
 			const payload: CartItemPayload = {
-				name: name || undefined,
-				description: description || undefined,
-				cart: cart || undefined,
+				qty: qty ? Number(qty) : undefined,
+				unit_price: unitPrice ? Number(unitPrice) : undefined,
+				line_total: lineTotal ? Number(lineTotal) : undefined,
+				cart: cart,
+				product: product ?? undefined,
 			};
 			await cartItems.update(id, payload);
 			await onSaved();
@@ -88,16 +94,20 @@ export function EditCartItemDialog({
 				) : (
 					<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
 						<Field>
-							<FieldLabel htmlFor="edit-ci-name">Name</FieldLabel>
-							<Input id="edit-ci-name" value={name} onChange={(e) => setName(e.target.value)} required />
+							<FieldLabel htmlFor="edit-ci-name">Quantity</FieldLabel>
+							<Input id="edit-ci-name" value={qty} onChange={(e) => setQty(Number(e.target.value))} required />
 						</Field>
 						<Field>
-							<FieldLabel htmlFor="edit-ci-description">Description</FieldLabel>
-							<Textarea id="edit-ci-description" value={description} onChange={(e) => setDescription(e.target.value)} required />
+							<FieldLabel htmlFor="edit-ci-description">Unit Price</FieldLabel>
+							<Textarea id="edit-ci-description" value={unitPrice} onChange={(e) => setUnitPrice(Number(e.target.value))} required />
 						</Field>
 						<Field>
 							<FieldLabel htmlFor="edit-ci-cart">Cart ID</FieldLabel>
 							<Input id="edit-ci-cart" value={cart} onChange={(e) => setCart(e.target.value)} required />
+						</Field>
+						<Field>
+							<FieldLabel htmlFor="edit-ci-product">Product</FieldLabel>
+							<Input id="edit-ci-product" value={product} onChange={(e) => setProduct(e.target.value)} required />
 						</Field>
 						{error && <p style={{ color: "red" }}>{error}</p>}
 						<DialogFooter>

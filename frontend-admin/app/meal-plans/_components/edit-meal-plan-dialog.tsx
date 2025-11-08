@@ -62,7 +62,7 @@ export function EditMealPlanDialog({
 				week_start: weekStart,
 				goal: goal || null,
 			};
-			await mealPlans.update(id, payload);
+			await mealPlans.update(id, payload as MealPlanPayload);
 			await onSaved();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to update");

@@ -5,16 +5,16 @@ import { useParams } from "next/navigation";
 import { createResource } from "@/lib/resource";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { ArrowLeft, ShoppingCart, DollarSign, Calendar } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import type { Cart } from "@/types/cart";
-import type { CartItem } from "@/types/cart-item";
+import type { Cart, CartPayload } from "@/types/cart";
+import type { CartItem, CartItemPayload } from "@/types/cart-item";
 
-const carts = createResource<Cart, any, any>({
+const carts = createResource<Cart, CartPayload, CartPayload>({
 	basePath: "/carts",
 });
 
-const cartItems = createResource<CartItem, any, any>({
+const cartItems = createResource<CartItem, CartItemPayload, CartItemPayload>({
 	basePath: "/cart_items",
 });
 
@@ -33,16 +33,20 @@ export default function OrderDetailPage() {
 		try {
 			const [orderRes, itemsRes] = await Promise.all([
 				carts.get(id),
-				cartItems.list().catch(() => ({ data: [] })),
+				cartItems.list().catch((error) => {
+					console.error("Failed to load cart items:", error);
+					return { data: [] };
+				}),
 			]);
 			setOrder(orderRes.data ?? null);
 			// Filter items by cart_id if available
 			const filteredItems = (itemsRes.data ?? []).filter(
-				(item: CartItem) => (item as any).cart_id === id
+				(item: CartItem) => item.cart === id
 			);
 			setItems(filteredItems);
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to load");
+		} catch (error) {
+			console.error("Failed to load order details:", error);
+			setError(error instanceof Error ? error.message : "Failed to load");
 		} finally {
 			setLoading(false);
 		}
@@ -112,12 +116,12 @@ export default function OrderDetailPage() {
 										<div>
 											<p className="font-medium text-zinc-900">Item #{item.id.slice(0, 8)}</p>
 											<p className="text-sm text-zinc-600">
-												Quantity: {(item as any).quantity || 1}
-											</p>
+												Quantity: {item.qty?.toLocaleString() || "1"}
+												</p>
 										</div>
 										<div className="text-right">
 											<p className="font-semibold text-zinc-900">
-												${((item as any).price || 0).toLocaleString()}
+												${item.unit_price?.toLocaleString() || "0.00"}
 											</p>
 										</div>
 									</div>

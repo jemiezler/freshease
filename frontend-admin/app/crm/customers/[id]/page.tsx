@@ -1,26 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { createResource } from "@/lib/resource";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { ArrowLeft, Mail, Phone, User, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Mail, Phone, UserIcon } from "lucide-react";
 import Link from "next/link";
-import type { User } from "@/types/user";
-import type { Cart } from "@/types/cart";
+import type { User, UserPayload } from "@/types/user";
+import type { Cart, CartPayload } from "@/types/cart";
 
-const users = createResource<User, any, any>({
+const users = createResource<User, UserPayload, UserPayload>({
 	basePath: "/users",
 });
 
-const carts = createResource<Cart, any, any>({
+const carts = createResource<Cart, CartPayload, CartPayload>({
 	basePath: "/carts",
 });
 
 export default function CustomerDetailPage() {
 	const params = useParams();
-	const router = useRouter();
 	const id = params.id as string;
 
 	const [customer, setCustomer] = useState<User | null>(null);
@@ -34,13 +33,17 @@ export default function CustomerDetailPage() {
 		try {
 			const [customerRes, ordersRes] = await Promise.all([
 				users.get(id),
-				carts.list().catch(() => ({ data: [] })),
+				carts.list().catch((error) => {
+					console.error("Failed to load carts:", error);
+					return { data: [] };
+				}),
 			]);
 			setCustomer(customerRes.data ?? null);
 			// Filter orders by user if we have user_id in cart
 			setOrders(ordersRes.data ?? []);
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to load");
+		} catch (error) {
+			console.error("Failed to load customer details:", error);
+			setError(error instanceof Error ? error.message : "Failed to load");
 		} finally {
 			setLoading(false);
 		}
@@ -115,7 +118,7 @@ export default function CustomerDetailPage() {
 							</div>
 							{customer.bio && (
 								<div className="flex items-start gap-3">
-									<User className="size-5 text-zinc-400" />
+									<UserIcon className="size-5 text-zinc-400" />
 									<div>
 										<p className="text-sm text-zinc-600">Bio</p>
 										<p className="font-medium text-zinc-900">{customer.bio}</p>

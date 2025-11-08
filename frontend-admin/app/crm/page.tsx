@@ -13,19 +13,19 @@ import {
 	Activity,
 } from "lucide-react";
 import Link from "next/link";
-import type { User } from "@/types/user";
-import type { Cart } from "@/types/cart";
-import type { Product } from "@/types/product";
+import type { User, UserPayload } from "@/types/user";
+import type { Cart, CartPayload } from "@/types/cart";
+import type { Product, ProductPayload } from "@/types/product";
 
-const users = createResource<User, any, any>({
+const users = createResource<User, UserPayload, UserPayload>({
 	basePath: "/users",
 });
 
-const carts = createResource<Cart, any, any>({
+const carts = createResource<Cart, CartPayload, CartPayload>({
 	basePath: "/carts",
 });
 
-const products = createResource<Product, any, any>({
+const products = createResource<Product, ProductPayload, ProductPayload>({
 	basePath: "/products",
 });
 

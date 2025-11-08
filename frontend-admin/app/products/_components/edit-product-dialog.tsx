@@ -84,7 +84,7 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 					"PATCH"
 				);
 			} else {
-				await products.update(id, payload);
+				await products.update(id, payload as ProductPayload);
 			}
 			await onSaved();
 		} catch (e) {

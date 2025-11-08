@@ -1,36 +1,38 @@
 FROM node:22-slim AS build
 WORKDIR /app
 
-# Install deps
-COPY package*.json ./
-RUN npm ci
+# Enable Corepack to get Yarn
+RUN corepack enable
 
-# Copy source & build (App Router ready; produces standalone server)
+# Copy lockfiles first for better cache hits
+COPY package.json yarn.lock ./
+
+# Install deps (production+dev for building)
+RUN yarn install --frozen-lockfile
+
+# Copy source & build
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN yarn build
 
-# --- Runtime stage ---
+# ---------- Runtime ----------
 FROM node:22-slim
 WORKDIR /app
 
-# Non-root user
+# Create non-root user
 RUN useradd -m nextjs
 USER nextjs
 
-# Copy the standalone output (fast, minimal runtime)
-# Next.js produces .next/standalone with a server.js entrypoint
+# Copy standalone output
 COPY --from=build /app/.next/standalone ./
-# Static assets
+# Static + public
 COPY --from=build /app/.next/static ./.next/static
-# Public assets (if you use them)
 COPY --from=build /app/public ./public
 
-# Env & port for Next server
+# Runtime env
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 EXPOSE 3000
-# The standalone output contains server.js at repo root (copied above)
 CMD ["node", "server.js"]

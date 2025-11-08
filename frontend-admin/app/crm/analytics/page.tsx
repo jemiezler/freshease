@@ -3,20 +3,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { createResource } from "@/lib/resource";
 import { Spinner } from "@/components/ui/spinner";
-import { TrendingUp, DollarSign, ShoppingCart, Users, Package } from "lucide-react";
-import type { User } from "@/types/user";
-import type { Cart } from "@/types/cart";
-import type { Product } from "@/types/product";
+import { TrendingUp, DollarSign, ShoppingCart, Users } from "lucide-react";
+import type { User, UserPayload } from "@/types/user";
+import type { Cart, CartPayload } from "@/types/cart";
+import type { Product, ProductPayload } from "@/types/product";
 
-const users = createResource<User, any, any>({
+const users = createResource<User, UserPayload, UserPayload>({
 	basePath: "/users",
 });
 
-const carts = createResource<Cart, any, any>({
+const carts = createResource<Cart, CartPayload, CartPayload>({
 	basePath: "/carts",
 });
 
-const products = createResource<Product, any, any>({
+const products = createResource<Product, ProductPayload, ProductPayload>({
 	basePath: "/products",
 });
 
@@ -36,9 +36,18 @@ export default function AnalyticsPage() {
 		setLoading(true);
 		try {
 			const [customersRes, ordersRes, productsRes] = await Promise.all([
-				users.list().catch(() => ({ data: [] })),
-				carts.list().catch(() => ({ data: [] })),
-				products.list().catch(() => ({ data: [] })),
+				users.list().catch((error) => {
+					console.error("Failed to load customers:", error);
+					return { data: [] };
+				}),
+				carts.list().catch((error) => {
+					console.error("Failed to load carts:", error);
+					return { data: [] };
+				}),
+				products.list().catch((error) => {
+					console.error("Failed to load products:", error);
+					return { data: [] };
+				}),
 			]);
 
 			const customers = customersRes.data ?? [];

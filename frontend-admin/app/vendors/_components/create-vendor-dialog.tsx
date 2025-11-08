@@ -37,7 +37,7 @@ export function CreateVendorDialog({
 	const [postalCode, setPostalCode] = useState("");
 	const [website, setWebsite] = useState("");
 	const [logoUrl, setLogoUrl] = useState("");
-	const [logoFile, setLogoFile] = useState<File | null>(null);
+	const [, setLogoFile] = useState<File | null>(null);
 	const [uploadingLogo, setUploadingLogo] = useState(false);
 	const [description, setDescription] = useState("");
 	const [isActive, setIsActive] = useState("active");
@@ -54,7 +54,7 @@ export function CreateVendorDialog({
 		try {
 			const data = await apiClient.uploadImage(file, "vendors/logos");
 			setLogoUrl(data.url);
-			setLogoFile(file);
+			setLogoFile(file as File);
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to upload logo");
 		} finally {

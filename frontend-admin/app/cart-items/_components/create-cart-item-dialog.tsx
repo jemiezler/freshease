@@ -26,9 +26,11 @@ export function CreateCartItemDialog({
 	onOpenChange,
 	onSaved,
 }: DialogProps) {
-	const [name, setName] = useState("");
-	const [description, setDescription] = useState("");
+		const [qty, setQty] = useState<string>("");
+	const [unitPrice, setUnitPrice] = useState<string>("");
+	const [lineTotal, ] = useState<string>("");
 	const [cart, setCart] = useState("");
+	const [product, ] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -38,9 +40,11 @@ export function CreateCartItemDialog({
 		setError(null);
 		try {
 			const payload: CartItemPayload = {
-				name: name || undefined,
-				description: description || undefined,
-				cart: cart || undefined,
+				qty: qty ? Number(qty) : undefined,
+				unit_price: unitPrice ? Number(unitPrice) : undefined,
+				line_total: lineTotal ? Number(lineTotal) : undefined,
+				cart: cart || "",
+				product: product ?? undefined,
 			};
 			await cartItems.create(payload);
 			await onSaved();
@@ -59,12 +63,12 @@ export function CreateCartItemDialog({
 				</DialogHeader>
 				<form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
 					<Field>
-						<FieldLabel htmlFor="ci-name">Name *</FieldLabel>
-						<Input id="ci-name" value={name} onChange={(e) => setName(e.target.value)} required />
+						<FieldLabel htmlFor="ci-name">Quantity *</FieldLabel>
+						<Input id="ci-name" value={qty} onChange={(e) => setQty(e.target.value)} required />
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="ci-description">Description *</FieldLabel>
-						<Textarea id="ci-description" value={description} onChange={(e) => setDescription(e.target.value)} required />
+						<FieldLabel htmlFor="ci-description">Unit Price *</FieldLabel>
+						<Textarea id="ci-description" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} required />
 					</Field>
 					<Field>
 						<FieldLabel htmlFor="ci-cart">Cart ID *</FieldLabel>

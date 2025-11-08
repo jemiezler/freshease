@@ -67,7 +67,7 @@ export function EditDeliveryDialog({
 				status,
 				eta: eta || null,
 			};
-			await deliveries.update(id, payload);
+			await deliveries.update(id, payload as DeliveryPayload);
 			await onSaved();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to update");

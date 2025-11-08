@@ -73,7 +73,7 @@ export function EditOrderDialog({
 				discount: discount ? Number(discount) : undefined,
 				total: total ? Number(total) : undefined,
 			};
-			await orders.update(id, payload);
+			await orders.update(id, payload as OrderPayload);
 			await onSaved();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to update");

@@ -18,7 +18,7 @@ export default function OrdersPage() {
 	const [items, setItems] = useState<Cart[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [editId, setEditId] = useState<string | null>(null);
+	const [, setEditId] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
 		setLoading(true);

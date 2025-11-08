@@ -62,7 +62,7 @@ export function EditCategoryDialog({
 				slug: slug || name.toLowerCase().replace(/\s+/g, "-"),
 				updated_at: new Date().toISOString(),
 			};
-			await categories.update(id, payload);
+			await categories.update(id, payload as CategoryPayload);
 			await onSaved();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to update");

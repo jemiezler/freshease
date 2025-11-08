@@ -65,7 +65,7 @@ export function EditRecipeDialog({
 				instructions: instructions || null,
 				kcal: kcal ? Number(kcal) : undefined,
 			};
-			await recipes.update(id, payload);
+			await recipes.update(id, payload as RecipePayload);
 			await onSaved();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to update");

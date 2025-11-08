@@ -35,8 +35,8 @@ export function EditUserDialog({
 	const [bio, setBio] = useState("");
 	const [avatar, setAvatar] = useState("");
 	const [cover, setCover] = useState("");
-	const [avatarFile, setAvatarFile] = useState<File | null>(null);
-	const [coverFile, setCoverFile] = useState<File | null>(null);
+	const [, setAvatarFile] = useState<File | null>(null);
+	const [, setCoverFile] = useState<File | null>(null);
 	const [uploadingAvatar, setUploadingAvatar] = useState(false);
 	const [uploadingCover, setUploadingCover] = useState(false);
 	const [dateOfBirth, setDateOfBirth] = useState("");
@@ -90,7 +90,7 @@ export function EditUserDialog({
 		try {
 			const data = await apiClient.uploadImage(file, "users/avatars");
 			setAvatar(data.url);
-			setAvatarFile(file);
+			setAvatarFile(file as File);
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to upload avatar");
 		} finally {
@@ -108,7 +108,7 @@ export function EditUserDialog({
 		try {
 			const data = await apiClient.uploadImage(file, "users/covers");
 			setCover(data.url);
-			setCoverFile(file);
+			setCoverFile(file as File);
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to upload cover");
 		} finally {
