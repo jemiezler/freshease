@@ -27,8 +27,8 @@ env:
   REGION: asia-southeast1
   GAR: ${{ secrets.GAR_HOST }}                       # e.g. asia-southeast1-docker.pkg.dev
   PROJECT: ${{ secrets.GCP_PROJECT }}
-  API_CTX: apps/backend
-  ADMIN_CTX: apps/frontend-admin
+  API_CTX: backend
+  ADMIN_CTX: frontend-admin
   API_REF: ${{ secrets.GAR_HOST }}/${{ secrets.GCP_PROJECT }}/freshease/api
   ADMIN_REF: ${{ secrets.GAR_HOST }}/${{ secrets.GCP_PROJECT }}/freshease/admin
   RUN_TAG: ${{ github.run_number }}                 # numeric, monotonic
