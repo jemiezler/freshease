@@ -99,7 +99,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ env.API_CTX }}           # <— builds from backend/
-          push: ${{ env.DO_PUSH }}
+          push: true
           tags: |
             ${{ env.API_REF }}:${{ env.RUN_TAG }}
           cache-from: type=registry,ref=${{ env.API_REF }}:cache
@@ -135,7 +135,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ env.ADMIN_CTX }}
-          push: ${{ env.DO_PUSH }}
+          push: true
           tags: |
             ${{ env.ADMIN_REF }}:${{ env.RUN_TAG }}
           cache-from: type=registry,ref=${{ env.ADMIN_REF }}:cache
@@ -155,7 +155,6 @@ jobs:
     steps:
       - name: Call Jenkins remote build (TARGET=both by default)
         env:
-          DO_PUSH: ${{ github.event_name != 'pull_request' }}
           JENKINS_URL:  ${{ secrets.JENKINS_URL }}  # e.g. https://jenkins.your-tunnel.domain
           JENKINS_JOB:  ${{ secrets.JENKINS_JOB }}  # Job name or folder/job notation
           JENKINS_TOKEN:  ${{ secrets.JENKINS_TOKEN }} # Build Token (configure in Jenkins job)
