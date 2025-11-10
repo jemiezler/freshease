@@ -173,18 +173,22 @@ jobs:
             exit 0
           fi
           
-          # --- FIX 1: Trim whitespace and remove trailing slash from URL ---
+          # --- FIX 1: Trim whitespace/slash from URL ---
           CLEAN_JENKINS_URL=$(echo "$JENKINS_URL" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | sed 's/\/$//')
           
-          # --- FIX 2 (The Rethink): URL-encode the job name to handle spaces/special chars ---
-          ENCODED_JENKINS_JOB=$(echo "$JENKINS_JOB" | jq -sRr @uri)
+          # --- FIX 2: Trim whitespace (including newlines) from job name ---
+          # This removes the problematic newline character (%0A)
+          CLEAN_JENKINS_JOB=$(echo "$JENKINS_JOB" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+          # --- FIX 3: URL-encode the *cleaned* job name ---
+          ENCODED_JENKINS_JOB=$(echo "$CLEAN_JENKINS_JOB" | jq -sRr @uri)
           
           # Build trigger URL with the *cleaned* and *encoded* variables
           TRIGGER_URL="${CLEAN_JENKINS_URL}/job/${ENCODED_JENKINS_JOB}/build"
           
           echo "Sending webhook to Jenkins job '${JENKINS_JOB}' at '${TRIGGER_URL}' (not printing token)."
           
-          # Prepare payload (convert result to boolean)
+          # Prepare payload
           API_SUCCESS="${{ needs.build-and-push-api.result == 'success' && 'true' || 'false' }}"
           ADMIN_SUCCESS="${{ needs.build-and-push-admin.result == 'success' && 'true' || 'false' }}"
           PAYLOAD=$(printf '{"branch":"%s","commit":"%s","services":{"api":%s,"admin":%s}}' \
@@ -193,18 +197,18 @@ jobs:
             "$API_SUCCESS" \
             "$ADMIN_SUCCESS")
           
-          # Option A: if token is provided, use it as query parameter
+          # Send webhook
           if [ -n "$JENKINS_TOKEN" ]; then
             HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}?token=${JENKINS_TOKEN}" \
               -H "Content-Type: application/json" \
               -d "${PAYLOAD}" || echo "000")
           else
-            # Option B: no token, try anonymous POST
             HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}" \
               -H "Content-Type: application/json" \
               -d "${PAYLOAD}" || echo "000")
           fi
           
+          # Check response
           if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "302" ]; then
             echo "✅ Jenkins webhook triggered successfully (HTTP $HTTP_CODE)"
           else
