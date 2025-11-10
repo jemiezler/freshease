@@ -109,7 +109,7 @@ function StatCard({ title, value, icon: Icon, href, loading, trend }: StatCardPr
 }
 
 export default function Home() {
-	const [stats, setStats] = useState({
+	const [stats, ] = useState({
 		users: { count: 0, loading: true },
 		products: { count: 0, loading: true },
 		vendors: { count: 0, loading: true },

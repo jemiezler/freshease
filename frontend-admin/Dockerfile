@@ -13,7 +13,7 @@ RUN yarn install --frozen-lockfile
 # Copy source & build
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN yarn build
+RUN yarn run build
 
 # ---------- Runtime ----------
 FROM node:22-slim

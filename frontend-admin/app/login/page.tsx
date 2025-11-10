@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { startOAuth, loginWithPassword } from "@/lib/auth";
 import { Chrome, AlertCircle, Mail, Loader2 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginForm() {
   const { isAuthenticated, loading, login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -197,6 +197,23 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-zinc-900 border-r-transparent"></div>
+            <p className="text-sm text-zinc-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
 
