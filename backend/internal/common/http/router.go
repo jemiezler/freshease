@@ -7,6 +7,7 @@ import (
 	"freshease/backend/internal/common/middleware"
 	"freshease/backend/modules/addresses"
 	"freshease/backend/modules/auth/authoidc"
+	authpassword "freshease/backend/modules/auth/password"
 	"freshease/backend/modules/bundle_items"
 	"freshease/backend/modules/bundles"
 	"freshease/backend/modules/cart_items"
@@ -50,6 +51,8 @@ func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	if err := authoidc.RegisterModule(api, client); err != nil {
 		panic(err)
 	}
+	// Password-based auth (login, init-admin)
+	authpassword.RegisterModule(api, client)
 	genai.RegisterModuleWithEnt(api, client)
 
 	// 2) Public: Shop API (no authentication required)
@@ -81,17 +84,14 @@ func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	reviews.RegisterModuleWithEnt(api, client)
 	roles.RegisterModuleWithEnt(api, client)
 	// Users: Register public routes (GET for viewing profiles)
-	usersRepo := users.NewEntRepo(client)
-	usersSvc := users.NewService(usersRepo, uploadsSvc)
-	usersCtl := users.NewController(usersSvc)
-	users.RegisterPublicRoutes(api, usersCtl)
+	users.RegisterModuleWithEnt(api, client, uploadsSvc)
 	vendors.RegisterModuleWithEnt(api, client, uploadsSvc)
 	orders.RegisterModuleWithEnt(api, client)
 	order_items.RegisterModuleWithEnt(api, client)
 	payments.RegisterModuleWithEnt(api, client)
 
 	// 4) Secured area (everything below requires Authorization: Bearer <JWT>)
-	secured := api.Group("", middleware.RequireAuth())
+	secured := api.Group("/api", middleware.RequireAuth())
 
 	// Mount protected modules on the secured router
 	// addresses.RegisterModuleWithEnt(secured, client)
@@ -113,7 +113,6 @@ func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	// reviews.RegisterModuleWithEnt(secured, client)
 	// roles.RegisterModuleWithEnt(secured, client)
 	// Users: Register secured routes (PUT, DELETE for modifying user data)
-	users.RegisterSecuredRoutes(secured, usersCtl)
 	// vendors.RegisterModuleWithEnt(secured, client, uploadsSvc)
 
 	secured.Get("/whoami", func(c *fiber.Ctx) error {

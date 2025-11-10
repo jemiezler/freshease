@@ -14,17 +14,17 @@ definitions:
         type: string
       line2:
         type: string
-      province:
+      postal_code:
         type: string
-      zip:
+      province:
         type: string
     required:
     - city
     - country
     - id
     - line1
+    - postal_code
     - province
-    - zip
     type: object
   addresses.GetAddressDTO:
     properties:
@@ -40,17 +40,17 @@ definitions:
         type: string
       line2:
         type: string
-      province:
+      postal_code:
         type: string
-      zip:
+      province:
         type: string
     required:
     - city
     - country
     - id
     - line1
+    - postal_code
     - province
-    - zip
     type: object
   addresses.UpdateAddressDTO:
     properties:
@@ -66,61 +66,77 @@ definitions:
         type: string
       line2:
         type: string
-      province:
+      postal_code:
         type: string
-      zip:
+      province:
         type: string
     required:
     - id
     type: object
   cart_items.CreateCart_itemDTO:
     properties:
-      cart:
-        type: string
-      description:
+      cart_id:
         type: string
       id:
         type: string
-      name:
-        maxLength: 60
-        minLength: 2
+      line_total:
+        minimum: 0
+        type: number
+      product_id:
         type: string
+      qty:
+        minimum: 1
+        type: integer
+      unit_price:
+        minimum: 0
+        type: number
     required:
-    - cart
-    - description
+    - cart_id
     - id
-    - name
+    - line_total
+    - product_id
+    - qty
+    - unit_price
     type: object
   cart_items.GetCart_itemDTO:
     properties:
-      cart:
-        type: string
-      description:
+      cart_id:
         type: string
       id:
         type: string
-      name:
-        maxLength: 60
-        minLength: 2
+      line_total:
+        type: number
+      product_id:
         type: string
+      qty:
+        type: integer
+      unit_price:
+        type: number
     required:
-    - cart
-    - description
+    - cart_id
     - id
-    - name
+    - line_total
+    - product_id
+    - qty
+    - unit_price
     type: object
   cart_items.UpdateCart_itemDTO:
     properties:
-      cart:
-        type: string
-      description:
+      cart_id:
         type: string
       id:
         type: string
-      name:
-        maxLength: 60
-        minLength: 2
+      line_total:
+        minimum: 0
+        type: number
+      product_id:
         type: string
+      qty:
+        minimum: 1
+        type: integer
+      unit_price:
+        minimum: 0
+        type: number
     required:
     - id
     type: object
@@ -133,20 +149,23 @@ definitions:
     type: object
   carts.GetCartDTO:
     properties:
-      created_at:
-        type: string
+      discount:
+        type: number
       id:
         type: string
       status:
         type: string
+      subtotal:
+        type: number
       total:
         type: number
       updated_at:
         type: string
     required:
-    - created_at
+    - discount
     - id
     - status
+    - subtotal
     - total
     - updated_at
     type: object
@@ -158,6 +177,121 @@ definitions:
         type: string
       total:
         type: number
+    required:
+    - id
+    type: object
+  categories.CreateCategoryDTO:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      slug:
+        maxLength: 100
+        minLength: 2
+        type: string
+      updated_at:
+        type: string
+    required:
+    - created_at
+    - id
+    - name
+    - slug
+    - updated_at
+    type: object
+  categories.GetCategoryDTO:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+    required:
+    - id
+    - name
+    - slug
+    type: object
+  categories.UpdateCategoryDTO:
+    properties:
+      id:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      slug:
+        maxLength: 100
+        minLength: 2
+        type: string
+      updated_at:
+        type: string
+    required:
+    - id
+    - updated_at
+    type: object
+  deliveries.CreateDeliveryDTO:
+    properties:
+      delivered_at:
+        type: string
+      eta:
+        type: string
+      id:
+        type: string
+      order_id:
+        type: string
+      provider:
+        type: string
+      status:
+        type: string
+      tracking_no:
+        type: string
+    required:
+    - id
+    - order_id
+    - provider
+    - status
+    type: object
+  deliveries.GetDeliveryDTO:
+    properties:
+      delivered_at:
+        type: string
+      eta:
+        type: string
+      id:
+        type: string
+      order_id:
+        type: string
+      provider:
+        type: string
+      status:
+        type: string
+      tracking_no:
+        type: string
+    required:
+    - id
+    - order_id
+    - provider
+    - status
+    type: object
+  deliveries.UpdateDeliveryDTO:
+    properties:
+      delivered_at:
+        type: string
+      eta:
+        type: string
+      id:
+        type: string
+      provider:
+        type: string
+      status:
+        type: string
+      tracking_no:
+        type: string
     required:
     - id
     type: object
@@ -192,13 +326,13 @@ definitions:
     properties:
       quantity:
         type: integer
-      restock_amount:
+      reorder_level:
         type: integer
       updated_at:
         type: string
     required:
     - quantity
-    - restock_amount
+    - reorder_level
     type: object
   inventories.GetInventoryDTO:
     properties:
@@ -206,14 +340,14 @@ definitions:
         type: string
       quantity:
         type: integer
-      restock_amount:
+      reorder_level:
         type: integer
       updated_at:
         type: string
     required:
     - id
     - quantity
-    - restock_amount
+    - reorder_level
     - updated_at
     type: object
   inventories.UpdateInventoryDTO:
@@ -222,195 +356,187 @@ definitions:
         type: string
       quantity:
         type: integer
-      restock_amount:
+      reorder_level:
         type: integer
       updated_at:
         type: string
     required:
     - id
     type: object
-  permissions.CreatePermissionDTO:
+  password.InitAdminRequest:
     properties:
-      description:
+      email:
+        type: string
+      name:
+        minLength: 2
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  password.InitAdminResponse:
+    properties:
+      message:
+        type: string
+      user:
+        $ref: '#/definitions/password.UserResponse'
+    type: object
+  password.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  password.LoginResponse:
+    properties:
+      accessToken:
+        type: string
+      message:
+        type: string
+      user:
+        $ref: '#/definitions/password.UserResponse'
+    type: object
+  password.UserResponse:
+    properties:
+      email:
         type: string
       id:
         type: string
       name:
+        type: string
+      role:
+        type: string
+    type: object
+  permissions.CreatePermissionDTO:
+    properties:
+      code:
         maxLength: 60
         minLength: 2
         type: string
+      description:
+        type: string
+      id:
+        type: string
     required:
-    - description
+    - code
     - id
-    - name
     type: object
   permissions.GetPermissionDTO:
     properties:
+      code:
+        type: string
       description:
         type: string
       id:
         type: string
-      name:
-        maxLength: 60
-        minLength: 2
-        type: string
     required:
-    - description
+    - code
     - id
-    - name
     type: object
   permissions.UpdatePermissionDTO:
     properties:
+      code:
+        maxLength: 60
+        minLength: 2
+        type: string
       description:
         type: string
       id:
-        type: string
-      name:
-        maxLength: 60
-        minLength: 2
         type: string
     required:
     - id
     type: object
   product_categories.CreateProductCategoryDTO:
     properties:
-      description:
+      category_id:
         type: string
       id:
         type: string
-      name:
-        maxLength: 60
-        minLength: 2
-        type: string
-      slug:
+      product_id:
         type: string
     required:
-    - description
+    - category_id
     - id
-    - name
-    - slug
+    - product_id
     type: object
   product_categories.GetProductCategoryDTO:
     properties:
-      description:
+      category_id:
         type: string
       id:
         type: string
-      name:
-        maxLength: 60
-        minLength: 2
-        type: string
-      slug:
+      product_id:
         type: string
     required:
-    - description
+    - category_id
     - id
-    - name
-    - slug
+    - product_id
     type: object
   product_categories.UpdateProductCategoryDTO:
     properties:
-      description:
+      category_id:
         type: string
       id:
         type: string
-      name:
-        maxLength: 60
-        minLength: 2
-        type: string
-      slug:
+      product_id:
         type: string
     required:
     - id
-    type: object
-  products.CreateProductDTO:
-    properties:
-      created_at:
-        type: string
-      deleted_at:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      image_url:
-        type: string
-      is_active:
-        type: string
-      name:
-        maxLength: 60
-        minLength: 2
-        type: string
-      price:
-        type: number
-      unit_label:
-        type: string
-      updated_at:
-        type: string
-    required:
-    - created_at
-    - description
-    - id
-    - image_url
-    - is_active
-    - name
-    - price
-    - unit_label
-    - updated_at
     type: object
   products.GetProductDTO:
     properties:
       created_at:
         type: string
-      deleted_at:
-        type: string
       description:
         type: string
       id:
         type: string
-      image_url:
-        type: string
       is_active:
-        type: string
+        type: boolean
       name:
-        maxLength: 60
-        minLength: 2
         type: string
       price:
         type: number
+      sku:
+        type: string
       unit_label:
         type: string
       updated_at:
         type: string
     required:
     - created_at
-    - description
     - id
-    - image_url
-    - is_active
     - name
     - price
+    - sku
     - unit_label
     - updated_at
     type: object
   products.UpdateProductDTO:
     properties:
-      deleted_at:
-        type: string
       description:
         type: string
       id:
         type: string
-      image_url:
-        type: string
       is_active:
-        type: string
+        type: boolean
       name:
         maxLength: 60
         minLength: 2
         type: string
       price:
         type: number
+      sku:
+        type: string
       unit_label:
         type: string
     required:
@@ -605,123 +731,37 @@ definitions:
     type: object
   vendors.CreateVendorDTO:
     properties:
-      address:
-        type: string
-      city:
-        type: string
-      country:
-        type: string
-      created_at:
-        type: string
-      deleted_at:
-        type: string
-      description:
-        type: string
-      email:
+      contact:
         type: string
       id:
         type: string
-      is_active:
-        type: string
-      logo_url:
-        type: string
       name:
-        maxLength: 60
-        minLength: 2
-        type: string
-      phone:
-        type: string
-      postal_code:
-        type: string
-      state:
-        type: string
-      updated_at:
-        type: string
-      website:
         type: string
     required:
     - id
-    - is_active
     type: object
   vendors.GetVendorDTO:
     properties:
-      address:
-        type: string
-      city:
-        type: string
-      country:
-        type: string
-      created_at:
-        type: string
-      deleted_at:
-        type: string
-      description:
-        type: string
-      email:
+      contact:
         type: string
       id:
         type: string
-      is_active:
-        type: string
-      logo_url:
-        type: string
       name:
-        maxLength: 60
-        minLength: 2
-        type: string
-      phone:
-        type: string
-      postal_code:
-        type: string
-      state:
-        type: string
-      updated_at:
-        type: string
-      website:
         type: string
     required:
-    - created_at
     - id
-    - is_active
-    - updated_at
     type: object
   vendors.UpdateVendorDTO:
     properties:
-      address:
-        type: string
-      city:
-        type: string
-      country:
-        type: string
-      deleted_at:
-        type: string
-      description:
-        type: string
-      email:
+      contact:
         type: string
       id:
         type: string
-      is_active:
-        type: string
-      logo_url:
-        type: string
       name:
-        maxLength: 60
-        minLength: 2
-        type: string
-      phone:
-        type: string
-      postal_code:
-        type: string
-      state:
-        type: string
-      website:
         type: string
     required:
     - id
-    - is_active
     type: object
-host: localhost:8080
 info:
   contact: {}
   description: API docs for Freshease backend.
@@ -955,6 +995,71 @@ paths:
             additionalProperties: true
             type: object
       summary: Begin OIDC login
+      tags:
+      - auth
+  /auth/init-admin:
+    post:
+      consumes:
+      - application/json
+      description: Create the first admin user with admin role. Can only be called
+        if no admin exists.
+      parameters:
+      - description: Admin user details
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/password.InitAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/password.InitAdminResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Initialize admin user
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password, returns JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/password.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/password.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login with email and password
       tags:
       - auth
   /cart_items:
@@ -1209,6 +1314,258 @@ paths:
       summary: Update cart
       tags:
       - carts
+  /categories:
+    get:
+      description: Get all categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/categories.GetCategoryDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List categories
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/categories.CreateCategoryDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/categories.GetCategoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create category
+      tags:
+      - categories
+  /categories/{id}:
+    delete:
+      parameters:
+      - description: Category ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete category
+      tags:
+      - categories
+    get:
+      parameters:
+      - description: Category ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/categories.GetCategoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get category by ID
+      tags:
+      - categories
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/categories.UpdateCategoryDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/categories.GetCategoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update category
+      tags:
+      - categories
+  /deliveries:
+    get:
+      description: Get all deliveries
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/deliveries.GetDeliveryDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List deliveries
+      tags:
+      - deliveries
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Delivery data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/deliveries.CreateDeliveryDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/deliveries.GetDeliveryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create delivery
+      tags:
+      - deliveries
+  /deliveries/{id}:
+    delete:
+      parameters:
+      - description: Delivery ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete delivery
+      tags:
+      - deliveries
+    get:
+      parameters:
+      - description: Delivery ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/deliveries.GetDeliveryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get delivery by ID
+      tags:
+      - deliveries
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Delivery ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial/Full update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/deliveries.UpdateDeliveryDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/deliveries.GetDeliveryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update delivery
+      tags:
+      - deliveries
   /genai/daily:
     post:
       consumes:
@@ -1675,14 +2032,18 @@ paths:
       - products
     post:
       consumes:
+      - multipart/form-data
       - application/json
       parameters:
-      - description: Product payload
-        in: body
+      - description: Product image file
+        in: formData
+        name: image
+        type: file
+      - description: Product payload (JSON string)
+        example: '{"name":"Product","price":10.99,"description":"Description","unit_label":"kg","is_active":"active","quantity":100,"restock_amount":50}'
+        in: formData
         name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/products.CreateProductDTO'
+        type: string
       produces:
       - application/json
       responses:
@@ -1751,6 +2112,7 @@ paths:
       - products
     patch:
       consumes:
+      - multipart/form-data
       - application/json
       parameters:
       - description: Product ID (UUID)
@@ -1758,6 +2120,10 @@ paths:
         name: id
         required: true
         type: string
+      - description: Product image file
+        in: formData
+        name: image
+        type: file
       - description: Partial/Full update
         in: body
         name: payload
@@ -2080,6 +2446,110 @@ paths:
       summary: Get vendor (public)
       tags:
       - shop
+  /uploads/images:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Upload an image file (supports: jpg, jpeg, png, gif, webp). Max
+        size: 10MB'
+      parameters:
+      - description: Image file to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 'Folder to store the image (default: ''images'')'
+        in: formData
+        name: folder
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload an image
+      tags:
+      - uploads
+  /uploads/images/{folder}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload an image file to a specific folder path
+      parameters:
+      - description: Folder path (e.g., 'products', 'users/avatars')
+        in: path
+        name: folder
+        required: true
+        type: string
+      - description: Image file to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload an image to a specific folder
+      tags:
+      - uploads
+  /uploads/images/{path}:
+    delete:
+      description: Delete an image file from storage
+      parameters:
+      - description: Object path (e.g., 'images/uuid.jpg' or 'products/uuid.png')
+        in: path
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete an image
+      tags:
+      - uploads
   /users:
     get:
       description: Get all users
@@ -2143,6 +2613,11 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
       summary: Delete user
       tags:
       - users
@@ -2197,6 +2672,11 @@ paths:
             $ref: '#/definitions/users.GetUserDTO'
         "400":
           description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties: true
             type: object

@@ -20,7 +20,6 @@ import (
 // @version 1.0
 // @description API docs for Freshease backend.
 // @BasePath /api
-// @host localhost:env.HTTPPort
 func main() {
 	cfg := config.Load()
 

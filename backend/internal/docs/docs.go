@@ -204,6 +204,102 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/init-admin": {
+            "post": {
+                "description": "Create the first admin user with admin role. Can only be called if no admin exists.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Initialize admin user",
+                "parameters": [
+                    {
+                        "description": "Admin user details",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/password.InitAdminRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/password.InitAdminResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user with email and password, returns JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login with email and password",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/password.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/password.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/auth/{provider}/callback": {
             "get": {
                 "description": "Validates state and redirects back to app with code",
@@ -722,6 +818,384 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/carts.GetCartDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/categories": {
+            "get": {
+                "description": "Get all categories",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "List categories",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/categories.GetCategoryDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Create category",
+                "parameters": [
+                    {
+                        "description": "Category data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/categories.CreateCategoryDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/categories.GetCategoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/categories/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Get category by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/categories.GetCategoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Delete category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Update category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/categories.UpdateCategoryDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/categories.GetCategoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/deliveries": {
+            "get": {
+                "description": "Get all deliveries",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deliveries"
+                ],
+                "summary": "List deliveries",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/deliveries.GetDeliveryDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deliveries"
+                ],
+                "summary": "Create delivery",
+                "parameters": [
+                    {
+                        "description": "Delivery data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/deliveries.CreateDeliveryDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/deliveries.GetDeliveryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/deliveries/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deliveries"
+                ],
+                "summary": "Get delivery by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Delivery ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/deliveries.GetDeliveryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deliveries"
+                ],
+                "summary": "Delete delivery",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Delivery ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deliveries"
+                ],
+                "summary": "Update delivery",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Delivery ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial/Full update",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/deliveries.UpdateDeliveryDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/deliveries.GetDeliveryDTO"
                         }
                     },
                     "400": {
@@ -1430,6 +1904,7 @@ const docTemplate = `{
             },
             "post": {
                 "consumes": [
+                    "multipart/form-data",
                     "application/json"
                 ],
                 "produces": [
@@ -1441,13 +1916,17 @@ const docTemplate = `{
                 "summary": "Create product",
                 "parameters": [
                     {
-                        "description": "Product payload",
+                        "type": "file",
+                        "description": "Product image file",
+                        "name": "image",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "{\"name\":\"Product\",\"price\":10.99,\"description\":\"Description\",\"unit_label\":\"kg\",\"is_active\":\"active\",\"quantity\":100,\"restock_amount\":50}",
+                        "description": "Product payload (JSON string)",
                         "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/products.CreateProductDTO"
-                        }
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -1544,6 +2023,7 @@ const docTemplate = `{
             },
             "patch": {
                 "consumes": [
+                    "multipart/form-data",
                     "application/json"
                 ],
                 "produces": [
@@ -1560,6 +2040,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Product image file",
+                        "name": "image",
+                        "in": "formData"
                     },
                     {
                         "description": "Partial/Full update",
@@ -2041,6 +2527,157 @@ const docTemplate = `{
                 }
             }
         },
+        "/uploads/images": {
+            "post": {
+                "description": "Upload an image file (supports: jpg, jpeg, png, gif, webp). Max size: 10MB",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "uploads"
+                ],
+                "summary": "Upload an image",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Image file to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Folder to store the image (default: 'images')",
+                        "name": "folder",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/uploads/images/{folder}": {
+            "post": {
+                "description": "Upload an image file to a specific folder path",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "uploads"
+                ],
+                "summary": "Upload an image to a specific folder",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Folder path (e.g., 'products', 'users/avatars')",
+                        "name": "folder",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Image file to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/uploads/images/{path}": {
+            "delete": {
+                "description": "Delete an image file from storage",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "uploads"
+                ],
+                "summary": "Delete an image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Object path (e.g., 'images/uuid.jpg' or 'products/uuid.png')",
+                        "name": "path",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Get all users",
@@ -2192,6 +2829,13 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             },
@@ -2218,6 +2862,13 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2424,8 +3075,8 @@ const docTemplate = `{
                 "country",
                 "id",
                 "line1",
-                "province",
-                "zip"
+                "postal_code",
+                "province"
             ],
             "properties": {
                 "city": {
@@ -2446,10 +3097,10 @@ const docTemplate = `{
                 "line2": {
                     "type": "string"
                 },
-                "province": {
+                "postal_code": {
                     "type": "string"
                 },
-                "zip": {
+                "province": {
                     "type": "string"
                 }
             }
@@ -2461,8 +3112,8 @@ const docTemplate = `{
                 "country",
                 "id",
                 "line1",
-                "province",
-                "zip"
+                "postal_code",
+                "province"
             ],
             "properties": {
                 "city": {
@@ -2483,10 +3134,10 @@ const docTemplate = `{
                 "line2": {
                     "type": "string"
                 },
-                "province": {
+                "postal_code": {
                     "type": "string"
                 },
-                "zip": {
+                "province": {
                     "type": "string"
                 }
             }
@@ -2515,10 +3166,10 @@ const docTemplate = `{
                 "line2": {
                     "type": "string"
                 },
-                "province": {
+                "postal_code": {
                     "type": "string"
                 },
-                "zip": {
+                "province": {
                     "type": "string"
                 }
             }
@@ -2526,50 +3177,65 @@ const docTemplate = `{
         "cart_items.CreateCart_itemDTO": {
             "type": "object",
             "required": [
-                "cart",
-                "description",
+                "cart_id",
                 "id",
-                "name"
+                "line_total",
+                "product_id",
+                "qty",
+                "unit_price"
             ],
             "properties": {
-                "cart": {
-                    "type": "string"
-                },
-                "description": {
+                "cart_id": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
+                "line_total": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "unit_price": {
+                    "type": "number",
+                    "minimum": 0
                 }
             }
         },
         "cart_items.GetCart_itemDTO": {
             "type": "object",
             "required": [
-                "cart",
-                "description",
+                "cart_id",
                 "id",
-                "name"
+                "line_total",
+                "product_id",
+                "qty",
+                "unit_price"
             ],
             "properties": {
-                "cart": {
-                    "type": "string"
-                },
-                "description": {
+                "cart_id": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
+                "line_total": {
+                    "type": "number"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "unit_price": {
+                    "type": "number"
                 }
             }
         },
@@ -2579,19 +3245,26 @@ const docTemplate = `{
                 "id"
             ],
             "properties": {
-                "cart": {
-                    "type": "string"
-                },
-                "description": {
+                "cart_id": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
+                "line_total": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "unit_price": {
+                    "type": "number",
+                    "minimum": 0
                 }
             }
         },
@@ -2609,21 +3282,25 @@ const docTemplate = `{
         "carts.GetCartDTO": {
             "type": "object",
             "required": [
-                "created_at",
+                "discount",
                 "id",
                 "status",
+                "subtotal",
                 "total",
                 "updated_at"
             ],
             "properties": {
-                "created_at": {
-                    "type": "string"
+                "discount": {
+                    "type": "number"
                 },
                 "id": {
                     "type": "string"
                 },
                 "status": {
                     "type": "string"
+                },
+                "subtotal": {
+                    "type": "number"
                 },
                 "total": {
                     "type": "number"
@@ -2647,6 +3324,171 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "number"
+                }
+            }
+        },
+        "categories.CreateCategoryDTO": {
+            "type": "object",
+            "required": [
+                "created_at",
+                "id",
+                "name",
+                "slug",
+                "updated_at"
+            ],
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "categories.GetCategoryDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "name",
+                "slug"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                }
+            }
+        },
+        "categories.UpdateCategoryDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "updated_at"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "deliveries.CreateDeliveryDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "order_id",
+                "provider",
+                "status"
+            ],
+            "properties": {
+                "delivered_at": {
+                    "type": "string"
+                },
+                "eta": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tracking_no": {
+                    "type": "string"
+                }
+            }
+        },
+        "deliveries.GetDeliveryDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "order_id",
+                "provider",
+                "status"
+            ],
+            "properties": {
+                "delivered_at": {
+                    "type": "string"
+                },
+                "eta": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tracking_no": {
+                    "type": "string"
+                }
+            }
+        },
+        "deliveries.UpdateDeliveryDTO": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "delivered_at": {
+                    "type": "string"
+                },
+                "eta": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tracking_no": {
+                    "type": "string"
                 }
             }
         },
@@ -2695,13 +3537,13 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "quantity",
-                "restock_amount"
+                "reorder_level"
             ],
             "properties": {
                 "quantity": {
                     "type": "integer"
                 },
-                "restock_amount": {
+                "reorder_level": {
                     "type": "integer"
                 },
                 "updated_at": {
@@ -2714,7 +3556,7 @@ const docTemplate = `{
             "required": [
                 "id",
                 "quantity",
-                "restock_amount",
+                "reorder_level",
                 "updated_at"
             ],
             "properties": {
@@ -2724,7 +3566,7 @@ const docTemplate = `{
                 "quantity": {
                     "type": "integer"
                 },
-                "restock_amount": {
+                "reorder_level": {
                     "type": "integer"
                 },
                 "updated_at": {
@@ -2744,7 +3586,7 @@ const docTemplate = `{
                 "quantity": {
                     "type": "integer"
                 },
-                "restock_amount": {
+                "reorder_level": {
                     "type": "integer"
                 },
                 "updated_at": {
@@ -2752,45 +3594,120 @@ const docTemplate = `{
                 }
             }
         },
-        "permissions.CreatePermissionDTO": {
+        "password.InitAdminRequest": {
             "type": "object",
             "required": [
-                "description",
-                "id",
-                "name"
+                "email",
+                "name",
+                "password"
             ],
             "properties": {
-                "description": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "minLength": 2
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
+        "password.InitAdminResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/password.UserResponse"
+                }
+            }
+        },
+        "password.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
+        "password.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/password.UserResponse"
+                }
+            }
+        },
+        "password.UserResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "permissions.CreatePermissionDTO": {
+            "type": "object",
+            "required": [
+                "code",
+                "id"
+            ],
+            "properties": {
+                "code": {
                     "type": "string",
                     "maxLength": 60,
                     "minLength": 2
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
                 }
             }
         },
         "permissions.GetPermissionDTO": {
             "type": "object",
             "required": [
-                "description",
-                "id",
-                "name"
+                "code",
+                "id"
             ],
             "properties": {
+                "code": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
                 }
             }
         },
@@ -2800,40 +3717,34 @@ const docTemplate = `{
                 "id"
             ],
             "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 2
+                },
                 "description": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
                 }
             }
         },
         "product_categories.CreateProductCategoryDTO": {
             "type": "object",
             "required": [
-                "description",
+                "category_id",
                 "id",
-                "name",
-                "slug"
+                "product_id"
             ],
             "properties": {
-                "description": {
+                "category_id": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
-                },
-                "slug": {
+                "product_id": {
                     "type": "string"
                 }
             }
@@ -2841,24 +3752,18 @@ const docTemplate = `{
         "product_categories.GetProductCategoryDTO": {
             "type": "object",
             "required": [
-                "description",
+                "category_id",
                 "id",
-                "name",
-                "slug"
+                "product_id"
             ],
             "properties": {
-                "description": {
+                "category_id": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
-                },
-                "slug": {
+                "product_id": {
                     "type": "string"
                 }
             }
@@ -2869,66 +3774,13 @@ const docTemplate = `{
                 "id"
             ],
             "properties": {
-                "description": {
+                "category_id": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
-                },
-                "slug": {
-                    "type": "string"
-                }
-            }
-        },
-        "products.CreateProductDTO": {
-            "type": "object",
-            "required": [
-                "created_at",
-                "description",
-                "id",
-                "image_url",
-                "is_active",
-                "name",
-                "price",
-                "unit_label",
-                "updated_at"
-            ],
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "image_url": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
-                },
-                "price": {
-                    "type": "number"
-                },
-                "unit_label": {
-                    "type": "string"
-                },
-                "updated_at": {
+                "product_id": {
                     "type": "string"
                 }
             }
@@ -2937,20 +3789,15 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "created_at",
-                "description",
                 "id",
-                "image_url",
-                "is_active",
                 "name",
                 "price",
+                "sku",
                 "unit_label",
                 "updated_at"
             ],
             "properties": {
                 "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
                     "type": "string"
                 },
                 "description": {
@@ -2959,19 +3806,17 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "image_url": {
-                    "type": "string"
-                },
                 "is_active": {
-                    "type": "string"
+                    "type": "boolean"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
+                    "type": "string"
                 },
                 "price": {
                     "type": "number"
+                },
+                "sku": {
+                    "type": "string"
                 },
                 "unit_label": {
                     "type": "string"
@@ -2987,20 +3832,14 @@ const docTemplate = `{
                 "id"
             ],
             "properties": {
-                "deleted_at": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "image_url": {
-                    "type": "string"
-                },
                 "is_active": {
-                    "type": "string"
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string",
@@ -3009,6 +3848,9 @@ const docTemplate = `{
                 },
                 "price": {
                     "type": "number"
+                },
+                "sku": {
+                    "type": "string"
                 },
                 "unit_label": {
                     "type": "string"
@@ -3275,58 +4117,16 @@ const docTemplate = `{
         "vendors.CreateVendorDTO": {
             "type": "object",
             "required": [
-                "id",
-                "is_active"
+                "id"
             ],
             "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "email": {
+                "contact": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "is_active": {
-                    "type": "string"
-                },
-                "logo_url": {
-                    "type": "string"
-                },
                 "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "postal_code": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "website": {
                     "type": "string"
                 }
             }
@@ -3334,60 +4134,16 @@ const docTemplate = `{
         "vendors.GetVendorDTO": {
             "type": "object",
             "required": [
-                "created_at",
-                "id",
-                "is_active",
-                "updated_at"
+                "id"
             ],
             "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "email": {
+                "contact": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "is_active": {
-                    "type": "string"
-                },
-                "logo_url": {
-                    "type": "string"
-                },
                 "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "postal_code": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "website": {
                     "type": "string"
                 }
             }
@@ -3395,52 +4151,16 @@ const docTemplate = `{
         "vendors.UpdateVendorDTO": {
             "type": "object",
             "required": [
-                "id",
-                "is_active"
+                "id"
             ],
             "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "email": {
+                "contact": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "is_active": {
-                    "type": "string"
-                },
-                "logo_url": {
-                    "type": "string"
-                },
                 "name": {
-                    "type": "string",
-                    "maxLength": 60,
-                    "minLength": 2
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "postal_code": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "string"
-                },
-                "website": {
                     "type": "string"
                 }
             }
@@ -3451,7 +4171,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
+	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Freshease API",
