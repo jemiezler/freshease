@@ -167,33 +167,43 @@ jobs:
           JENKINS_JOB: ${{ secrets.JENKINS_JOB }}
           JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
         run: |
-          # sanity checks
+          # Sanity checks
           if [ -z "$JENKINS_URL" ] || [ -z "$JENKINS_JOB" ]; then
             echo "❌ Missing JENKINS_URL or JENKINS_JOB secret — skipping Jenkins notify"
             exit 0
           fi
-
-          # Build trigger URL (example: https://jenkins.example.com/job/my-job/build)
-          # If your job requires token auth via query param, use buildWithParameters?token=...
-          TRIGGER_URL="${JENKINS_URL%/}/job/${JENKINS_JOB}/build"
-
-          echo "Sending webhook to Jenkins job '${JENKINS_JOB}' at '${TRIGGER_URL}' (not printing secret/token)."
-
-          # Option A: if your Jenkins is configured with a job token param (recommended for anonymous trigger)
+          
+          # Normalize JENKINS_URL (remove trailing slash if present)
+          JENKINS_URL="${JENKINS_URL%/}"
+          
+          # Build trigger URL
+          TRIGGER_URL="${JENKINS_URL}/job/${JENKINS_JOB}/build"
+          
+          echo "Sending webhook to Jenkins job '${JENKINS_JOB}' at '${TRIGGER_URL}' (not printing token)."
+          
+          # Prepare payload (convert result to boolean)
+          API_SUCCESS="${{ needs.build-and-push-api.result == 'success' && 'true' || 'false' }}"
+          ADMIN_SUCCESS="${{ needs.build-and-push-admin.result == 'success' && 'true' || 'false' }}"
+          PAYLOAD=$(printf '{"branch":"%s","commit":"%s","services":{"api":%s,"admin":%s}}' \
+            "${{ github.ref_name }}" \
+            "${{ github.sha }}" \
+            "$API_SUCCESS" \
+            "$ADMIN_SUCCESS")
+          
+          # Option A: if token is provided, use it as query parameter
           if [ -n "$JENKINS_TOKEN" ]; then
-            # Use buildWithParameters+token if you use token-based trigger:
-            curl -sS -o /dev/null -w "%{http_code}\n" -X POST "${TRIGGER_URL}?token=${JENKINS_TOKEN}" \
+            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}?token=${JENKINS_TOKEN}" \
               -H "Content-Type: application/json" \
-              -d "{\"branch\":\"${{ github.ref_name }}\",\"commit\":\"${{ github.sha }}\"}" \
-              || echo "Jenkins webhook notification failed (optional)"
+              -d "${PAYLOAD}" || echo "000")
           else
-            # Option B: no token, try anonymous POST (or use Basic auth below)
-            curl -sS -o /dev/null -w "%{http_code}\n" -X POST "${TRIGGER_URL}" \
+            # Option B: no token, try anonymous POST
+            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}" \
               -H "Content-Type: application/json" \
-              -d "{\"branch\":\"${{ github.ref_name }}\",\"commit\":\"${{ github.sha }}\"}" \
-              || echo "Jenkins webhook notification failed (optional)"
+              -d "${PAYLOAD}" || echo "000")
           fi
-
-          # If your Jenkins needs user:apiToken basic auth, replace the curl above with:
-          # curl -sS -u "jenkins_user:${JENKINS_TOKEN}" -X POST "${TRIGGER_URL}" -H "Content-Type: application/json" -d '...'
-
+          
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "302" ]; then
+            echo "✅ Jenkins webhook triggered successfully (HTTP $HTTP_CODE)"
+          else
+            echo "⚠️ Jenkins webhook notification returned HTTP $HTTP_CODE (this is optional)"
+          fi
