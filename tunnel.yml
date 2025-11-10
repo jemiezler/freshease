@@ -1,0 +1,6 @@
+tunnel: freshease-api
+credentials-file: /home/jemiezler/.cloudflared/10ce321f-0a2c-4799-8f04-45a5605ece77.json
+ingress:
+  - hostname: freshease-api.jemiezler.site
+    service: http://localhost:8080
+  - service: http_status:404

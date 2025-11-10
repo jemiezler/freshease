@@ -80,7 +80,11 @@ func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	recipes.RegisterModuleWithEnt(api, client)
 	reviews.RegisterModuleWithEnt(api, client)
 	roles.RegisterModuleWithEnt(api, client)
-	users.RegisterModuleWithEnt(api, client, uploadsSvc)
+	// Users: Register public routes (GET for viewing profiles)
+	usersRepo := users.NewEntRepo(client)
+	usersSvc := users.NewService(usersRepo, uploadsSvc)
+	usersCtl := users.NewController(usersSvc)
+	users.RegisterPublicRoutes(api, usersCtl)
 	vendors.RegisterModuleWithEnt(api, client, uploadsSvc)
 	orders.RegisterModuleWithEnt(api, client)
 	order_items.RegisterModuleWithEnt(api, client)
@@ -108,7 +112,8 @@ func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	// recipes.RegisterModuleWithEnt(secured, client)
 	// reviews.RegisterModuleWithEnt(secured, client)
 	// roles.RegisterModuleWithEnt(secured, client)
-	// users.RegisterModuleWithEnt(secured, client, uploadsSvc)
+	// Users: Register secured routes (PUT, DELETE for modifying user data)
+	users.RegisterSecuredRoutes(secured, usersCtl)
 	// vendors.RegisterModuleWithEnt(secured, client, uploadsSvc)
 
 	secured.Get("/whoami", func(c *fiber.Ctx) error {

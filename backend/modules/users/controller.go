@@ -87,6 +87,7 @@ func (ctl *Controller) CreateUser(c *fiber.Ctx) error {
 // @Param        payload body      UpdateUserDTO true "Partial/Full update"
 // @Success      200     {object}  GetUserDTO
 // @Failure      400     {object}  map[string]interface{}
+// @Failure      403     {object}  map[string]interface{}
 // @Router       /users/{id} [put]
 func (ctl *Controller) UpdateUser(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -94,6 +95,16 @@ func (ctl *Controller) UpdateUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
 	}
+
+	// Check authorization: users can only update their own profile
+	userID := c.Locals("user_id")
+	if userID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "user not found in token"})
+	}
+	if userID.(string) != id.String() {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden: can only update own profile"})
+	}
+
 	var dto UpdateUserDTO
 	if err := middleware.BindAndValidate(c, &dto); err != nil {
 		return err
@@ -112,6 +123,7 @@ func (ctl *Controller) UpdateUser(c *fiber.Ctx) error {
 // @Param        id   path      string true "User ID (UUID)"
 // @Success      204  {object}  nil
 // @Failure      400  {object}  map[string]interface{}
+// @Failure      403  {object}  map[string]interface{}
 // @Router       /users/{id} [delete]
 func (ctl *Controller) DeleteUser(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -119,6 +131,16 @@ func (ctl *Controller) DeleteUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
 	}
+
+	// Check authorization: users can only delete their own profile
+	userID := c.Locals("user_id")
+	if userID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "user not found in token"})
+	}
+	if userID.(string) != id.String() {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden: can only delete own profile"})
+	}
+
 	if err := ctl.svc.Delete(c.Context(), id); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
 	}

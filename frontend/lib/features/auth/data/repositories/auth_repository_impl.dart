@@ -13,4 +13,10 @@ class AuthRepositoryImpl implements AuthRepository {
     final json = await api.signInWithGoogle();
     return UserDto.fromJson(json).toEntity();
   }
+
+  @override
+  Future<User> verifyToken() async {
+    final json = await api.verifyToken();
+    return UserDto.fromJson(json).toEntity();
+  }
 }

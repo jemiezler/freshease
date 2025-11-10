@@ -8,6 +8,7 @@ import 'package:frontend/features/account/presentation/state/user_cubit.dart';
 import 'package:frontend/features/cart/data/cart_repository.dart';
 import 'package:get_it/get_it.dart';
 import '../core/network/dio_client.dart';
+import '../core/api/api_di.dart' as api_di;
 import '../features/auth/di.dart' as auth_di;
 import '../features/account/di.dart' as account_di;
 import '../features/shop/di.dart' as shop_di;
@@ -19,6 +20,11 @@ final getIt = GetIt.instance;
 Future<void> configureDependencies({String envFile = ".env"}) async {
   await dotenv.load(fileName: envFile);
   getIt.registerLazySingleton<DioClient>(() => DioClient());
+  
+  // Register all API clients
+  api_di.registerApiClients(getIt);
+  
+  // Register feature dependencies
   auth_di.registerAuthDependencies(getIt);
   account_di.registerAccountDependencies(getIt);
   shop_di.registerShopDependencies(getIt);

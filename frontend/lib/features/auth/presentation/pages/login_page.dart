@@ -22,6 +22,9 @@ class _LoginPageState extends State<LoginPage> {
   late final DioClient _dioClient;
   late final AuthRepository _authRepo;
   late final LoginCubit _cubit;
+  bool _hasCheckedToken = false;
+  bool _isAutoLogin = false;
+  bool _hasNavigated = false; // Prevent multiple navigation attempts
 
   @override
   void initState() {
@@ -29,6 +32,46 @@ class _LoginPageState extends State<LoginPage> {
     _dioClient = DioClient();
     _authRepo = AuthRepositoryImpl(AuthApi(_dioClient));
     _cubit = LoginCubit(_authRepo);
+    // Check for existing token and verify it
+    _verifyExistingToken();
+  }
+
+  Future<void> _verifyExistingToken() async {
+    // Verify existing token before showing login UI
+    try {
+      await _cubit.verifyExistingToken();
+
+      // Wait for state to update after verification
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
+
+      final currentState = _cubit.state;
+
+      // If user is set and success, it was auto-login
+      if (currentState.user != null && currentState.isSuccess) {
+        _isAutoLogin = true;
+        // Mark as checked so BlocConsumer renders and listener/builder can navigate
+        if (mounted) {
+          setState(() {
+            _hasCheckedToken = true;
+          });
+        }
+        // Navigation will be handled by listener or builder after widget builds
+        return;
+      }
+    } catch (e) {
+      // Token verification failed - this is expected if no token exists
+      // Continue to show login screen - don't log as this is normal
+    }
+
+    // Token verification failed or no token - show login screen
+    if (mounted) {
+      setState(() {
+        _hasCheckedToken = true;
+        _isAutoLogin = false;
+      });
+    }
   }
 
   @override
@@ -45,10 +88,42 @@ class _LoginPageState extends State<LoginPage> {
     return BlocProvider.value(
       value: _cubit,
       child: BlocConsumer<LoginCubit, LoginState>(
-        listenWhen: (prev, curr) =>
-            prev.error != curr.error || prev.user != curr.user,
         listener: (context, state) {
-          if (state.error != null) {
+          // Handle successful login (either from token verification or manual login)
+          // Check current state directly - don't rely only on state changes
+          if (state.user != null &&
+              state.isSuccess &&
+              mounted &&
+              !_hasNavigated) {
+            _hasNavigated = true;
+
+            if (_isAutoLogin) {
+              // Auto-login: Navigate immediately
+              Future.delayed(const Duration(milliseconds: 100), () {
+                if (mounted) {
+                  context.go('/');
+                }
+              });
+            } else {
+              // Manual login: Show success message and navigate
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Login successful! Welcome!'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  context.go('/');
+                }
+              });
+            }
+          }
+
+          // Handle errors (only show errors for manual login attempts, not token verification)
+          if (state.error != null && state.isFailure && mounted) {
             // Handle different types of errors
             String message;
             Color backgroundColor;
@@ -85,24 +160,46 @@ class _LoginPageState extends State<LoginPage> {
               ),
             );
           }
-          if (state.user != null) {
-            // Login successful - show success message and navigate
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Login successful! Welcome!'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
-            // Navigate to home page after a short delay
-            Future.delayed(const Duration(milliseconds: 500), () {
-              context.go('/');
-            });
-          }
         },
         builder: (context, state) {
-          final loading = state.loading;
+          // Show loading screen while verifying token
+          if (!_hasCheckedToken) {
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [const CircularProgressIndicator()],
+                ),
+              ),
+            );
+          }
 
+          // If auto-login was successful, show welcome message and navigate
+          if (_isAutoLogin && state.user != null && state.isSuccess) {
+            // Trigger navigation once - this is the primary navigation trigger
+            if (!_hasNavigated) {
+              _hasNavigated = true;
+              // Navigate after widget is fully built
+              Future.microtask(() {
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (mounted && _isAutoLogin) {
+                    context.go('/');
+                  }
+                });
+              });
+            }
+
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [const CircularProgressIndicator()],
+                ),
+              ),
+            );
+          }
+
+          // Show login UI after token verification is complete and not auto-login
           return Scaffold(
             body: Column(
               children: [
@@ -174,7 +271,7 @@ class _LoginPageState extends State<LoginPage> {
                                           size: 26,
                                         ),
                                       ),
-                                      onTap: loading
+                                      onTap: state.loading
                                           ? null
                                           : () => context
                                                 .read<LoginCubit>()

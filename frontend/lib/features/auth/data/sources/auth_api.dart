@@ -11,6 +11,53 @@ class AuthApi {
   static const _scheme = 'freshease';
   static const _provider = 'google';
 
+  /// Verify if the existing token is valid by calling /api/whoami
+  /// Returns user data if token is valid, throws exception if invalid
+  Future<Map<String, dynamic>> verifyToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+
+      if (token == null || token.isEmpty) {
+        throw Exception('No token found');
+      }
+
+      // Verify token by calling whoami endpoint
+      final response = await _dio.get('/api/whoami');
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          return data;
+        } else {
+          throw Exception('Invalid response format from server');
+        }
+      } else {
+        throw Exception('Token verification failed: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        final statusCode = e.response?.statusCode;
+        if (statusCode == 401 || statusCode == 403) {
+          // Token is invalid, clear it
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('access_token');
+          await prefs.remove('refresh_token');
+          await prefs.remove('id_token');
+          throw Exception('Token expired or invalid');
+        }
+        throw Exception('Token verification failed: ${e.response?.data?['message'] ?? e.message}');
+      } else {
+        throw Exception('Network error: ${e.message ?? 'Unable to connect to server'}');
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Token verification failed: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> signInWithGoogle() async {
     // 1) Start OIDC via your backend
     final startUrl = '${_dio.options.baseUrl}/api/auth/$_provider/start';

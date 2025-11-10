@@ -41,6 +41,38 @@ class LoginCubit extends Cubit<LoginState> {
   final AuthRepository repo;
   LoginCubit(this.repo) : super(const LoginState());
 
+  /// Verify existing token and auto-login if valid
+  Future<void> verifyExistingToken() async {
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        loading: true,
+        error: null,
+        isSuccess: false,
+        isFailure: false,
+      ),
+    );
+    try {
+      final u = await repo.verifyToken();
+      if (!isClosed) {
+        emit(LoginState(user: u, isSuccess: true, isFailure: false, loading: false));
+      }
+    } catch (e) {
+      if (!isClosed) {
+        // Token verification failed - this is expected if no token exists
+        // Don't treat it as an error, just show login screen
+        emit(
+          LoginState(
+            loading: false,
+            error: null,
+            isSuccess: false,
+            isFailure: false,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> googleLogin() async {
     if (isClosed) return;
     emit(
@@ -54,12 +86,17 @@ class LoginCubit extends Cubit<LoginState> {
     try {
       final u = await repo.signInWithGoogle();
       if (!isClosed) {
-        emit(LoginState(user: u, isSuccess: true, isFailure: false));
+        emit(LoginState(user: u, isSuccess: true, isFailure: false, loading: false));
       }
     } catch (e) {
       if (!isClosed) {
         emit(
-          LoginState(error: e.toString(), isSuccess: false, isFailure: true),
+          LoginState(
+            error: e.toString(),
+            isSuccess: false,
+            isFailure: true,
+            loading: false,
+          ),
         );
       }
     }
