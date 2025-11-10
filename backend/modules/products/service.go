@@ -32,19 +32,27 @@ func NewService(r Repository, uploadsSvc uploads.Service) Service {
 }
 
 func (s *service) List(ctx context.Context) ([]*GetProductDTO, error) {
+	// Return products with object names (paths), not URLs
+	// Clients should use /api/uploads/{object_name} to get presigned URLs
 	return s.repo.List(ctx)
 }
 
 func (s *service) Get(ctx context.Context, id uuid.UUID) (*GetProductDTO, error) {
+	// Return product with object name (path), not URL
+	// Clients should use /api/uploads/{object_name} to get presigned URLs
 	return s.repo.FindByID(ctx, id)
 }
 
 func (s *service) Create(ctx context.Context, dto CreateProductDTO) (*GetProductDTO, error) {
+	// Return product with object name (path), not URL
+	// Clients should use /api/uploads/{object_name} to get presigned URLs
 	return s.repo.Create(ctx, &dto)
 }
 
 func (s *service) Update(ctx context.Context, id uuid.UUID, dto UpdateProductDTO) (*GetProductDTO, error) {
 	dto.ID = id
+	// Return product with object name (path), not URL
+	// Clients should use /api/uploads/{object_name} to get presigned URLs
 	return s.repo.Update(ctx, &dto)
 }
 

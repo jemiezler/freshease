@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:frontend/core/constants/app_colors.dart';
+import 'package:frontend/core/theme/design_tokens.dart';
 import 'package:go_router/go_router.dart';
 
 class BannerItem {
@@ -85,101 +87,108 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
     return SizedBox(
       height: widget.height,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            PageView.builder(
-              controller: _ctrl,
-              clipBehavior: Clip.hardEdge, // ✅ prevents overlap/bleed
-              itemCount: widget.items.length,
-              onPageChanged: (i) {
-                setState(() => _index = i);
-                widget.onPageChanged?.call(i);
-              },
-              itemBuilder: (context, i) {
-                final item = widget.items[i];
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          boxShadow: DesignTokens.raisedShadow,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              PageView.builder(
+                controller: _ctrl,
+                clipBehavior: Clip.hardEdge, // ✅ prevents overlap/bleed
+                itemCount: widget.items.length,
+                onPageChanged: (i) {
+                  setState(() => _index = i);
+                  widget.onPageChanged?.call(i);
+                },
+                itemBuilder: (context, i) {
+                  final item = widget.items[i];
 
-                void handleTap() {
-                  if (item.onTap != null) {
-                    item.onTap!();
-                  } else if (item.route != null) {
-                    context.go(item.route!);
+                  void handleTap() {
+                    if (item.onTap != null) {
+                      item.onTap!();
+                    } else if (item.route != null) {
+                      context.go(item.route!);
+                    }
                   }
-                }
 
-                // ✅ use cover to maintain ratio and fill frame
-                final image = item.isAsset
-                    ? Image.asset(
-                        item.imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                        semanticLabel: item.semanticLabel,
-                      )
-                    : Image.network(
-                        item.imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                        semanticLabel: item.semanticLabel,
-                      );
+                  // ✅ use cover to maintain ratio and fill frame
+                  final image = item.isAsset
+                      ? Image.asset(
+                          item.imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          semanticLabel: item.semanticLabel,
+                        )
+                      : Image.network(
+                          item.imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          semanticLabel: item.semanticLabel,
+                        );
 
-                return GestureDetector(
-                  onTap: (item.onTap != null || item.route != null)
-                      ? handleTap
-                      : null,
-                  child: image,
-                );
-              },
-            ),
+                  return GestureDetector(
+                    onTap: (item.onTap != null || item.route != null)
+                        ? handleTap
+                        : null,
+                    child: image,
+                  );
+                },
+              ),
 
-            // optional gradient fade
-            if (widget.gradientFade)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.center,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.28),
-                          Colors.transparent,
-                        ],
+              // optional gradient fade
+              if (widget.gradientFade)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.center,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.28),
+                            Colors.transparent,
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-            // dots indicator
-            if (widget.showDots)
-              Positioned(
-                bottom: 10,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(widget.items.length, (i) {
-                    final active = i == _index;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      height: 8,
-                      width: active ? 18 : 8,
-                      decoration: BoxDecoration(
-                        color: active
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.white.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    );
-                  }),
+              // dots indicator
+              if (widget.showDots)
+                Positioned(
+                  bottom: 10,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(widget.items.length, (i) {
+                      final active = i == _index;
+                      return AnimatedContainer(
+                        duration: DesignTokens.smallAnimation,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        height: 8,
+                        width: active ? 18 : 8,
+                        decoration: BoxDecoration(
+                          color: active
+                              ? AppColors.primary
+                              : Colors.white.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: active ? DesignTokens.raisedShadow : null,
+                        ),
+                      );
+                    }),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

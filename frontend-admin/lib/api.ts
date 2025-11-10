@@ -126,7 +126,7 @@ export class ApiClient {
       formData.append("image", file);
     }
 
-    // Add other fields as JSON string in payload field, or as individual fields
+    // Add other fields as JSON string in payload field
     formData.append("payload", JSON.stringify(data));
 
     const token = this.getToken();
@@ -134,7 +134,7 @@ export class ApiClient {
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
-    // Don't set Content-Type - browser will set it with boundary
+    // Don't set Content-Type - browser will set it with boundary for multipart/form-data
 
     const res = await fetch(`${this.baseUrl}${path}`, {
       method,
@@ -143,8 +143,15 @@ export class ApiClient {
     });
 
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ message: "Request failed" }));
-      throw new Error(errorData.message || `${method} ${path} failed: ${res.status}`);
+      let errorData: { message?: string; error?: string } = { message: "Request failed" };
+      try {
+        errorData = await res.json();
+      } catch {
+        // If JSON parsing fails, use status text
+        errorData.message = `Request failed with status ${res.status}: ${res.statusText}`;
+      }
+      const errorMessage = errorData.error || errorData.message || `${method} ${path} failed: ${res.status}`;
+      throw new Error(errorMessage);
     }
 
     return (await res.json()) as T;

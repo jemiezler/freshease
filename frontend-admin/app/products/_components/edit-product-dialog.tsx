@@ -17,9 +17,9 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 	const [name, setName] = useState("");
 	const [price, setPrice] = useState<string>("");
 	const [description, setDescription] = useState("");
-	const [imageUrl, setImageUrl] = useState("");
+	const [, setImageUrl] = useState("");
 	const [imageFile, setImageFile] = useState<File | null>(null);
-	const [uploadingImage, setUploadingImage] = useState(false);
+	const [imagePreview, setImagePreview] = useState<string>("");
 	const [loading, setLoading] = useState(true);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -35,6 +35,7 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 					setPrice(p.price != null ? String(p.price) : "");
 					setDescription(p.description ?? "");
 					setImageUrl(p.image_url ?? "");
+					setImagePreview(p.image_url ?? "");
 				}
 			} catch (e) {
 				setError(e instanceof Error ? e.message : "Failed to load");
@@ -45,22 +46,19 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 		return () => { cancelled = true; };
 	}, [id]);
 
-	async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+	function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (!file) return;
 
-		setUploadingImage(true);
+		setImageFile(file);
 		setError(null);
 
-		try {
-			const data = await apiClient.uploadImage(file, "products");
-			setImageUrl(data.url);
-			setImageFile(file);
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to upload image");
-		} finally {
-			setUploadingImage(false);
-		}
+		// Create preview URL
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setImagePreview(reader.result as string);
+		};
+		reader.readAsDataURL(file);
 	}
 
 	async function onSubmit(e: React.FormEvent) {
@@ -68,14 +66,28 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 		setSubmitting(true);
 		setError(null);
 		try {
-			const payload: Partial<ProductPayload> = {
-				name: name || undefined,
-				price: price ? Number(price) : undefined,
-				description: description || undefined,
-				image_url: imageUrl || undefined,
+			// Prepare payload for update (all fields are optional except ID)
+			// Always include ID, and include other fields if they have values
+			const payload: Record<string, unknown> = {
+				id,
 			};
 
+			// Add fields only if they have values
+			if (name.trim()) {
+				payload.name = name.trim();
+			}
+			if (price && price.trim()) {
+				const priceNum = Number(price);
+				if (!isNaN(priceNum) && priceNum > 0) {
+					payload.price = priceNum;
+				}
+			}
+			if (description.trim()) {
+				payload.description = description.trim();
+			}
+
 			// If we have a new image file, use multipart/form-data
+			// The backend will handle the image upload and set image_url in the DTO
 			if (imageFile) {
 				await apiClient.postWithImage<{ data?: Product; message: string }>(
 					`/products/${id}`,
@@ -84,11 +96,33 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 					"PATCH"
 				);
 			} else {
-				await products.update(id, payload as ProductPayload);
+				// No new image, just update the product data using regular PATCH
+				// Backend requires ID in payload for UpdateProductDTO validation
+				// Check if we have any fields to update (besides ID)
+				const fieldsToUpdate = Object.keys(payload).filter(key => key !== 'id');
+				if (fieldsToUpdate.length > 0) {
+					await apiClient.patch<{ data?: Product; message: string }>(
+						`/products/${id}`,
+						payload
+					);
+				} else {
+					// No fields to update, this is a no-op but not an error
+					// Just call onSaved to refresh the list
+					console.info("No fields changed, skipping update");
+				}
 			}
 			await onSaved();
 		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to update");
+			let errorMessage = "Failed to update product";
+			if (e instanceof Error) {
+				errorMessage = e.message;
+				// Try to extract more detailed error from response
+				if (e.message.includes("failed to upload image") || e.message.includes("payload") || e.message.includes("validation")) {
+					errorMessage = e.message;
+				}
+			}
+			setError(errorMessage);
+			console.error("Product update error:", e);
 		} finally {
 			setSubmitting(false);
 		}
@@ -126,18 +160,13 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 							type="file"
 							accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
 							onChange={handleImageChange}
-							disabled={uploadingImage}
 						/>
-						{uploadingImage && (
-							<div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-								<Spinner className="size-4" />
-								<span>Uploading image...</span>
-							</div>
-						)}
-						{imageUrl && !uploadingImage && (
+						{imagePreview && (
 							<div className="mt-2">
-								<img src={imageUrl} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
-								<p className="text-xs text-muted-foreground mt-1">Current image</p>
+								<img src={imagePreview} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
+								<p className="text-xs text-muted-foreground mt-1">
+									{imageFile ? "New image preview" : "Current image"}
+								</p>
 							</div>
 						)}
 					</Field>
@@ -146,9 +175,9 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 							<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
 								Cancel
 							</Button>
-						<Button type="submit" disabled={submitting || uploadingImage} className="flex items-center gap-2">
-							{(submitting || uploadingImage) && <Spinner className="size-4" />}
-							{submitting || uploadingImage ? "Saving…" : "Save"}
+						<Button type="submit" disabled={submitting} className="flex items-center gap-2">
+							{submitting && <Spinner className="size-4" />}
+							{submitting ? "Saving…" : "Save"}
 						</Button>
 						</DialogFooter>
 					</form>

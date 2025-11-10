@@ -8,27 +8,40 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { createResource } from "@/lib/resource";
 import { apiClient } from "@/lib/api";
-import type { Product, ProductPayload } from "@/types/product";
+import type { Product } from "@/types/product";
 import type { Category, CategoryPayload } from "@/types/catagory";
 import type { DialogProps } from "@/types/dialog";
 
-const products = createResource<Product, ProductPayload, ProductPayload>({ basePath: "/products" });
-const categories = createResource<Category, CategoryPayload, CategoryPayload>({ basePath: "/product_categories" });
+const categories = createResource<Category, CategoryPayload, CategoryPayload>({ basePath: "/categories" });
 
 export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps) {
 	const [name, setName] = useState("");
+	const [sku, setSku] = useState("");
 	const [price, setPrice] = useState<string>("");
 	const [description, setDescription] = useState("");
-	const [imageUrl, setImageUrl] = useState("");
+	const [imageFile, setImageFile] = useState<File | null>(null);
+	const [imagePreview, setImagePreview] = useState<string>("");
 	const [unitLabel, setUnitLabel] = useState("kg");
 	const [isActive, setIsActive] = useState("active");
 	const [categoryId, setCategoryId] = useState<string>("");
 	const [quantity, setQuantity] = useState<string>("0");
 	const [restockAmount, setRestockAmount] = useState<string>("0");
-	const [uploadingImage, setUploadingImage] = useState(false);
 	const [categoryItems, setCategoryItems] = useState<Category[]>([]);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	// Auto-generate SKU from name
+	useEffect(() => {
+		if (name && !sku) {
+			const generatedSKU = name
+				.toUpperCase()
+				.replace(/[^A-Z0-9]/g, "-")
+				.replace(/-+/g, "-")
+				.replace(/^-|-$/g, "")
+				.substring(0, 20) + "-" + crypto.randomUUID().substring(0, 8).toUpperCase();
+			setSku(generatedSKU);
+		}
+	}, [name, sku]);
 
 	useEffect(() => {
 		if (open) {
@@ -41,21 +54,19 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 		}
 	}, [open]);
 
-	async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+	function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (!file) return;
 
-		setUploadingImage(true);
+		setImageFile(file);
 		setError(null);
 
-		try {
-			const data = await apiClient.uploadImage(file, "products");
-			setImageUrl(data.url);
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to upload image");
-		} finally {
-			setUploadingImage(false);
-		}
+		// Create preview URL
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setImagePreview(reader.result as string);
+		};
+		reader.readAsDataURL(file);
 	}
 
 	async function onSubmit(e: React.FormEvent) {
@@ -64,7 +75,7 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 		setError(null);
 
 		// Validate required fields
-		if (!name || !price || !description || !imageUrl || !unitLabel || !isActive || !quantity || !restockAmount) {
+		if (!name || !sku || !price || !description || !imageFile || !unitLabel || !isActive || !quantity || !restockAmount) {
 			setError("Please fill in all required fields");
 			setSubmitting(false);
 			return;
@@ -96,35 +107,53 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 			const id = crypto.randomUUID();
 			const now = new Date().toISOString();
 
-			const payload: ProductPayload = {
+			const payload = {
 				id,
 				name,
+				sku,
 				price: priceNum,
 				description,
-				image_url: imageUrl,
 				unit_label: unitLabel,
-				is_active: isActive,
+				is_active: isActive === "active",
 				created_at: now,
 				updated_at: now,
 				quantity: quantityNum,
-				restock_amount: restockAmountNum,
+				reorder_level: restockAmountNum,
 			};
 
-			await products.create(payload);
+			// Use postWithImage to send both image and product data
+			await apiClient.postWithImage<{ data?: Product; message: string }>(
+				"/products",
+				imageFile,
+				payload,
+				"POST"
+			);
+
 			await onSaved();
 			
 			// Reset form
 			setName("");
+			setSku("");
 			setPrice("");
 			setDescription("");
-			setImageUrl("");
+			setImageFile(null);
+			setImagePreview("");
 			setUnitLabel("kg");
 			setIsActive("active");
 			setCategoryId("");
 			setQuantity("0");
 			setRestockAmount("0");
 		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to create product");
+			let errorMessage = "Failed to create product";
+			if (e instanceof Error) {
+				errorMessage = e.message;
+				// Try to extract more detailed error from response
+				if (e.message.includes("failed to upload image") || e.message.includes("payload")) {
+					errorMessage = e.message;
+				}
+			}
+			setError(errorMessage);
+			console.error("Product creation error:", e);
 		} finally {
 			setSubmitting(false);
 		}
@@ -146,6 +175,16 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 							required 
 							minLength={2}
 							maxLength={60}
+						/>
+					</Field>
+					<Field>
+						<FieldLabel htmlFor="product-sku">SKU *</FieldLabel>
+						<Input 
+							id="product-sku" 
+							value={sku} 
+							onChange={(e) => setSku(e.target.value)} 
+							required 
+							placeholder="Auto-generated from name"
 						/>
 					</Field>
 					<Field>
@@ -176,19 +215,12 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 							type="file" 
 							accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
 							onChange={handleImageChange}
-							disabled={uploadingImage}
-							required={!imageUrl}
+							required={!imageFile}
 						/>
-						{uploadingImage && (
-							<div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-								<Spinner className="size-4" />
-								<span>Uploading image...</span>
-							</div>
-						)}
-						{imageUrl && !uploadingImage && (
+						{imagePreview && (
 							<div className="mt-2">
-								<img src={imageUrl} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
-								<p className="text-xs text-muted-foreground mt-1">Image uploaded successfully</p>
+								<img src={imagePreview} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
+								<p className="text-xs text-muted-foreground mt-1">Image preview</p>
 							</div>
 						)}
 					</Field>
@@ -263,7 +295,7 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 						<Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
-						<Button type="submit" disabled={submitting || uploadingImage} className="flex items-center gap-2">
+						<Button type="submit" disabled={submitting} className="flex items-center gap-2">
 							{submitting && <Spinner className="size-4" />}
 							{submitting ? "Saving…" : "Create"}
 						</Button>

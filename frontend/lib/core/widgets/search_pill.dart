@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/constants/app_colors.dart';
+import 'package:frontend/core/theme/design_tokens.dart';
+import 'package:frontend/core/widgets/design_system/soft_icon_button.dart';
 
 class SearchPill extends StatelessWidget {
   const SearchPill({
@@ -29,7 +32,7 @@ class SearchPill extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final Color? backgroundColor;
 
-  /// show an “X” to clear the field when there’s text
+  /// show an "X" to clear the field when there's text
   final bool showClear;
 
   /// Optional overrides for leading/trailing widgets
@@ -38,32 +41,23 @@ class SearchPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final surface =
-        backgroundColor ??
-        // use withOpacity for wider SDK compatibility; swap to withValues if you prefer
-        theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.95);
-
     return Container(
       decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 12,
-            spreadRadius: -2,
-            color: Colors.black.withValues(alpha: 0.06),
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: backgroundColor ?? AppColors.surface,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
+        boxShadow: DesignTokens.insetShadow,
       ),
       padding: padding,
       child: Row(
         children: [
           leading ??
-              const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Icon(Icons.search, size: 22),
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(
+                  Icons.search,
+                  size: 22,
+                  color: AppColors.textSecondary,
+                ),
               ),
 
           /// TextField with live change + submit callbacks
@@ -72,10 +66,19 @@ class SearchPill extends StatelessWidget {
               controller: controller,
               readOnly: readOnly,
               onTap: onTap,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+              ),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hintText,
+                hintStyle: TextStyle(
+                  color: AppColors.textSecondary.withValues(alpha: 0.6),
+                  fontSize: 16,
+                ),
                 isDense: true,
+                contentPadding: EdgeInsets.zero,
               ),
               textInputAction: TextInputAction.search,
               onChanged: onChanged,
@@ -83,33 +86,42 @@ class SearchPill extends StatelessWidget {
             ),
           ),
 
-          // clear button (shows only when there’s text)
+          // clear button (shows only when there's text)
           if (showClear)
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: controller,
               builder: (_, value, _) => AnimatedSwitcher(
-                duration: const Duration(milliseconds: 150),
+                duration: DesignTokens.microAnimation,
                 child: value.text.isEmpty
                     ? const SizedBox.shrink()
-                    : IconButton(
+                    : Padding(
                         key: const ValueKey('clear'),
-                        tooltip: 'Clear',
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () {
-                          controller.clear();
-                          onChanged?.call('');
-                        },
+                        padding: const EdgeInsets.only(left: 4),
+                        child: SoftIconButton(
+                          icon: Icons.close_rounded,
+                          onPressed: () {
+                            controller.clear();
+                            onChanged?.call('');
+                          },
+                          size: 32,
+                          tooltip: 'Clear',
+                        ),
                       ),
               ),
             ),
 
           // trailing: filter or a custom widget
-          trailing ??
-              IconButton(
-                tooltip: 'Filters',
-                icon: const Icon(Icons.tune_rounded),
-                onPressed: onFilterTap,
-              ),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child:
+                trailing ??
+                SoftIconButton(
+                  icon: Icons.tune_rounded,
+                  onPressed: onFilterTap,
+                  size: 32,
+                  tooltip: 'Filters',
+                ),
+          ),
         ],
       ),
     );

@@ -64,49 +64,46 @@ func (ctl *Controller) GetProduct(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        image formData file false "Product image file"
-// @Param        payload formData string false "Product payload (JSON string)" example({"name":"Product","price":10.99,"description":"Description","unit_label":"kg","is_active":"active","quantity":100,"restock_amount":50})
+// @Param        payload formData string false "Product payload (JSON string)" example({"name":"Product","price":10.99,"description":"Description","unit_label":"kg","is_active":true,"quantity":100,"reorder_level":50})
 // @Success      201     {object}  GetProductDTO
 // @Failure      400     {object}  map[string]interface{}
 // @Router       /products [post]
 func (ctl *Controller) CreateProduct(c *fiber.Ctx) error {
 	var dto CreateProductDTO
 
-	// Check if this is multipart/form-data (file upload)
-	contentType := string(c.Request().Header.ContentType())
-	if len(contentType) > 0 && contentType[:19] == "multipart/form-data" {
-		// Handle file upload if present
-		file, err := c.FormFile("image")
-		if err == nil && file != nil {
-			// Upload image to MinIO
-			_, err = ctl.svc.UploadProductImage(c.Context(), file)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "failed to upload image", "error": err.Error()})
-			}
-			// Image is uploaded to MinIO, URL is handled by uploads service
+	// Use binding helper to handle both multipart/form-data and JSON
+	file, err := middleware.BindMultipartForm(c, &dto, "image")
+	if err != nil {
+		if fiberErr, ok := err.(*fiber.Error); ok {
+			return c.Status(fiberErr.Code).JSON(fiber.Map{
+				"message": fiberErr.Message,
+			})
 		}
-
-		// Parse other form fields - try JSON payload first, then individual fields
-		if jsonStr := c.FormValue("payload"); jsonStr != "" {
-			if err := c.App().Config().JSONDecoder([]byte(jsonStr), &dto); err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload", "error": err.Error()})
-			}
-		} else if err := c.BodyParser(&dto); err != nil {
-			// If BodyParser fails, try individual form fields
-			if name := c.FormValue("name"); name != "" {
-				dto.Name = name
-			}
-			// Image URL is handled by uploads service, not stored in product
-		}
-	} else {
-		// Standard JSON request
-		if err := middleware.BindAndValidate(c, &dto); err != nil {
-			return err
-		}
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 
+	// Handle image upload if file is provided
+	if file != nil {
+		// Upload image to MinIO and get object name (path, not URL)
+		objectName, err := ctl.svc.UploadProductImage(c.Context(), file)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "failed to upload image",
+				"error":   err.Error(),
+			})
+		}
+		// Set the object name in DTO (this will be stored in database)
+		dto.ImageURL = &objectName
+	}
+
+	// Create product (service will handle URL generation when retrieving)
 	item, err := ctl.svc.Create(c.Context(), dto)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": item, "message": "Product Created Successfully"})
 }
@@ -119,8 +116,8 @@ func (ctl *Controller) CreateProduct(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        id      path      string           true "Product ID (UUID)"
 // @Param        image formData file false "Product image file"
-// @Param        payload body      UpdateProductDTO true "Partial/Full update"
-// @Success      201     {object}  GetProductDTO
+// @Param        payload formData string false "Product payload (JSON string)" example({"name":"Updated Product","price":15.99})
+// @Success      200     {object}  GetProductDTO
 // @Failure      400     {object}  map[string]interface{}
 // @Router       /products/{id} [patch]
 func (ctl *Controller) UpdateProduct(c *fiber.Ctx) error {
@@ -129,42 +126,46 @@ func (ctl *Controller) UpdateProduct(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
 	}
+
 	var dto UpdateProductDTO
+	dto.ID = id
 
-	// Check if this is multipart/form-data (file upload)
-	contentType := string(c.Request().Header.ContentType())
-	if len(contentType) > 0 && contentType[:19] == "multipart/form-data" {
-		// Handle file upload if present
-		file, err := c.FormFile("image")
-		if err == nil && file != nil {
-			// Upload image to MinIO
-			_, err = ctl.svc.UploadProductImage(c.Context(), file)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "failed to upload image", "error": err.Error()})
-			}
-			// Image is uploaded to MinIO, URL is handled by uploads service
+	// Use binding helper to handle both multipart/form-data and JSON
+	// allowEmptyPayload=true for updates (allows image-only updates)
+	file, err := middleware.BindMultipartForm(c, &dto, "image", true)
+	if err != nil {
+		if fiberErr, ok := err.(*fiber.Error); ok {
+			return c.Status(fiberErr.Code).JSON(fiber.Map{
+				"message": fiberErr.Message,
+			})
 		}
-
-		// Parse other form fields - try JSON payload first, then body parser
-		if jsonStr := c.FormValue("payload"); jsonStr != "" {
-			if err := c.App().Config().JSONDecoder([]byte(jsonStr), &dto); err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload", "error": err.Error()})
-			}
-		} else if err := c.BodyParser(&dto); err != nil {
-			// Image URL is handled by uploads service, not stored in product
-		}
-	} else {
-		// Standard JSON request
-		if err := middleware.BindAndValidate(c, &dto); err != nil {
-			return err
-		}
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 
+	// Handle image upload if file is provided
+	if file != nil {
+		// Upload image to MinIO and get object name (path, not URL)
+		objectName, err := ctl.svc.UploadProductImage(c.Context(), file)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "failed to upload image",
+				"error":   err.Error(),
+			})
+		}
+		// Set the object name in DTO (this will be stored in database)
+		dto.ImageURL = &objectName
+	}
+
+	// Update product (service will handle URL generation when retrieving)
 	item, err := ctl.svc.Update(c.Context(), id, dto)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": item, "message": "Product Updated Successfully"})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": item, "message": "Product Updated Successfully"})
 }
 
 // DeleteProduct godoc

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/design_system/soft_icon_button.dart';
 
 class RoundedIconButton extends StatelessWidget {
   final IconData icon;
@@ -16,25 +17,11 @@ class RoundedIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return IconButton(
+    return SoftIconButton(
+      icon: icon,
       onPressed: onPressed,
-      icon: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color:
-              backgroundColor ??
-              (theme.brightness == Brightness.dark
-                  ? Colors.white10
-                  : Colors.black12),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          icon,
-          color: iconColor ?? theme.iconTheme.color,
-          size: theme.iconTheme.size,
-        ),
-      ),
+      iconColor: iconColor,
+      backgroundColor: backgroundColor,
     );
   }
 }
@@ -58,35 +45,50 @@ class GlobalAppBar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
 
     return AppBar(
-      backgroundColor: theme.appBarTheme.backgroundColor,
+      backgroundColor: Colors.transparent,
       centerTitle: true,
       elevation: 0,
-      title: Text(title, style: theme.appBarTheme.titleTextStyle),
+      title: Text(
+        title,
+        style: theme.appBarTheme.titleTextStyle,
+      ),
       leading: showBackButton && Navigator.canPop(context)
           ? Padding(
-              padding: const EdgeInsets.only(
-                left: 6,
-              ), // optional spacing from screen edge
+              padding: const EdgeInsets.only(left: 8),
               child: Center(
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).maybePop(),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: theme.iconTheme.color,
-                      size: theme.iconTheme.size ?? 20,
-                    ),
-                  ),
+                child: SoftIconButton(
+                  icon: Icons.arrow_back_ios_new_rounded,
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  size: 40,
+                  tooltip: 'Back',
                 ),
               ),
             )
           : null,
-      actions: actions,
+      actions: actions?.map((action) {
+        if (action is IconButton) {
+          IconData? iconData;
+          if (action.icon is Icon) {
+            iconData = (action.icon as Icon).icon;
+          }
+          if (iconData != null) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Center(
+                child: SoftIconButton(
+                  icon: iconData,
+                  onPressed: action.onPressed ?? () {},
+                  size: 40,
+                ),
+              ),
+            );
+          }
+        }
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Center(child: action),
+        );
+      }).toList(),
       bottom: bottom,
     );
   }

@@ -21,6 +21,7 @@ func (Product) Fields() []ent.Field {
 		field.String("description").Nillable().Optional(),
 		field.Float("price"),
 		field.String("unit_label"),
+		field.String("image_url").Nillable().Optional(),
 		field.Bool("is_active").Default(true),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),

@@ -1,173 +1,176 @@
-name: Build & Push (Artifact Registry) + Optional Jenkins Deploy
+name: Build and Push Docker Images
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/**'
+      - 'frontend-admin/**'
+      - '.github/workflows/build-and-push.yml'
   pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/**'
+      - 'frontend-admin/**'
+      - '.github/workflows/build-and-push.yml'
   workflow_dispatch:
     inputs:
-      target:
-        description: "What to build/deploy?"
+      service:
+        description: 'Service to build (api, admin, or both)'
         required: true
-        default: "both"
+        default: 'both'
         type: choice
-        options: [api, admin, both]
-      trigger_jenkins:
-        description: "Trigger Jenkins deploy after push?"
-        required: true
-        default: "false"
-        type: choice
-        options: ["true", "false"]
-
-concurrency:
-  group: build-${{ github.ref }}
-  cancel-in-progress: true
+        options:
+          - both
+          - api
+          - admin
 
 env:
-  REGION: asia-southeast1
-  GAR: ${{ secrets.GAR_HOST }}                       # e.g. asia-southeast1-docker.pkg.dev
-  PROJECT: ${{ secrets.GCP_PROJECT }}
-  API_CTX: backend
-  ADMIN_CTX: frontend-admin
-  API_REF: ${{ secrets.GAR_HOST }}/${{ secrets.GCP_PROJECT }}/freshease/api
-  ADMIN_REF: ${{ secrets.GAR_HOST }}/${{ secrets.GCP_PROJECT }}/freshease/admin
-  RUN_TAG: ${{ github.run_number }}                 # numeric, monotonic
-  LATEST_TAG: latest
+  REGISTRY: asia-southeast1-docker.pkg.dev
+  PROJECT_ID: nodal-kite-477007-s4
+  REPOSITORY: freshease
 
 jobs:
-  setup:
-    name: Setup gcloud (auth)
+  build-and-push-api:
+    name: Build and Push API Image
     runs-on: ubuntu-latest
-    outputs:
-      effective_target: ${{ steps.resolve_target.outputs.tgt }}
-      should_trigger_jenkins: ${{ steps.resolve_target.outputs.trig }}
+    if: |
+      github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'both' || github.event.inputs.service == 'api') ||
+      github.event_name == 'push' || github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # Resolve inputs for non-dispatch events
-      - id: resolve_target
-        run: |
-          tgt="${{ github.event_name == 'workflow_dispatch' && inputs.target || 'both' }}"
-          trig="${{ github.event_name == 'workflow_dispatch' && inputs.trigger_jenkins || 'false' }}"
-          echo "tgt=$tgt" >> "$GITHUB_OUTPUT"
-          echo "trig=$trig" >> "$GITHUB_OUTPUT"
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Set up gcloud (JSON key)
+      - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ env.PROJECT }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
 
-      - name: Configure Docker to use GAR
-        run: gcloud auth configure-docker ${{ env.GAR }} -q
-      
-      - name: Decode .env.prod
+      - name: Configure Docker to use gcloud as a credential helper
         run: |
-          echo "${{ secrets.ENV_PROD_BASE64 }}" | base64 -d > .env.prod
+          gcloud auth configure-docker $REGISTRY --quiet
 
-
-  build_api:
-    name: Build & Push API
-    needs: setup
-    if: ${{ needs.setup.outputs.effective_target != 'admin' && !contains(github.event.head_commit.message, '[skip api]') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
+      - name: Extract metadata for API
+        id: meta-api
+        uses: docker/metadata-action@v5
         with:
-          go-version: '1.23.x'   # match your project
-
-      - uses: docker/setup-buildx-action@v3
-
-      # Optional CI tests (best-effort)
-      - name: Go mod tidy/verify
-        working-directory: ${{ env.API_CTX }}   # <— IMPORTANT
-        run: |
-          if [ -f go.mod ]; then
-            go mod tidy || true
-            go mod verify || true
-          fi
-
-      - name: Generate Ent code
-        working-directory: ${{ env.API_CTX }}   # <— IMPORTANT
-        run: |
-          go run -mod=mod entgo.io/ent/cmd/ent generate ./ent/schema
-
-      - name: Build & push API (run tag)
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ env.API_CTX }}           # <— builds from backend/
-          push: true
+          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/api
           tags: |
-            ${{ env.API_REF }}:${{ env.RUN_TAG }}
-          cache-from: type=registry,ref=${{ env.API_REF }}:cache
-          cache-to: type=registry,ref=${{ env.API_REF }}:cache,mode=max
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Also tag :latest
-        run: |
-          docker pull ${{ env.API_REF }}:${{ env.RUN_TAG }}
-          docker tag  ${{ env.API_REF }}:${{ env.RUN_TAG }}  ${{ env.API_REF }}:${{ env.LATEST_TAG }}
-          docker push ${{ env.API_REF }}:${{ env.LATEST_TAG }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  build_admin:
-    name: Build & Push Admin (Next.js SSR)
-    needs: setup
-    if: ${{ needs.setup.outputs.effective_target != 'api' && !contains(github.event.head_commit.message, '[skip admin]') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/setup-buildx-action@v3
-
-      # Lint
-      - name: Lint
-        working-directory: ${{ env.ADMIN_CTX }}
-        run: |
-          if [ -f package.json ]; then
-            corepack enable
-            yarn install --frozen-lockfile || true
-            yarn lint || true
-          fi
-
-      - name: Build & push Admin (run tag)
-        uses: docker/build-push-action@v6
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
         with:
-          context: ${{ env.ADMIN_CTX }}
-          push: true
-          tags: |
-            ${{ env.ADMIN_REF }}:${{ env.RUN_TAG }}
-          cache-from: type=registry,ref=${{ env.ADMIN_REF }}:cache
-          cache-to: type=registry,ref=${{ env.ADMIN_REF }}:cache,mode=max
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
-      - name: Also tag :latest
-        run: |
-          docker pull ${{ env.ADMIN_REF }}:${{ env.RUN_TAG }}
-          docker tag  ${{ env.ADMIN_REF }}:${{ env.RUN_TAG }}  ${{ env.ADMIN_REF }}:${{ env.LATEST_TAG }}
-          docker push ${{ env.ADMIN_REF }}:${{ env.LATEST_TAG }}
+      - name: Output image digest
+        run: echo "Image pushed with digest ${{ steps.meta-api.outputs.digest }}"
 
-  trigger_jenkins:
-    name: Trigger Jenkins (optional)
-    needs: [setup, build_api, build_admin]
-    if: ${{ needs.setup.outputs.should_trigger_jenkins == 'true' }}
+  build-and-push-admin:
+    name: Build and Push Admin Image
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'both' || github.event.inputs.service == 'admin') ||
+      github.event_name == 'push' || github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
-      - name: Call Jenkins remote build (TARGET=both by default)
-        env:
-          JENKINS_URL:  ${{ secrets.JENKINS_URL }}  # e.g. https://jenkins.your-tunnel.domain
-          JENKINS_JOB:  ${{ secrets.JENKINS_JOB }}  # Job name or folder/job notation
-          JENKINS_TOKEN:  ${{ secrets.JENKINS_TOKEN }} # Build Token (configure in Jenkins job)
-          TARGET:       ${{ needs.setup.outputs.effective_target }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker to use gcloud as a credential helper
         run: |
-          if [ -z "$JENKINS_URL" ] || [ -z "$JENKINS_JOB" ] || [ -z "$JENKINS_TOKEN" ]; then
-            echo "Jenkins secrets not set; skipping."
-            exit 0
-          fi
+          gcloud auth configure-docker $REGISTRY --quiet
 
-          # URL-encode TARGET minimally (api/admin/both are safe)
-          TARGET="${TARGET:-both}"
+      - name: Extract metadata for Admin
+        id: meta-admin
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/admin
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
-          # Jenkins freestyle/pipeline buildWithParameters endpoint
-          curl -sSf -X POST \
-            "$JENKINS_URL/job/$JENKINS_JOB/buildWithParameters?token=$JENKINS_TOKEN&TARGET=$TARGET"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Admin image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend-admin
+          file: ./frontend-admin/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-admin.outputs.tags }}
+          labels: ${{ steps.meta-admin.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL || 'https://freshease.jemiezler.site/api' }}
+
+      - name: Output image digest
+        run: echo "Image pushed with digest ${{ steps.meta-admin.outputs.digest }}"
+
+  notify-jenkins:
+    name: Notify Jenkins
+    runs-on: ubuntu-latest
+    needs: [build-and-push-api, build-and-push-admin]
+    if: github.event_name != 'pull_request' && (needs.build-and-push-api.result == 'success' || needs.build-and-push-admin.result == 'success')
+    steps:
+      - name: Trigger Jenkins deployment
+        run: |
+          curl -X POST "${{ secrets.JENKINS_WEBHOOK_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.JENKINS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "services": {
+                "api": "${{ needs.build-and-push-api.result == 'success' }}",
+                "admin": "${{ needs.build-and-push-admin.result == 'success' }}"
+              }
+            }' || echo "Jenkins webhook notification failed (this is optional)"

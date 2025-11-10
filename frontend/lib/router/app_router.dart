@@ -15,6 +15,7 @@ import 'package:frontend/features/progress/presentation/pages/progress_page.dart
 import 'package:frontend/features/shop/domain/product.dart';
 import 'package:frontend/features/account/domain/entities/user_profile.dart';
 import 'package:frontend/features/shop/presentation/pages/product_detail_page.dart';
+import 'package:frontend/core/widgets/design_system/soft_bottom_nav.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/shop/presentation/pages/shop_page.dart';
@@ -50,54 +51,34 @@ GoRouter buildRouter() {
           final cart = CartScope.of(context);
           return Scaffold(
             body: nav,
-            bottomNavigationBar: NavigationBar(
-              height: 64,
-              backgroundColor: Colors.white,
-              selectedIndex: nav.currentIndex,
-              onDestinationSelected: (i) =>
-                  nav.goBranch(i, initialLocation: i != nav.currentIndex),
-              destinations: [
-                const NavigationDestination(
-                  icon: Icon(Icons.storefront),
+            bottomNavigationBar: SoftBottomNav(
+              currentIndex: nav.currentIndex,
+              onTap: (i) => nav.goBranch(i, initialLocation: i != nav.currentIndex),
+              items: [
+                const SoftNavItem(
+                  icon: Icons.storefront_outlined,
+                  selectedIcon: Icons.storefront,
                   label: 'Shop',
                 ),
-                NavigationDestination(
-                  icon: Stack(
-                    children: [
-                      const Icon(Icons.shopping_cart),
-                      if (cart.count > 0)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Text(
-                              '${cart.count}',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                SoftNavItem(
+                  icon: Icons.shopping_cart_outlined,
+                  selectedIcon: Icons.shopping_cart,
                   label: 'Cart',
+                  badge: cart.count > 0 ? cart.count : null,
                 ),
-                const NavigationDestination(
-                  icon: Icon(Icons.list_alt),
+                const SoftNavItem(
+                  icon: Icons.list_alt_outlined,
+                  selectedIcon: Icons.list_alt,
                   label: 'Plans',
                 ),
-                const NavigationDestination(
-                  icon: Icon(Icons.show_chart),
+                const SoftNavItem(
+                  icon: Icons.show_chart_outlined,
+                  selectedIcon: Icons.show_chart,
                   label: 'Progress',
                 ),
-                const NavigationDestination(
-                  icon: Icon(Icons.person),
+                const SoftNavItem(
+                  icon: Icons.person_outline,
+                  selectedIcon: Icons.person,
                   label: 'Account',
                 ),
               ],

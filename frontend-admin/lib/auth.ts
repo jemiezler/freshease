@@ -57,7 +57,7 @@ export function removeAdminToken(): void {
  * Get current user information
  */
 export async function getCurrentUser(): Promise<User> {
-  const response = await apiClient.get<{ data: User }>("/api/whoami");
+  const response = await apiClient.get<{ data: User }>("/whoami");
   return response.data;
 }
 

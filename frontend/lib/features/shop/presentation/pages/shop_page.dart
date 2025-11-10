@@ -1,9 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:frontend/core/constants/app_colors.dart';
 import 'package:frontend/core/state/cart_controller.dart';
 import 'package:frontend/core/widgets/banner_carousel.dart';
 import 'package:frontend/core/widgets/global_appbar.dart';
 import 'package:frontend/core/widgets/search_pill.dart';
+import 'package:frontend/core/widgets/design_system/soft_chip.dart';
+import 'package:frontend/core/widgets/design_system/soft_button.dart';
+import 'package:frontend/core/widgets/design_system/soft_card.dart';
+import 'package:frontend/core/theme/design_tokens.dart';
 import 'package:frontend/core/health/health_controller.dart';
 import 'package:frontend/features/shop/data/product_repository.dart';
 import 'package:frontend/features/shop/domain/product.dart';
@@ -135,7 +140,7 @@ class _ShopPageState extends State<ShopPage> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: BannerCarousel(
                       items: _banners,
-                      borderRadius: 16,
+                      borderRadius: DesignTokens.radiusMedium,
                       autoPlay: true,
                       autoPlayInterval: const Duration(seconds: 4),
                       onPageChanged: (_) {},
@@ -148,8 +153,8 @@ class _ShopPageState extends State<ShopPage> {
                     height: 50,
                     child: ListView.separated(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                        horizontal: DesignTokens.paddingMedium,
+                        vertical: DesignTokens.paddingSmall,
                       ),
                       scrollDirection: Axis.horizontal,
                       itemCount: _chips.length,
@@ -157,22 +162,10 @@ class _ShopPageState extends State<ShopPage> {
                       itemBuilder: (_, i) {
                         final label = _chips[i];
                         final selected = _category == label;
-                        return ChoiceChip(
-                          label: Text(label),
-                          selected: selected,
-                          onSelected: (_) => setState(() => _category = label),
-                          shape: StadiumBorder(
-                            side: BorderSide(
-                              color: selected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          labelStyle: TextStyle(
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                          ),
+                        return SoftChip(
+                          label: label,
+                          isSelected: selected,
+                          onTap: () => setState(() => _category = label),
                         );
                       },
                     ),
@@ -231,66 +224,87 @@ class _ShopPageState extends State<ShopPage> {
     var temp = _range;
     await showModalBottomSheet(
       context: context,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (_) => StatefulBuilder(
         builder: (context, setSheet) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Filters',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Price range'),
-                    Text('฿${temp.start.toInt()} – ฿${temp.end.toInt()}'),
-                  ],
-                ),
-                RangeSlider(
-                  values: temp,
-                  min: 0,
-                  max: 200,
-                  divisions: 20,
-                  labels: RangeLabels(
-                    '฿${temp.start.toInt()}',
-                    '฿${temp.end.toInt()}',
+          return SoftCard(
+            margin: EdgeInsets.zero,
+            borderRadius: DesignTokens.radiusLarge,
+            child: Padding(
+              padding: const EdgeInsets.all(DesignTokens.paddingLarge),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Filters',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  onChanged: (v) => setSheet(() => temp = v),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() => _range = const RangeValues(0, 150));
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Reset'),
+                  const SizedBox(height: DesignTokens.paddingLarge),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Price range',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() => _range = temp);
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Apply'),
+                      Text(
+                        '฿${temp.start.toInt()} – ฿${temp.end.toInt()}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: DesignTokens.paddingMedium),
+                  RangeSlider(
+                    values: temp,
+                    min: 0,
+                    max: 200,
+                    divisions: 20,
+                    activeColor: AppColors.primary,
+                    labels: RangeLabels(
+                      '฿${temp.start.toInt()}',
+                      '฿${temp.end.toInt()}',
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
+                    onChanged: (v) => setSheet(() => temp = v),
+                  ),
+                  const SizedBox(height: DesignTokens.paddingLarge),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SoftButton(
+                          label: 'Reset',
+                          isPrimary: false,
+                          onPressed: () {
+                            setState(() => _range = const RangeValues(0, 150));
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: DesignTokens.paddingMedium),
+                      Expanded(
+                        child: SoftButton(
+                          label: 'Apply',
+                          isPrimary: true,
+                          onPressed: () {
+                            setState(() => _range = temp);
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
         },

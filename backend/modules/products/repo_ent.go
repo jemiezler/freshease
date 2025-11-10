@@ -28,6 +28,7 @@ func (r *EntRepo) List(ctx context.Context) ([]*GetProductDTO, error) {
 			Price:       v.Price,
 			Description: v.Description,
 			UnitLabel:   v.UnitLabel,
+			ImageURL:    v.ImageURL,
 			IsActive:    v.IsActive,
 			CreatedAt:   v.CreatedAt,
 			UpdatedAt:   v.UpdatedAt,
@@ -48,6 +49,7 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetProductDTO, e
 		Price:       v.Price,
 		Description: v.Description,
 		UnitLabel:   v.UnitLabel,
+		ImageURL:    v.ImageURL,
 		IsActive:    v.IsActive,
 		CreatedAt:   v.CreatedAt,
 		UpdatedAt:   v.UpdatedAt,
@@ -70,6 +72,9 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateProductDTO) (*GetProduc
 	if dto.Description != nil {
 		q.SetDescription(*dto.Description)
 	}
+	if dto.ImageURL != nil {
+		q.SetNillableImageURL(dto.ImageURL)
+	}
 
 	row, err := q.Save(ctx)
 	if err != nil {
@@ -86,6 +91,7 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateProductDTO) (*GetProduc
 		Price:       row.Price,
 		Description: row.Description,
 		UnitLabel:   row.UnitLabel,
+		ImageURL:    row.ImageURL,
 		IsActive:    row.IsActive,
 		CreatedAt:   row.CreatedAt,
 		UpdatedAt:   row.UpdatedAt,
@@ -110,6 +116,9 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateProductDTO) (*GetProduc
 	if dto.UnitLabel != nil {
 		q.SetUnitLabel(*dto.UnitLabel)
 	}
+	if dto.ImageURL != nil {
+		q.SetNillableImageURL(dto.ImageURL)
+	}
 	if dto.IsActive != nil {
 		q.SetIsActive(*dto.IsActive)
 	}
@@ -130,6 +139,7 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateProductDTO) (*GetProduc
 		Price:       row.Price,
 		Description: row.Description,
 		UnitLabel:   row.UnitLabel,
+		ImageURL:    row.ImageURL,
 		IsActive:    row.IsActive,
 		CreatedAt:   row.CreatedAt,
 		UpdatedAt:   row.UpdatedAt,

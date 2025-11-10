@@ -11,7 +11,9 @@ type Ctx = fiber.Ctx
 
 func New() *fiber.App {
 	app := fiber.New(fiber.Config{
-		AppName: "FreshEase API",
+		AppName:      "FreshEase API",
+		BodyLimit:    10 * 1024 * 1024, // 10MB limit for file uploads
+		ServerHeader: "FreshEase",
 	})
 	app.Use(middleware.RequestLogger())
 	app.Get("/swagger/*", fiberSwagger.WrapHandler)

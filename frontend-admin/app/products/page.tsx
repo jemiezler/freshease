@@ -19,13 +19,18 @@ import { CreateCategoryDialog } from "./_components/create-category-dialog";
 import { EditCategoryDialog } from "./_components/edit-catagory-dialog";
 import type { Product, ProductPayload } from "@/types/product";
 import type { Category, CategoryPayload } from "@/types/catagory";
+import type { ProductCategory } from "@/types/product-category";
 
 const categories = createResource<Category, CategoryPayload, CategoryPayload>({
-  basePath: "/product_categories",
+  basePath: "/categories",
 });
 
 const products = createResource<Product, ProductPayload, ProductPayload>({
   basePath: "/products",
+});
+
+const productCategories = createResource<ProductCategory, ProductCategory, ProductCategory>({
+  basePath: "/product_categories",
 });
 
 export default function ProductsPage() {
@@ -41,6 +46,9 @@ export default function ProductsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
+  const [productCategoryMappings, setProductCategoryMappings] = useState<ProductCategory[]>([]);
+  const [productCategoryLoading, setProductCategoryLoading] = useState(false);
+
   const loadCategories = useCallback(async () => {
     setCategoryLoading(true);
     setCategoryError(null);
@@ -51,6 +59,18 @@ export default function ProductsPage() {
       setCategoryError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setCategoryLoading(false);
+    }
+  }, []);
+
+  const loadProductCategories = useCallback(async () => {
+    setProductCategoryLoading(true);
+    try {
+      const res = await productCategories.list();
+      setProductCategoryMappings(res.data ?? []);
+    } catch (e) {
+      console.error("Failed to load product categories:", e);
+    } finally {
+      setProductCategoryLoading(false);
     }
   }, []);
 
@@ -69,25 +89,58 @@ export default function ProductsPage() {
 
   useEffect(() => {
     void loadCategories();
+    void loadProductCategories();
     void load();
-  }, [loadCategories, load]);
+  }, [loadCategories, loadProductCategories, load]);
 
-  // Group products by category_id
+  // Create a map from product_id to category_id(s)
+  // A product can have multiple categories
+  const productToCategoriesMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    productCategoryMappings.forEach((pc) => {
+      if (!map.has(pc.product_id)) {
+        map.set(pc.product_id, []);
+      }
+      map.get(pc.product_id)?.push(pc.category_id);
+    });
+    return map;
+  }, [productCategoryMappings]);
+
+  // Group products by category_id using the product_categories mapping
   const productsByCategory = useMemo(() => {
     const grouped: Record<string, Product[]> = {};
-    items.forEach((product) => {
-      const categoryId = product.category_id || "uncategorized";
-      if (!grouped[categoryId]) {
-        grouped[categoryId] = [];
-      }
-      grouped[categoryId].push(product);
+    
+    // Initialize with all categories
+    categoryItems.forEach((category) => {
+      grouped[category.id] = [];
     });
+    
+    // Add uncategorized bucket
+    grouped["uncategorized"] = [];
+    
+    // Group products by their categories
+    items.forEach((product) => {
+      const categoryIds = productToCategoriesMap.get(product.id) || [];
+      if (categoryIds.length === 0) {
+        // Product has no categories
+        grouped["uncategorized"].push(product);
+      } else {
+        // Product can belong to multiple categories
+        categoryIds.forEach((categoryId) => {
+          if (!grouped[categoryId]) {
+            grouped[categoryId] = [];
+          }
+          grouped[categoryId].push(product);
+        });
+      }
+    });
+    
     return grouped;
-  }, [items]);
+  }, [items, categoryItems, productToCategoriesMap]);
 
   const reloadAll = useCallback(async () => {
-    await Promise.all([loadCategories(), load()]);
-  }, [loadCategories, load]);
+    await Promise.all([loadCategories(), loadProductCategories(), load()]);
+  }, [loadCategories, loadProductCategories, load]);
 
   const onDeleteCategory = useCallback(
     async (id: string) => {
@@ -118,6 +171,27 @@ export default function ProductsPage() {
   const productColumns = useMemo<ColumnDef<Product>[]>(
     () => [
       {
+        id: "image",
+        header: "Image",
+        cell: ({ row }) => {
+          const product = row.original;
+          return product.image_url ? (
+            <img 
+              src={product.image_url} 
+              alt={product.name} 
+              className="w-16 h-16 object-cover rounded border"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-16 h-16 bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-400">
+              No image
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: "name",
         header: "Name",
         cell: ({ row }) => row.getValue("name") ?? "-",
@@ -127,7 +201,7 @@ export default function ProductsPage() {
         header: "Price",
         cell: ({ row }) => {
           const product = row.original;
-          return product.price != null ? product.price.toString() : "-";
+          return product.price != null ? `$${product.price.toFixed(2)}` : "-";
         },
       },
       {
@@ -182,7 +256,7 @@ export default function ProductsPage() {
           <p style={{ color: "red" }}>{categoryError || error}</p>
         )}
         <div className="min-h-[200px]">
-          {categoryLoading || loading ? (
+          {categoryLoading || loading || productCategoryLoading ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
               <Spinner className="size-6" />
               <span>Loading…</span>

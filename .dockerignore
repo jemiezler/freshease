@@ -1,0 +1,79 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+README*
+
+# CI/CD
+Jenkinsfile
+scripts/
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test files
+*.test
+coverage/
+*.out
+
+# Temporary files
+tmp/
+*.tmp
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Node modules (for frontend)
+node_modules/
+.next/
+.build/
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+main
+server
+
+# Test binaries
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# IDE specific files
+*.iml
+.idea/
+
+# Build artifacts
+bin/
+dist/
+build/
+

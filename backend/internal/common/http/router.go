@@ -45,6 +45,14 @@ import (
 func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	api := app.Group("/api")
 
+	// Health check endpoint
+	api.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status": "healthy",
+			"service": "freshease-api",
+		})
+	})
+
 	log.Debug("[router] registering modules...")
 
 	// 1) Public: OIDC auth (Google/LINE callbacks)
@@ -91,7 +99,7 @@ func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	payments.RegisterModuleWithEnt(api, client)
 
 	// 4) Secured area (everything below requires Authorization: Bearer <JWT>)
-	secured := api.Group("/api", middleware.RequireAuth())
+	secured := api.Group("", middleware.RequireAuth())
 
 	// Mount protected modules on the secured router
 	// addresses.RegisterModuleWithEnt(secured, client)

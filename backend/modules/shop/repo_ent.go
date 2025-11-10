@@ -110,6 +110,14 @@ func (r *EntRepo) GetActiveProducts(ctx context.Context, filters ShopSearchFilte
 			dto.IsInStock = p.Edges.Inventories[0].Quantity > 0
 		}
 
+		// Add image object name (path, not URL)
+		// Clients should use /api/uploads/{object_name} to get presigned URLs
+		if p.ImageURL != nil {
+			dto.ImageURL = *p.ImageURL
+		} else {
+			dto.ImageURL = ""
+		}
+
 		result = append(result, dto)
 	}
 
@@ -141,7 +149,14 @@ func (r *EntRepo) GetProductByID(ctx context.Context, id uuid.UUID) (*ShopProduc
 	} else {
 		dto.Description = ""
 	}
-	dto.ImageURL = "" // ImageURL is handled by MinIO, not stored in Product
+
+	// Add image object name (path, not URL)
+	// Clients should use /api/uploads/{object_name} to get presigned URLs
+	if p.ImageURL != nil {
+		dto.ImageURL = *p.ImageURL
+	} else {
+		dto.ImageURL = ""
+	}
 
 	// Add vendor info
 	if p.Edges.Vendor != nil {

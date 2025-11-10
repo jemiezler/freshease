@@ -60,17 +60,54 @@ func (ctl *Controller) GetUser(c *fiber.Ctx) error {
 // CreateUser godoc
 // @Summary      Create user
 // @Tags         users
+// @Accept       multipart/form-data
 // @Accept       json
 // @Produce      json
-// @Param        payload body      CreateUserDTO true "User payload"
+// @Param        avatar formData file false "User avatar image file"
+// @Param        cover formData file false "User cover image file"
+// @Param        payload formData string false "User payload (JSON string)"
 // @Success      201     {object}  GetUserDTO
 // @Failure      400     {object}  map[string]interface{}
 // @Router       /users [post]
 func (ctl *Controller) CreateUser(c *fiber.Ctx) error {
 	var dto CreateUserDTO
-	if err := middleware.BindAndValidate(c, &dto); err != nil {
-		return err
+
+	// Use binding helper to handle both multipart/form-data and JSON
+	// Note: BindMultipartForm only handles one file field, so we'll handle avatar and cover separately
+	_, err := middleware.BindMultipartForm(c, &dto, "")
+	if err != nil {
+		// If binding fails and it's not a multipart request, try standard JSON binding
+		if err := middleware.BindAndValidate(c, &dto); err != nil {
+			return err
+		}
 	}
+
+	// Handle avatar upload if provided
+	avatarFile, _ := c.FormFile("avatar")
+	if avatarFile != nil && avatarFile.Size > 0 {
+		objectName, err := ctl.svc.UploadUserAvatar(c.Context(), avatarFile)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "failed to upload avatar",
+				"error":   err.Error(),
+			})
+		}
+		dto.Avatar = &objectName
+	}
+
+	// Handle cover upload if provided
+	coverFile, _ := c.FormFile("cover")
+	if coverFile != nil && coverFile.Size > 0 {
+		objectName, err := ctl.svc.UploadUserCover(c.Context(), coverFile)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "failed to upload cover",
+				"error":   err.Error(),
+			})
+		}
+		dto.Cover = &objectName
+	}
+
 	item, err := ctl.svc.Create(c.Context(), dto)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
@@ -81,10 +118,13 @@ func (ctl *Controller) CreateUser(c *fiber.Ctx) error {
 // UpdateUser godoc
 // @Summary      Update user
 // @Tags         users
+// @Accept       multipart/form-data
 // @Accept       json
 // @Produce      json
 // @Param        id      path      string        true "User ID (UUID)"
-// @Param        payload body      UpdateUserDTO true "Partial/Full update"
+// @Param        avatar formData file false "User avatar image file"
+// @Param        cover formData file false "User cover image file"
+// @Param        payload formData string false "User payload (JSON string)"
 // @Success      200     {object}  GetUserDTO
 // @Failure      400     {object}  map[string]interface{}
 // @Failure      403     {object}  map[string]interface{}
@@ -106,9 +146,44 @@ func (ctl *Controller) UpdateUser(c *fiber.Ctx) error {
 	}
 
 	var dto UpdateUserDTO
-	if err := middleware.BindAndValidate(c, &dto); err != nil {
-		return err
+	dto.ID = id
+
+	// Use binding helper to handle both multipart/form-data and JSON
+	// allowEmptyPayload=true for updates (allows image-only updates)
+	_, err = middleware.BindMultipartForm(c, &dto, "", true)
+	if err != nil {
+		// If binding fails and it's not a multipart request, try standard JSON binding
+		if err := middleware.BindAndValidate(c, &dto); err != nil {
+			return err
+		}
 	}
+
+	// Handle avatar upload if provided
+	avatarFile, _ := c.FormFile("avatar")
+	if avatarFile != nil && avatarFile.Size > 0 {
+		objectName, err := ctl.svc.UploadUserAvatar(c.Context(), avatarFile)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "failed to upload avatar",
+				"error":   err.Error(),
+			})
+		}
+		dto.Avatar = &objectName
+	}
+
+	// Handle cover upload if provided
+	coverFile, _ := c.FormFile("cover")
+	if coverFile != nil && coverFile.Size > 0 {
+		objectName, err := ctl.svc.UploadUserCover(c.Context(), coverFile)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "failed to upload cover",
+				"error":   err.Error(),
+			})
+		}
+		dto.Cover = &objectName
+	}
+
 	item, err := ctl.svc.Update(c.Context(), id, dto)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})

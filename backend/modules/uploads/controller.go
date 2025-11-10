@@ -15,9 +15,13 @@ func NewController(s Service) *Controller {
 }
 
 func (ctl *Controller) Register(r fiber.Router) {
+	// Register specific routes first (these take precedence)
 	r.Post("/images", ctl.UploadImage)
 	r.Post("/images/:folder", ctl.UploadImageToFolder)
 	r.Delete("/images/:path", ctl.DeleteImage)
+	// Register global GET endpoint - matches any path except "images" (handled above)
+	// Use wildcard to capture paths with slashes like "products/uuid.jpg"
+	r.Get("/*", ctl.GetImage)
 }
 
 // UploadImage godoc
@@ -133,6 +137,55 @@ func (ctl *Controller) UploadImageToFolder(c *fiber.Ctx) error {
 		"message":     "Image uploaded successfully",
 		"object_name": objectName,
 		"url":         url,
+	})
+}
+
+// GetImage godoc
+// @Summary      Get image URL
+// @Description  Get presigned URL for an image by object path. The path can include slashes (e.g., 'products/uuid.jpg' or 'users/avatars/uuid.png'). Fiber's wildcard route will capture the full path.
+// @Tags         uploads
+// @Produce      json
+// @Param        path path string true "Object path (e.g., 'products/uuid.jpg' or 'users/avatars/uuid.png')"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} map[string]interface{}
+// @Failure      404 {object} map[string]interface{}
+// @Failure      500 {object} map[string]interface{}
+// @Router       /uploads/{path} [get]
+func (ctl *Controller) GetImage(c *fiber.Ctx) error {
+	// Use wildcard parameter - Fiber captures everything after /uploads/
+	path := c.Params("*")
+	if path == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "path parameter is required",
+		})
+	}
+
+	// Remove leading slash if present (wildcard may include it)
+	path = strings.TrimPrefix(path, "/")
+	
+	// Prevent accessing /uploads/images via GET (that route is for POST only)
+	if path == "images" {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "not found",
+		})
+	}
+	
+	// Decode URL-encoded path (handle %2F for slashes in case of double encoding)
+	path = strings.ReplaceAll(path, "%2F", "/")
+	
+	// Generate presigned URL for the image
+	url, err := ctl.svc.GetImageURL(c.Context(), path)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "failed to generate image URL",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"image_url": url,
+		"object_name": path,
+		"message": "Image URL retrieved successfully",
 	})
 }
 
