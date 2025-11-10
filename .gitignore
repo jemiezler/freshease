@@ -114,9 +114,11 @@ go.work.sum
 .env
 .env.*
 backend/ent/*
+!backend/ent/generate.go
+!backend/ent/ent.go
 !backend/ent/schema/
 !backend/ent/schema/**
-
+!backend/ent/schema/*.go
 
 # Editor/IDE
 # .idea/
