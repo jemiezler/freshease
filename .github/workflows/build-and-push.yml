@@ -3,16 +3,14 @@ name: Build and Push Docker Images
 on:
   push:
     branches:
-      - main
-      - develop
+      - deployment
     paths:
       - 'backend/**'
       - 'frontend-admin/**'
       - '.github/workflows/build-and-push.yml'
   pull_request:
     branches:
-      - main
-      - develop
+      - deployment
     paths:
       - 'backend/**'
       - 'frontend-admin/**'
@@ -184,7 +182,7 @@ jobs:
           ENCODED_JENKINS_JOB=$(echo "$CLEAN_JENKINS_JOB" | jq -sRr @uri)
           
           # Build trigger URL with the *cleaned* and *encoded* variables
-          TRIGGER_URL="${CLEAN_JENKINS_URL}/job/${ENCODED_JENKINS_JOB}/build"
+          TRIGGER_URL="${CLEAN_JENKINS_URL}/job/${ENCODED_JENKINS_JOB}/buildWithParameters"
           
           echo "Sending webhook to Jenkins job '${JENKINS_JOB}' at '${TRIGGER_URL}' (not printing token)."
           
@@ -199,11 +197,11 @@ jobs:
           
           # Send webhook
           if [ -n "$JENKINS_TOKEN" ]; then
-            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}?token=${JENKINS_TOKEN}" \
+            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}?token=${JENKINS_TOKEN}&target=both" \
               -H "Content-Type: application/json" \
               -d "${PAYLOAD}" || echo "000")
           else
-            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}" \
+            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}?target=both" \
               -H "Content-Type: application/json" \
               -d "${PAYLOAD}" || echo "000")
           fi

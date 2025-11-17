@@ -138,14 +138,16 @@ func TestController_ListUsers(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
-			var responseBody interface{}
+			var responseBody map[string]interface{}
 			err = json.NewDecoder(resp.Body).Decode(&responseBody)
 			require.NoError(t, err)
 
 			if tt.expectedStatus == http.StatusOK {
-				assert.IsType(t, []interface{}{}, responseBody)
+				assert.Contains(t, responseBody, "data")
+				assert.Contains(t, responseBody, "message")
+				assert.Equal(t, "Users Retrieved Successfully", responseBody["message"])
 			} else {
-				assert.IsType(t, map[string]interface{}{}, responseBody)
+				assert.Contains(t, responseBody, "message")
 			}
 
 			mockSvc.AssertExpectations(t)
@@ -376,6 +378,15 @@ func TestController_UpdateUser(t *testing.T) {
 
 			controller := NewController(mockSvc)
 			app := fiber.New()
+			
+			// Set user_id in locals for authentication
+			if tt.userID != "invalid-uuid" {
+				app.Use(func(c *fiber.Ctx) error {
+					c.Locals("user_id", tt.userID)
+					return c.Next()
+				})
+			}
+			
 			app.Put("/users/:id", controller.UpdateUser)
 
 			jsonBody, err := json.Marshal(tt.requestBody)
@@ -450,6 +461,15 @@ func TestController_DeleteUser(t *testing.T) {
 
 			controller := NewController(mockSvc)
 			app := fiber.New()
+			
+			// Set user_id in locals for authentication
+			if tt.userID != "invalid-uuid" {
+				app.Use(func(c *fiber.Ctx) error {
+					c.Locals("user_id", tt.userID)
+					return c.Next()
+				})
+			}
+			
 			app.Delete("/users/:id", controller.DeleteUser)
 
 			req := httptest.NewRequest(http.MethodDelete, "/users/"+tt.userID, nil)

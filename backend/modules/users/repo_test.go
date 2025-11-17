@@ -217,7 +217,8 @@ func TestEntRepo_Create(t *testing.T) {
 			expectedUser: &GetUserDTO{
 				Email:  "minimal@example.com",
 				Name:   "Minimal User",
-				Status: stringPtr("active"), // Default status
+				Phone:  nil, // Explicitly nil for minimal data
+				Status: nil, // Status is optional, so it's nil when not provided
 			},
 		},
 		{

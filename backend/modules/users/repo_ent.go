@@ -64,7 +64,7 @@ func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetUserDTO, erro
 		Goal:        helpers.PtrIfNotNil(v.Goal),
 		HeightCm:    v.HeightCm,
 		WeightKg:    v.WeightKg,
-		Status:      v.Status,
+		Status:      helpers.PtrIfNotNil(v.Status),
 	}, nil
 }
 
@@ -129,7 +129,7 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateUserDTO) (*GetUserDTO, 
 		Goal:        helpers.PtrIfNotNil(row.Goal),
 		HeightCm:    row.HeightCm,
 		WeightKg:    row.WeightKg,
-		Status:      row.Status,
+		Status:      helpers.PtrIfNotNil(row.Status),
 	}, nil
 }
 
@@ -206,7 +206,7 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateUserDTO) (*GetUserDTO, 
 		Goal:        helpers.PtrIfNotNil(row.Goal),
 		HeightCm:    row.HeightCm,
 		WeightKg:    row.WeightKg,
-		Status:      row.Status,
+		Status:      helpers.PtrIfNotNil(row.Status),
 	}, nil
 }
 
