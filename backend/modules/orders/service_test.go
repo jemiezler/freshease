@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // MockRepository is a mock implementation of the Repository interface
@@ -29,16 +30,16 @@ func (m *MockRepository) FindByID(ctx context.Context, id uuid.UUID) (*GetOrderD
 	return args.Get(0).(*GetOrderDTO), args.Error(1)
 }
 
-func (m *MockRepository) Create(ctx context.Context, u *CreateOrderDTO) (*GetOrderDTO, error) {
-	args := m.Called(ctx, u)
+func (m *MockRepository) Create(ctx context.Context, dto *CreateOrderDTO) (*GetOrderDTO, error) {
+	args := m.Called(ctx, dto)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*GetOrderDTO), args.Error(1)
 }
 
-func (m *MockRepository) Update(ctx context.Context, u *UpdateOrderDTO) (*GetOrderDTO, error) {
-	args := m.Called(ctx, u)
+func (m *MockRepository) Update(ctx context.Context, dto *UpdateOrderDTO) (*GetOrderDTO, error) {
+	args := m.Called(ctx, dto)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -60,23 +61,31 @@ func TestService_List(t *testing.T) {
 		{
 			name: "success - returns orders list",
 			mockSetup: func(mockRepo *MockRepository) {
-				userID := uuid.New()
-				mockRepo.On("List", context.Background()).Return([]*GetOrderDTO{
+				orders := []*GetOrderDTO{
 					{
-						ID:      uuid.New(),
-						OrderNo: "ORD-001",
-						Status:  "pending",
-						Total:   110.0,
-						UserID:  userID,
+						ID:          uuid.New(),
+						OrderNo:     "ORD-001",
+						Status:      "pending",
+						Subtotal:    100.00,
+						ShippingFee: 10.00,
+						Discount:    5.00,
+						Total:       105.00,
+						UserID:      uuid.New(),
+						UpdatedAt:   time.Now(),
 					},
 					{
-						ID:      uuid.New(),
-						OrderNo: "ORD-002",
-						Status:  "completed",
-						Total:   210.0,
-						UserID:  userID,
+						ID:          uuid.New(),
+						OrderNo:     "ORD-002",
+						Status:      "completed",
+						Subtotal:    200.00,
+						ShippingFee: 15.00,
+						Discount:    10.00,
+						Total:       205.00,
+						UserID:      uuid.New(),
+						UpdatedAt:   time.Now(),
 					},
-				}, nil)
+				}
+				mockRepo.On("List", mock.Anything).Return(orders, nil)
 			},
 			expectedCount: 2,
 			expectedError: false,
@@ -84,10 +93,18 @@ func TestService_List(t *testing.T) {
 		{
 			name: "error - repository returns error",
 			mockSetup: func(mockRepo *MockRepository) {
-				mockRepo.On("List", context.Background()).Return([]*GetOrderDTO(nil), errors.New("database error"))
+				mockRepo.On("List", mock.Anything).Return(([]*GetOrderDTO)(nil), errors.New("database error"))
 			},
 			expectedCount: 0,
 			expectedError: true,
+		},
+		{
+			name: "success - returns empty list",
+			mockSetup: func(mockRepo *MockRepository) {
+				mockRepo.On("List", mock.Anything).Return([]*GetOrderDTO{}, nil)
+			},
+			expectedCount: 0,
+			expectedError: false,
 		},
 	}
 
@@ -96,16 +113,18 @@ func TestService_List(t *testing.T) {
 			mockRepo := new(MockRepository)
 			tt.mockSetup(mockRepo)
 
-			svc := NewService(mockRepo)
-			result, err := svc.List(context.Background())
+			service := NewService(mockRepo)
+			ctx := context.Background()
+
+			orders, err := service.List(ctx)
 
 			if tt.expectedError {
 				assert.Error(t, err)
-				assert.Nil(t, result)
+				assert.Nil(t, orders)
 			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, result)
-				assert.Len(t, result, tt.expectedCount)
+				require.NoError(t, err)
+				assert.NotNil(t, orders)
+				assert.Len(t, orders, tt.expectedCount)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -118,27 +137,33 @@ func TestService_Get(t *testing.T) {
 		name          string
 		orderID       uuid.UUID
 		mockSetup     func(*MockRepository, uuid.UUID)
+		expectedOrder *GetOrderDTO
 		expectedError bool
 	}{
 		{
-			name:    "success - returns order by ID",
+			name:   "success - returns order by ID",
 			orderID: uuid.New(),
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID) {
-				mockRepo.On("FindByID", context.Background(), id).Return(&GetOrderDTO{
-					ID:      id,
-					OrderNo: "ORD-001",
-					Status:  "pending",
-					Total:   110.0,
-					UserID:  uuid.New(),
-				}, nil)
+				order := &GetOrderDTO{
+					ID:          id,
+					OrderNo:     "ORD-003",
+					Status:      "pending",
+					Subtotal:    150.00,
+					ShippingFee: 12.00,
+					Discount:    8.00,
+					Total:       154.00,
+					UserID:      uuid.New(),
+					UpdatedAt:   time.Now(),
+				}
+				mockRepo.On("FindByID", mock.Anything, id).Return(order, nil)
 			},
 			expectedError: false,
 		},
 		{
-			name:    "error - order not found",
+			name:   "error - order not found",
 			orderID: uuid.New(),
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID) {
-				mockRepo.On("FindByID", context.Background(), id).Return(nil, errors.New("not found"))
+				mockRepo.On("FindByID", mock.Anything, id).Return((*GetOrderDTO)(nil), errors.New("order not found"))
 			},
 			expectedError: true,
 		},
@@ -149,16 +174,18 @@ func TestService_Get(t *testing.T) {
 			mockRepo := new(MockRepository)
 			tt.mockSetup(mockRepo, tt.orderID)
 
-			svc := NewService(mockRepo)
-			result, err := svc.Get(context.Background(), tt.orderID)
+			service := NewService(mockRepo)
+			ctx := context.Background()
+
+			order, err := service.Get(ctx, tt.orderID)
 
 			if tt.expectedError {
 				assert.Error(t, err)
-				assert.Nil(t, result)
+				assert.Nil(t, order)
 			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, result)
-				assert.Equal(t, tt.orderID, result.ID)
+				require.NoError(t, err)
+				assert.NotNil(t, order)
+				assert.Equal(t, tt.orderID, order.ID)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -169,50 +196,77 @@ func TestService_Get(t *testing.T) {
 func TestService_Create(t *testing.T) {
 	userID := uuid.New()
 	now := time.Now()
+
 	tests := []struct {
 		name          string
-		dto           CreateOrderDTO
+		createDTO     CreateOrderDTO
 		mockSetup     func(*MockRepository, CreateOrderDTO)
 		expectedError bool
 	}{
 		{
-			name: "success - creates order",
-			dto: CreateOrderDTO{
+			name: "success - creates new order",
+			createDTO: CreateOrderDTO{
 				ID:          uuid.New(),
-				OrderNo:     "ORD-003",
+				OrderNo:     "ORD-004",
 				Status:      "pending",
-				Subtotal:    150.0,
-				ShippingFee: 15.0,
-				Discount:    5.0,
-				Total:       160.0,
-				PlacedAt:    &now,
+				Subtotal:    200.00,
+				ShippingFee: 15.00,
+				Discount:    10.00,
+				Total:       205.00,
 				UserID:      userID,
+				PlacedAt:    &now,
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateOrderDTO) {
-				mockRepo.On("Create", context.Background(), &dto).Return(&GetOrderDTO{
-					ID:      dto.ID,
-					OrderNo: dto.OrderNo,
-					Status:  dto.Status,
-					Total:   dto.Total,
-					UserID:  dto.UserID,
-				}, nil)
+				expectedOrder := &GetOrderDTO{
+					ID:          dto.ID,
+					OrderNo:     dto.OrderNo,
+					Status:      dto.Status,
+					Subtotal:    dto.Subtotal,
+					ShippingFee: dto.ShippingFee,
+					Discount:    dto.Discount,
+					Total:       dto.Total,
+					UserID:      dto.UserID,
+					PlacedAt:   dto.PlacedAt,
+					UpdatedAt:   time.Now(),
+				}
+				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(actual *CreateOrderDTO) bool {
+					return actual.ID == dto.ID && actual.OrderNo == dto.OrderNo && actual.UserID == dto.UserID
+				})).Return(expectedOrder, nil)
 			},
 			expectedError: false,
 		},
 		{
 			name: "error - repository returns error",
-			dto: CreateOrderDTO{
+			createDTO: CreateOrderDTO{
 				ID:          uuid.New(),
-				OrderNo:     "ORD-004",
+				OrderNo:     "ORD-005",
 				Status:      "pending",
-				Subtotal:    150.0,
-				ShippingFee: 15.0,
-				Discount:    5.0,
-				Total:       160.0,
+				Subtotal:    100.00,
+				ShippingFee: 10.00,
+				Discount:    0.00,
+				Total:       110.00,
 				UserID:      userID,
 			},
 			mockSetup: func(mockRepo *MockRepository, dto CreateOrderDTO) {
-				mockRepo.On("Create", context.Background(), &dto).Return(nil, errors.New("database error"))
+				mockRepo.On("Create", mock.Anything, mock.Anything).Return((*GetOrderDTO)(nil), errors.New("creation failed"))
+			},
+			expectedError: true,
+		},
+		{
+			name: "error - negative total",
+			createDTO: CreateOrderDTO{
+				ID:          uuid.New(),
+				OrderNo:     "ORD-006",
+				Status:      "pending",
+				Subtotal:    100.00,
+				ShippingFee: 10.00,
+				Discount:    120.00, // Discount exceeds subtotal + shipping
+				Total:       -10.00,
+				UserID:      userID,
+			},
+			mockSetup: func(mockRepo *MockRepository, dto CreateOrderDTO) {
+				// This should be caught by validation, but if it reaches repository, it should fail
+				mockRepo.On("Create", mock.Anything, mock.Anything).Return((*GetOrderDTO)(nil), errors.New("invalid total"))
 			},
 			expectedError: true,
 		},
@@ -221,19 +275,22 @@ func TestService_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
-			tt.mockSetup(mockRepo, tt.dto)
+			tt.mockSetup(mockRepo, tt.createDTO)
 
-			svc := NewService(mockRepo)
-			result, err := svc.Create(context.Background(), tt.dto)
+			service := NewService(mockRepo)
+			ctx := context.Background()
+
+			order, err := service.Create(ctx, tt.createDTO)
 
 			if tt.expectedError {
 				assert.Error(t, err)
-				assert.Nil(t, result)
+				assert.Nil(t, order)
 			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, result)
-				assert.Equal(t, tt.dto.ID, result.ID)
-				assert.Equal(t, tt.dto.OrderNo, result.OrderNo)
+				require.NoError(t, err)
+				assert.NotNil(t, order)
+				assert.Equal(t, tt.createDTO.ID, order.ID)
+				assert.Equal(t, tt.createDTO.OrderNo, order.OrderNo)
+				assert.Equal(t, tt.createDTO.Total, order.Total)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -243,39 +300,71 @@ func TestService_Create(t *testing.T) {
 
 func TestService_Update(t *testing.T) {
 	orderID := uuid.New()
-	newStatus := "completed"
-	newTotal := 120.0
+	userID := uuid.New()
 
 	tests := []struct {
 		name          string
-		dto           UpdateOrderDTO
-		mockSetup     func(*MockRepository, UpdateOrderDTO)
+		orderID       uuid.UUID
+		updateDTO     UpdateOrderDTO
+		mockSetup     func(*MockRepository, uuid.UUID, UpdateOrderDTO)
 		expectedError bool
 	}{
 		{
-			name: "success - updates order",
-			dto: UpdateOrderDTO{
-				ID:     orderID,
-				Status: &newStatus,
-				Total:  &newTotal,
+			name:    "success - updates order status",
+			orderID: orderID,
+			updateDTO: UpdateOrderDTO{
+				Status: stringPtr("completed"),
 			},
-			mockSetup: func(mockRepo *MockRepository, dto UpdateOrderDTO) {
-				mockRepo.On("Update", context.Background(), mock.AnythingOfType("*orders.UpdateOrderDTO")).Return(&GetOrderDTO{
-					ID:     orderID,
-					Status: newStatus,
-					Total:  newTotal,
-				}, nil)
+			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateOrderDTO) {
+				expectedOrder := &GetOrderDTO{
+					ID:          id,
+					OrderNo:     "ORD-007",
+					Status:      *dto.Status,
+					Subtotal:    200.00,
+					ShippingFee: 15.00,
+					Discount:    10.00,
+					Total:       205.00,
+					UserID:      userID,
+					UpdatedAt:   time.Now(),
+				}
+				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdateOrderDTO) bool {
+					return actual.ID == id && actual.Status != nil && *actual.Status == *dto.Status
+				})).Return(expectedOrder, nil)
 			},
 			expectedError: false,
 		},
 		{
-			name: "error - repository returns error",
-			dto: UpdateOrderDTO{
-				ID:     orderID,
-				Status: &newStatus,
+			name:    "success - updates order total",
+			orderID: orderID,
+			updateDTO: UpdateOrderDTO{
+				Total: float64Ptr(250.00),
 			},
-			mockSetup: func(mockRepo *MockRepository, dto UpdateOrderDTO) {
-				mockRepo.On("Update", context.Background(), mock.AnythingOfType("*orders.UpdateOrderDTO")).Return(nil, errors.New("database error"))
+			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateOrderDTO) {
+				expectedOrder := &GetOrderDTO{
+					ID:          id,
+					OrderNo:     "ORD-008",
+					Status:      "pending",
+					Subtotal:    230.00,
+					ShippingFee: 20.00,
+					Discount:    0.00,
+					Total:       *dto.Total,
+					UserID:      userID,
+					UpdatedAt:   time.Now(),
+				}
+				mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(actual *UpdateOrderDTO) bool {
+					return actual.ID == id && actual.Total != nil && *actual.Total == *dto.Total
+				})).Return(expectedOrder, nil)
+			},
+			expectedError: false,
+		},
+		{
+			name:    "error - repository returns error",
+			orderID: orderID,
+			updateDTO: UpdateOrderDTO{
+				Status: stringPtr("cancelled"),
+			},
+			mockSetup: func(mockRepo *MockRepository, id uuid.UUID, dto UpdateOrderDTO) {
+				mockRepo.On("Update", mock.Anything, mock.Anything).Return((*GetOrderDTO)(nil), errors.New("order not found"))
 			},
 			expectedError: true,
 		},
@@ -284,18 +373,20 @@ func TestService_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
-			tt.mockSetup(mockRepo, tt.dto)
+			tt.mockSetup(mockRepo, tt.orderID, tt.updateDTO)
 
-			svc := NewService(mockRepo)
-			result, err := svc.Update(context.Background(), orderID, tt.dto)
+			service := NewService(mockRepo)
+			ctx := context.Background()
+
+			order, err := service.Update(ctx, tt.orderID, tt.updateDTO)
 
 			if tt.expectedError {
 				assert.Error(t, err)
-				assert.Nil(t, result)
+				assert.Nil(t, order)
 			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, result)
-				assert.Equal(t, orderID, result.ID)
+				require.NoError(t, err)
+				assert.NotNil(t, order)
+				assert.Equal(t, tt.orderID, order.ID)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -304,24 +395,25 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	orderID := uuid.New()
-
 	tests := []struct {
 		name          string
+		orderID       uuid.UUID
 		mockSetup     func(*MockRepository, uuid.UUID)
 		expectedError bool
 	}{
 		{
-			name: "success - deletes order",
+			name:    "success - deletes order",
+			orderID: uuid.New(),
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID) {
-				mockRepo.On("Delete", context.Background(), id).Return(nil)
+				mockRepo.On("Delete", mock.Anything, id).Return(nil)
 			},
 			expectedError: false,
 		},
 		{
-			name: "error - repository returns error",
+			name:    "error - repository returns error",
+			orderID: uuid.New(),
 			mockSetup: func(mockRepo *MockRepository, id uuid.UUID) {
-				mockRepo.On("Delete", context.Background(), id).Return(errors.New("database error"))
+				mockRepo.On("Delete", mock.Anything, id).Return(errors.New("order not found"))
 			},
 			expectedError: true,
 		},
@@ -330,10 +422,12 @@ func TestService_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockRepository)
-			tt.mockSetup(mockRepo, orderID)
+			tt.mockSetup(mockRepo, tt.orderID)
 
-			svc := NewService(mockRepo)
-			err := svc.Delete(context.Background(), orderID)
+			service := NewService(mockRepo)
+			ctx := context.Background()
+
+			err := service.Delete(ctx, tt.orderID)
 
 			if tt.expectedError {
 				assert.Error(t, err)
@@ -346,3 +440,11 @@ func TestService_Delete(t *testing.T) {
 	}
 }
 
+// Helper functions
+func stringPtr(s string) *string {
+	return &s
+}
+
+func float64Ptr(f float64) *float64 {
+	return &f
+}
