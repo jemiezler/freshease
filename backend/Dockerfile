@@ -1,38 +1,33 @@
 # syntax=docker/dockerfile:1
-
-####################
-# Builder stage
-####################
 FROM golang:1.25-alpine AS builder
 WORKDIR /src
 
-# copy go.mod first to leverage layer caching
+# copy module files then download deps for caching
 COPY go.mod go.sum ./
+ENV GOPROXY=https://proxy.golang.org,direct
+ENV GO111MODULE=on
 RUN go mod download
 
-# copy the backend source only (workflow uses context ./backend)
+# copy rest of sources
 COPY . .
 
-# Build a static linux binary (CGO disabled). Buildx will handle CPU arch variants.
+# debug: show module and go env
+RUN echo "=== backend/go.mod ===" && sed -n '1,120p' go.mod || true
+RUN echo "=== go env ===" && go env || true
+RUN echo "=== go list ./... (before tidy) ===" && go list ./... 2>&1 | sed -n '1,120p' || true
+
+# attempt tidy to ensure modules are correct
+RUN go mod tidy -v
+RUN echo "=== go list ./... (after tidy) ===" && go list ./... 2>&1 | sed -n '1,200p' || true
+
+# build
 RUN set -eux; \
-  # if main.go exists in root, build '.'; otherwise try common cmd/* dirs
-  if [ -f "./main.go" ]; then \
-    BUILD_TARGET="."; \
-  elif [ -d ./cmd ] && [ -f ./cmd/genmodule/main.go ]; then \
-    # example fallback; you can add more if needed
-    BUILD_TARGET="./cmd/genmodule"; \
-  else \
-    BUILD_TARGET="."; \
-  fi; \
+  BUILD_TARGET="."; \
   echo "Building ${BUILD_TARGET}"; \
   CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /app/backend "${BUILD_TARGET}"
 
-####################
-# Final image
-####################
 FROM gcr.io/distroless/static-debian11
 COPY --from=builder /app/backend /usr/local/bin/backend
-
 EXPOSE 8080
 USER nonroot:nonroot
 ENTRYPOINT ["/usr/local/bin/backend"]
