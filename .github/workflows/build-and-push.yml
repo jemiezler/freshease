@@ -15,19 +15,21 @@ env:
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    outputs:
+      ref_name: ${{ steps.refs.outputs.ref_name }}
+      short_sha: ${{ steps.refs.outputs.short_sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-        with:
-          driver: docker-container
 
-      - name: Set up Docker Buildx
+      - name: Create a containerized buildx builder
         id: buildx
         uses: docker/setup-buildx-action@v3
         with:
+          driver: docker-container
           buildkitd-flags: --debug
 
       - name: Login to Docker Hub
@@ -37,22 +39,33 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Export refs
+        id: refs
         run: |
-          echo "GITHUB_REF_NAME=$(echo ${GITHUB_REF} | awk -F'/' '{print $NF}')" >> $GITHUB_ENV
-          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          ref_name=${GITHUB_REF#refs/heads/}
+          short_sha=${GITHUB_SHA::7}
+          echo "ref_name=$ref_name" >> $GITHUB_OUTPUT
+          echo "short_sha=$short_sha" >> $GITHUB_OUTPUT
 
   build-and-push:
     needs: prepare
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         platform: [linux/amd64,linux/arm64]
-      fail-fast: true
+    env:
+      REF_NAME: ${{ needs.prepare.outputs.ref_name }}
+      SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # === Backend ===
+      - name: Ensure buildx (re-use container builder)
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+
+      # === Backend: multi-arch build & push ===
       - name: Build & push backend (multi-arch)
         uses: docker/build-push-action@v6
         with:
@@ -62,15 +75,15 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE_NAMESPACE }}/freshease-backend:latest
-            ${{ env.IMAGE_NAMESPACE }}/freshease-backend:${{ env.GITHUB_REF_NAME }}
+            ${{ env.IMAGE_NAMESPACE }}/freshease-backend:${{ env.REF_NAME }}
             ${{ env.IMAGE_NAMESPACE }}/freshease-backend:${{ env.SHORT_SHA }}
           cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/freshease-backend:cache
           cache-to: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/freshease-backend:cache,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
-      # === Frontend ===
-      - name: Build & push frontend (multi-arch)
+      # === Frontend-admin: multi-arch build & push ===
+      - name: Build & push frontend-admin (multi-arch)
         uses: docker/build-push-action@v6
         with:
           context: ./frontend-admin
@@ -79,7 +92,7 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:latest
-            ${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:${{ env.GITHUB_REF_NAME }}
+            ${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:${{ env.REF_NAME }}
             ${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:${{ env.SHORT_SHA }}
           cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:cache
           cache-to: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:cache,mode=max
