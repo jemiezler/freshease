@@ -42,9 +42,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
-	api := app.Group("/api")
-
+func RegisterRoutes(api fiber.Router, app *fiber.App, client *ent.Client, cfg config.Config) {
 	// Health check endpoint
 	api.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
@@ -63,16 +61,16 @@ func RegisterRoutes(app *fiber.App, client *ent.Client, cfg config.Config) {
 	authpassword.RegisterModule(api, client)
 	genai.RegisterModuleWithEnt(api, client)
 
-	// 2) Public: Shop API (no authentication required)
-	shop.RegisterModuleWithEnt(api, client)
-
-	// 3) File uploads (public for now, can be secured later)
+	// 2) File uploads (public for now, can be secured later)
 	uploadsSvc, err := uploads.NewService(cfg.MinIO)
 	if err != nil {
 		log.Fatalf("[router] failed to create uploads service: %v", err)
 	}
 	uploadsCtl := uploads.NewController(uploadsSvc)
 	uploads.Routes(api, uploadsCtl)
+
+	// 3) Public: Shop API (no authentication required)
+	shop.RegisterModuleWithEntAndUploads(api, client, uploadsSvc)
 	addresses.RegisterModuleWithEnt(api, client)
 	bundle_items.RegisterModuleWithEnt(api, client)
 	bundles.RegisterModuleWithEnt(api, client)

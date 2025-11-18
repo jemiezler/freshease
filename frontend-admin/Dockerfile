@@ -1,22 +1,27 @@
-FROM node:22-slim AS build
+# syntax=docker/dockerfile:1.5
+# Multi-platform build for Next.js frontend
+ARG TARGETPLATFORM=linux/amd64
+FROM --platform=$TARGETPLATFORM node:22-slim AS build
 WORKDIR /app
 
-# Enable Corepack to get Yarn
+# Enable Corepack for Yarn
 RUN corepack enable
 
 # Copy lockfiles first for better cache hits
 COPY package.json yarn.lock ./
 
-# Install deps (production+dev for building)
-RUN yarn install --frozen-lockfile
+# Use npm registry with retries to avoid network errors
+RUN yarn config set registry https://registry.npmjs.org/ && \
+    yarn install --frozen-lockfile --network-concurrency 1 --network-timeout 600000
 
 # Copy source & build
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-https://freshease.seezdev.com/api}
 RUN yarn run build
 
 # ---------- Runtime ----------
-FROM node:22-slim
+FROM --platform=$TARGETPLATFORM node:22-slim
 WORKDIR /app
 
 # Create non-root user
@@ -25,11 +30,11 @@ USER nextjs
 
 # Copy standalone output
 COPY --from=build /app/.next/standalone ./
-# Static + public
+# Copy static and public files
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 
-# Runtime env
+# Runtime environment
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0

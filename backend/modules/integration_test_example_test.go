@@ -1,8 +1,6 @@
 package modules
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -14,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"freshease/backend/modules/carts"
 	"freshease/backend/modules/cart_items"
+	"freshease/backend/modules/carts"
 	"freshease/backend/modules/orders"
 	"freshease/backend/modules/products"
 )
@@ -38,16 +36,16 @@ func TestCartToOrderFlow_Integration(t *testing.T) {
 
 		// Step 1: Create a product (would use real repository in actual test)
 		productDTO := products.CreateProductDTO{
-			ID:          productID,
-			Name:        "Test Product",
-			SKU:         "TEST-001",
-			Price:       99.99,
-			UnitLabel:   "kg",
-			IsActive:    true,
-			Quantity:    100,
+			ID:           productID,
+			Name:         "Test Product",
+			SKU:          "TEST-001",
+			Price:        99.99,
+			UnitLabel:    "kg",
+			IsActive:     true,
+			Quantity:     100,
 			ReorderLevel: 50,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
 		}
 
 		// In real test: product := productRepo.Create(ctx, productDTO)
@@ -127,11 +125,11 @@ func TestAPIEndpointIntegration(t *testing.T) {
 // TestOrderCalculationIntegration tests order total calculation logic
 func TestOrderCalculationIntegration(t *testing.T) {
 	tests := []struct {
-		name           string
-		subtotal       float64
-		shippingFee    float64
-		discount       float64
-		expectedTotal  float64
+		name          string
+		subtotal      float64
+		shippingFee   float64
+		discount      float64
+		expectedTotal float64
 	}{
 		{
 			name:          "order with no discount",
@@ -169,10 +167,10 @@ func TestOrderCalculationIntegration(t *testing.T) {
 // TestCartTotalCalculationIntegration tests cart total calculation
 func TestCartTotalCalculationIntegration(t *testing.T) {
 	tests := []struct {
-		name           string
-		subtotal       float64
-		discount       float64
-		expectedTotal  float64
+		name          string
+		subtotal      float64
+		discount      float64
+		expectedTotal float64
 	}{
 		{
 			name:          "cart with no discount",
@@ -210,4 +208,3 @@ func float64Ptr(f float64) *float64 {
 func timePtr(t time.Time) *time.Time {
 	return &t
 }
-

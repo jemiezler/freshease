@@ -349,3 +349,65 @@ func TestController_Callback_Success(t *testing.T) {
 	assert.Contains(t, location, "code=test-code")
 	assert.Contains(t, location, "state="+state)
 }
+
+func TestController_Start_Web(t *testing.T) {
+	service := &MockService{
+		clients: map[ProviderName]*providerClient{
+			ProviderGoogle: {},
+		},
+	}
+	controller := NewController(service)
+	app := fiber.New()
+	app.Get("/auth/:provider/start", controller.Start)
+
+	callbackURL := "http://localhost:8080/auth/callback"
+	req := httptest.NewRequest(http.MethodGet, "/auth/google/start?platform=web&callback_url="+callbackURL, nil)
+	resp, err := app.Test(req)
+
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusTemporaryRedirect, resp.StatusCode)
+	
+	// Verify cookies are set
+	setCookies := resp.Header.Values("Set-Cookie")
+	hasState := false
+	hasNonce := false
+	for _, cookie := range setCookies {
+		if len(cookie) > 0 && (cookie[:10] == "oidc_state" || 
+			(len(cookie) > 10 && cookie[1:11] == "oidc_state")) {
+			hasState = true
+		}
+		if len(cookie) > 0 && (cookie[:10] == "oidc_nonce" || 
+			(len(cookie) > 10 && cookie[1:11] == "oidc_nonce")) {
+			hasNonce = true
+		}
+	}
+	assert.True(t, hasState, "oidc_state cookie should be set")
+	assert.True(t, hasNonce, "oidc_nonce cookie should be set")
+}
+
+func TestController_Callback_Web(t *testing.T) {
+	service := &MockService{
+		clients: map[ProviderName]*providerClient{},
+	}
+	controller := NewController(service)
+	state := "test-state-456"
+	webCallbackURL := "http://localhost:8080/auth/callback"
+	controller.stateStore.StoreWithCallback(state, webCallbackURL)
+	
+	app := fiber.New()
+	app.Get("/auth/:provider/callback", controller.Callback)
+
+	req := httptest.NewRequest(http.MethodGet, "/auth/google/callback?state="+state+"&code=test-code-web", nil)
+	req.Header.Set("Cookie", "oidc_state="+state)
+	resp, err := app.Test(req)
+
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusTemporaryRedirect, resp.StatusCode)
+	
+	// Verify redirect URL is the web callback URL with code and state
+	location := resp.Header.Get("Location")
+	assert.Contains(t, location, webCallbackURL)
+	assert.Contains(t, location, "code=test-code-web")
+	assert.Contains(t, location, "state="+state)
+	assert.NotContains(t, location, "freshease://")
+}

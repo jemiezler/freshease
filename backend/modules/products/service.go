@@ -4,6 +4,7 @@ import (
 	"context"
 	"mime/multipart"
 
+	"freshease/backend/modules/product_categories"
 	"freshease/backend/modules/uploads"
 
 	"github.com/google/uuid"
@@ -20,8 +21,9 @@ type Service interface {
 }
 
 type service struct {
-	repo       Repository
-	uploadsSvc uploads.Service
+	repo              Repository
+	uploadsSvc        uploads.Service
+	productCategorySvc product_categories.Service
 }
 
 func NewService(r Repository, uploadsSvc uploads.Service) Service {
@@ -31,29 +33,100 @@ func NewService(r Repository, uploadsSvc uploads.Service) Service {
 	}
 }
 
+// NewServiceWithProductCategories creates a service with product categories support
+func NewServiceWithProductCategories(r Repository, uploadsSvc uploads.Service, productCategorySvc product_categories.Service) Service {
+	return &service{
+		repo:              r,
+		uploadsSvc:        uploadsSvc,
+		productCategorySvc: productCategorySvc,
+	}
+}
+
 func (s *service) List(ctx context.Context) ([]*GetProductDTO, error) {
-	// Return products with object names (paths), not URLs
-	// Clients should use /api/uploads/{object_name} to get presigned URLs
-	return s.repo.List(ctx)
+	products, err := s.repo.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert image object names to URLs
+	for _, product := range products {
+		if product.ImageURL != nil && *product.ImageURL != "" {
+			url, err := s.uploadsSvc.GetImageURL(ctx, *product.ImageURL)
+			if err == nil {
+				product.ImageURL = &url
+			}
+		}
+	}
+	
+	return products, nil
 }
 
 func (s *service) Get(ctx context.Context, id uuid.UUID) (*GetProductDTO, error) {
-	// Return product with object name (path), not URL
-	// Clients should use /api/uploads/{object_name} to get presigned URLs
-	return s.repo.FindByID(ctx, id)
+	product, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert image object name to URL
+	if product.ImageURL != nil && *product.ImageURL != "" {
+		url, err := s.uploadsSvc.GetImageURL(ctx, *product.ImageURL)
+		if err == nil {
+			product.ImageURL = &url
+		}
+	}
+	
+	return product, nil
 }
 
 func (s *service) Create(ctx context.Context, dto CreateProductDTO) (*GetProductDTO, error) {
-	// Return product with object name (path), not URL
-	// Clients should use /api/uploads/{object_name} to get presigned URLs
-	return s.repo.Create(ctx, &dto)
+	// Create the product first
+	product, err := s.repo.Create(ctx, &dto)
+	if err != nil {
+		return nil, err
+	}
+
+	// If product categories service is available and category IDs are provided, create associations
+	if s.productCategorySvc != nil && len(dto.CategoryIDs) > 0 {
+		for _, categoryID := range dto.CategoryIDs {
+			_, err := s.productCategorySvc.Create(ctx, product_categories.CreateProductCategoryDTO{
+				ID:         uuid.New(),
+				ProductID:  product.ID,
+				CategoryID: categoryID,
+			})
+			if err != nil {
+				// Return error if category creation fails - this ensures data consistency
+				return nil, err
+			}
+		}
+	}
+
+	// Convert image object name to URL before returning
+	if product.ImageURL != nil && *product.ImageURL != "" {
+		url, err := s.uploadsSvc.GetImageURL(ctx, *product.ImageURL)
+		if err == nil {
+			product.ImageURL = &url
+		}
+	}
+
+	return product, nil
 }
 
 func (s *service) Update(ctx context.Context, id uuid.UUID, dto UpdateProductDTO) (*GetProductDTO, error) {
 	dto.ID = id
-	// Return product with object name (path), not URL
-	// Clients should use /api/uploads/{object_name} to get presigned URLs
-	return s.repo.Update(ctx, &dto)
+	product, err := s.repo.Update(ctx, &dto)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert image object name to URL
+	if product.ImageURL != nil && *product.ImageURL != "" {
+		url, err := s.uploadsSvc.GetImageURL(ctx, *product.ImageURL)
+		if err == nil {
+			product.ImageURL = &url
+		}
+	}
+	
+	return product, nil
 }
 
 func (s *service) Delete(ctx context.Context, id uuid.UUID) error {

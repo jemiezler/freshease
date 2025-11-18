@@ -1,5 +1,6 @@
 // data/sources/auth_api.dart
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/dio_client.dart';
@@ -46,9 +47,13 @@ class AuthApi {
           await prefs.remove('id_token');
           throw Exception('Token expired or invalid');
         }
-        throw Exception('Token verification failed: ${e.response?.data?['message'] ?? e.message}');
+        throw Exception(
+          'Token verification failed: ${e.response?.data?['message'] ?? e.message}',
+        );
       } else {
-        throw Exception('Network error: ${e.message ?? 'Unable to connect to server'}');
+        throw Exception(
+          'Network error: ${e.message ?? 'Unable to connect to server'}',
+        );
       }
     } catch (e) {
       if (e is Exception) {
@@ -60,63 +65,107 @@ class AuthApi {
 
   Future<Map<String, dynamic>> signInWithGoogle() async {
     // 1) Start OIDC via your backend
-    final startUrl = '${_dio.options.baseUrl}/api/auth/$_provider/start';
-    try {
-      final callbackUrl = await FlutterWebAuth2.authenticate(
-        url: startUrl,
-        callbackUrlScheme: _scheme,
-      );
-      // Check if callback is null or empty
-      if (callbackUrl.isEmpty) {
-        throw Exception('Empty callback URL received');
-      }
+    final isWeb = kIsWeb;
 
-      // 2) Parse the app callback - backend returns JSON with accessToken
-      final uri = Uri.parse(callbackUrl);
-      final code = uri.queryParameters['code'];
-      final state = uri.queryParameters['state'];
+    // For web, get the current origin where the Flutter app is running
+    String? webCallbackUrl;
+    if (isWeb) {
+      // Use Uri.base to get the current origin (where the Flutter web app is hosted)
+      final currentOrigin = Uri.base.origin;
+      webCallbackUrl = '$currentOrigin/auth/callback';
+      final startUrl =
+          '${_dio.options.baseUrl}/api/auth/$_provider/start?platform=web&callback_url=${Uri.encodeComponent(webCallbackUrl)}';
 
-      if (code == null || state == null) {
-        throw Exception('OAuth callback missing code or state');
-      }
-      final res = await _dio.post(
-        '/api/auth/$_provider/exchange',
-        data: {'code': code, 'state': state},
-      );
+      try {
+        // For web, callbackUrlScheme should be just the scheme (http or https)
+        // FlutterWebAuth2 will match URLs that start with this scheme
+        // The full callback URL is passed to the backend via callback_url parameter
 
-      final data = res.data as Map<String, dynamic>;
-      final responseData = data['data'] as Map<String, dynamic>;
-      final accessToken = responseData['accessToken'] as String;
+        final uri = Uri.parse(currentOrigin);
+        final scheme = uri.scheme; // Extract just 'http' or 'https'
 
-      if (accessToken.isEmpty) {
-        throw DioException(
-          requestOptions: res.requestOptions,
-          error: 'No access token in exchange response',
+        final callbackUrl = await FlutterWebAuth2.authenticate(
+          url: startUrl,
+          callbackUrlScheme:
+              scheme, // Use just the scheme for web (e.g., 'http' or 'https')
         );
+
+        // Parse callback and continue with exchange
+        return await _handleOAuthCallback(callbackUrl);
+      } catch (e) {
+        _handleAuthError(e);
       }
+    } else {
+      // Mobile: use custom scheme
+      final startUrl = '${_dio.options.baseUrl}/api/auth/$_provider/start';
 
-      // 4) Store the access token
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', accessToken);
-
-      // 5) Fetch current user info
-      final me = await _dio.get('/api/whoami');
-
-      return me.data as Map<String, dynamic>;
-    } catch (e) {
-      // Handle specific error types
-      if (e.toString().contains('CANCELED') ||
-          e.toString().contains('User canceled')) {
-        throw Exception(
-          'Login was canceled or interrupted. Please try again and complete the full login process.',
+      try {
+        final callbackUrl = await FlutterWebAuth2.authenticate(
+          url: startUrl,
+          callbackUrlScheme: _scheme,
         );
-      } else if (e.toString().contains('NETWORK_ERROR')) {
-        throw Exception('Network error. Please check your internet connection');
-      } else if (e.toString().contains('401')) {
-        throw Exception('Authentication failed. Please try again');
-      } else {
-        throw Exception('Google Sign-in failed: ${e.toString()}');
+
+        // Parse callback and continue with exchange
+        return await _handleOAuthCallback(callbackUrl);
+      } catch (e) {
+        _handleAuthError(e);
       }
+    }
+  }
+
+  Future<Map<String, dynamic>> _handleOAuthCallback(String callbackUrl) async {
+    // Check if callback is null or empty
+    if (callbackUrl.isEmpty) {
+      throw Exception('Empty callback URL received');
+    }
+
+    // 2) Parse the app callback - backend returns JSON with accessToken
+    final uri = Uri.parse(callbackUrl);
+    final code = uri.queryParameters['code'];
+    final state = uri.queryParameters['state'];
+
+    if (code == null || state == null) {
+      throw Exception('OAuth callback missing code or state');
+    }
+    final res = await _dio.post(
+      '/api/auth/$_provider/exchange',
+      data: {'code': code, 'state': state},
+    );
+
+    final data = res.data as Map<String, dynamic>;
+    final responseData = data['data'] as Map<String, dynamic>;
+    final accessToken = responseData['accessToken'] as String;
+
+    if (accessToken.isEmpty) {
+      throw DioException(
+        requestOptions: res.requestOptions,
+        error: 'No access token in exchange response',
+      );
+    }
+
+    // 4) Store the access token
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('access_token', accessToken);
+
+    // 5) Fetch current user info
+    final me = await _dio.get('/api/whoami');
+
+    return me.data as Map<String, dynamic>;
+  }
+
+  Never _handleAuthError(dynamic e) {
+    // Handle specific error types
+    if (e.toString().contains('CANCELED') ||
+        e.toString().contains('User canceled')) {
+      throw Exception(
+        'Login was canceled or interrupted. Please try again and complete the full login process.',
+      );
+    } else if (e.toString().contains('NETWORK_ERROR')) {
+      throw Exception('Network error. Please check your internet connection');
+    } else if (e.toString().contains('401')) {
+      throw Exception('Authentication failed. Please try again');
+    } else {
+      throw Exception('Google Sign-in failed: ${e.toString()}');
     }
   }
 }

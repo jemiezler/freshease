@@ -1,6 +1,7 @@
 package uploads
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -141,12 +142,15 @@ func (ctl *Controller) UploadImageToFolder(c *fiber.Ctx) error {
 }
 
 // GetImage godoc
-// @Summary      Get image URL
-// @Description  Get presigned URL for an image by object path. The path can include slashes (e.g., 'products/uuid.jpg' or 'users/avatars/uuid.png'). Fiber's wildcard route will capture the full path.
+// @Summary      Get image file
+// @Description  Get image file directly by object path. The path can include slashes (e.g., 'products/uuid.jpg' or 'users/avatars/uuid.png'). Returns the actual image file, not JSON.
 // @Tags         uploads
-// @Produce      json
+// @Produce      image/jpeg
+// @Produce      image/png
+// @Produce      image/gif
+// @Produce      image/webp
 // @Param        path path string true "Object path (e.g., 'products/uuid.jpg' or 'users/avatars/uuid.png')"
-// @Success      200 {object} map[string]interface{}
+// @Success      200 {file} file "Image file"
 // @Failure      400 {object} map[string]interface{}
 // @Failure      404 {object} map[string]interface{}
 // @Failure      500 {object} map[string]interface{}
@@ -173,20 +177,29 @@ func (ctl *Controller) GetImage(c *fiber.Ctx) error {
 	// Decode URL-encoded path (handle %2F for slashes in case of double encoding)
 	path = strings.ReplaceAll(path, "%2F", "/")
 	
-	// Generate presigned URL for the image
-	url, err := ctl.svc.GetImageURL(c.Context(), path)
+	// Get image from MinIO
+	object, info, err := ctl.svc.GetImage(c.Context(), path)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "failed to generate image URL",
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "image not found",
 			"error":   err.Error(),
 		})
 	}
+	defer object.Close()
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"image_url": url,
-		"object_name": path,
-		"message": "Image URL retrieved successfully",
-	})
+	// Set content type from object info
+	contentType := "application/octet-stream"
+	if info.ContentType != "" {
+		contentType = info.ContentType
+	}
+
+	// Set headers
+	c.Set("Content-Type", contentType)
+	c.Set("Content-Length", fmt.Sprintf("%d", info.Size))
+	c.Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year
+
+	// Stream the image
+	return c.Status(fiber.StatusOK).SendStream(object, int(info.Size))
 }
 
 // DeleteImage godoc

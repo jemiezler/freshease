@@ -22,13 +22,15 @@ type Controller struct {
 }
 
 type StateStore struct {
-	states map[string]time.Time
-	mutex  sync.RWMutex
+	states       map[string]time.Time
+	webCallbacks map[string]string // state -> web callback URL
+	mutex        sync.RWMutex
 }
 
 func NewStateStore() *StateStore {
 	store := &StateStore{
-		states: make(map[string]time.Time),
+		states:       make(map[string]time.Time),
+		webCallbacks: make(map[string]string),
 	}
 	// Start cleanup goroutine
 	go store.cleanup()
@@ -36,9 +38,16 @@ func NewStateStore() *StateStore {
 }
 
 func (s *StateStore) Store(state string) {
+	s.StoreWithCallback(state, "")
+}
+
+func (s *StateStore) StoreWithCallback(state, callbackURL string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.states[state] = time.Now().Add(10 * time.Minute) // 10 minute expiration
+	if callbackURL != "" {
+		s.webCallbacks[state] = callbackURL
+	}
 }
 
 func (s *StateStore) Validate(state string) bool {
@@ -55,6 +64,13 @@ func (s *StateStore) Delete(state string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	delete(s.states, state)
+	delete(s.webCallbacks, state)
+}
+
+func (s *StateStore) GetWebCallback(state string) string {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	return s.webCallbacks[state]
 }
 
 func (s *StateStore) cleanup() {
@@ -67,6 +83,7 @@ func (s *StateStore) cleanup() {
 		for state, expiry := range s.states {
 			if now.After(expiry) {
 				delete(s.states, state)
+				delete(s.webCallbacks, state)
 			}
 		}
 		s.mutex.Unlock()
@@ -99,7 +116,18 @@ func (ctl *Controller) Start(c *fiber.Ctx) error {
 	p := ProviderName(c.Params("provider"))
 	state := randB64(16)
 	nonce := randB64(16)
-	ctl.stateStore.Store(state)
+	
+	// Check if this is a web request and get the callback URL
+	platform := c.Query("platform")
+	callbackURL := c.Query("callback_url")
+	
+	// Store state with web callback URL if provided
+	if platform == "web" && callbackURL != "" {
+		ctl.stateStore.StoreWithCallback(state, callbackURL)
+	} else {
+		ctl.stateStore.Store(state)
+	}
+	
 	c.Cookie(&fiber.Cookie{Name: "oidc_state", Value: state, HTTPOnly: true, SameSite: "Lax", Path: "/"})
 	c.Cookie(&fiber.Cookie{Name: "oidc_nonce", Value: nonce, HTTPOnly: true, SameSite: "Lax", Path: "/"})
 
@@ -135,6 +163,14 @@ func (ctl *Controller) Callback(c *fiber.Ctx) error {
 	stateValid := ctl.stateStore.Validate(state) || c.Cookies("oidc_state") == state
 	if !stateValid {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "invalid state"})
+	}
+
+	// Check if this is a web callback (has stored web callback URL)
+	webCallbackURL := ctl.stateStore.GetWebCallback(state)
+	if webCallbackURL != "" {
+		// For web, redirect to the provided callback URL with code and state
+		redirectURL := fmt.Sprintf("%s?code=%s&state=%s", webCallbackURL, code, state)
+		return c.Redirect(redirectURL, fiber.StatusTemporaryRedirect)
 	}
 
 	// For mobile apps, redirect to custom scheme with the authorization code

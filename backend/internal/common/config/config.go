@@ -30,6 +30,7 @@ type MinIOConfig struct {
 	SecretAccessKey string
 	Bucket          string
 	UseSSL          bool
+	PublicBaseURL   string // Public base URL for image access (e.g., "https://freshease.jemiezler.site/storage")
 }
 
 // Load reads configuration from environment variables or defaults
@@ -55,6 +56,7 @@ func Load() Config {
 			SecretAccessKey: getEnv("MINIO_SECRET_ACCESS_KEY", "minioadmin1234"),
 			Bucket:          getEnv("MINIO_BUCKET", "freshease"),
 			UseSSL:          getEnv("MINIO_USE_SSL", "false") == "true",
+			PublicBaseURL:   getEnv("MINIO_PUBLIC_BASE_URL", ""), // Empty = use presigned URLs (default)
 		},
 	}
 
