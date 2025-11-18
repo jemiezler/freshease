@@ -1,39 +1,20 @@
-FROM golang:1.25-alpine AS build
-
-# Install build dependencies
-RUN apk add --no-cache git
-
+FROM golang:1.25-alpine AS builder
 WORKDIR /src
 
-# Copy go.mod and go.sum first for better Docker layer caching
+# cache modules
 COPY go.mod go.sum ./
-
-# Download all dependencies (this downloads entgo.io/ent which includes the CLI tool)
 RUN go mod download
 
-# Verify ent package is available
-RUN go list -m entgo.io/ent
-
-# Copy all source code
+# copy sources
 COPY . .
 
-# Generate Ent code from schema
-# The generate.go file contains: //go:generate go run -mod=mod entgo.io/ent/cmd/ent generate ./schema
-RUN go generate ./ent
+# build for Linux; Buildx will produce arch-specific binaries automatically
+# Do not hardcode GOARCH here so buildx can produce arm64/amd64 variants
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /app/backend ./cmd/server
 
-# Verify Ent code was generated (check for ent package)
-RUN go list ./ent || (echo "ERROR: ent package not found after generation" && ls -la ent/ && exit 1)
-
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./main.go
-
-# Runtime stage
-FROM gcr.io/distroless/base-debian12
-WORKDIR /app
-
-# Copy the binary from build stage
-COPY --from=build /src/server /app/server
-
+# --- final minimal image ---
+FROM gcr.io/distroless/static-debian11
+COPY --from=builder /app/backend /usr/local/bin/backend
 EXPOSE 8080
 USER nonroot:nonroot
-ENTRYPOINT ["/app/server"]
+ENTRYPOINT ["/usr/local/bin/backend"]

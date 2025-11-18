@@ -57,6 +57,13 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateCartDTO) (*GetCartDTO, 
 	if dto.Total != nil {
 		q.SetTotal(*dto.Total)
 	}
+	if dto.UserID != nil {
+		user, err := r.c.User.Get(ctx, *dto.UserID)
+		if err != nil {
+			return nil, err
+		}
+		q.AddUser(user)
+	}
 
 	row, err := q.Save(ctx)
 	if err != nil {

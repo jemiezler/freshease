@@ -9,6 +9,8 @@ import (
 type CreateInventoryDTO struct {
 	Quantity      int       `json:"quantity" validate:"required,gt=0"`
 	ReorderLevel int       `json:"reorder_level" validate:"required,gt=0"`
+	ProductID     *uuid.UUID `json:"product_id,omitempty" validate:"omitempty,uuid"`
+	VendorID      *uuid.UUID `json:"vendor_id,omitempty" validate:"omitempty,uuid"`
 	UpdatedAt     time.Time `json:"updated_at,omitempty"`
 }
 

@@ -1,0 +1,408 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>bundle_items: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">freshease/backend/modules/bundle_items/controller.go (83.7%)</option>
+				
+				<option value="file1">freshease/backend/modules/bundle_items/module.go (0.0%)</option>
+				
+				<option value="file2">freshease/backend/modules/bundle_items/repo_ent.go (94.0%)</option>
+				
+				<option value="file3">freshease/backend/modules/bundle_items/routes.go (0.0%)</option>
+				
+				<option value="file4">freshease/backend/modules/bundle_items/service.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package bundle_items
+
+import (
+        "freshease/backend/internal/common/middleware"
+        "github.com/gofiber/fiber/v2"
+        "github.com/google/uuid"
+)
+
+type Controller struct{ svc Service }
+
+func NewController(s Service) *Controller <span class="cov10" title="13">{ return &amp;Controller{svc: s} }</span>
+
+func (ctl *Controller) Register(r fiber.Router) <span class="cov0" title="0">{
+        r.Get("/",   ctl.ListBundle_items)
+        r.Get("/:id", ctl.GetBundle_item)
+        r.Post("/",  ctl.CreateBundle_item)
+        r.Patch("/:id", ctl.UpdateBundle_item)
+        r.Delete("/:id", ctl.DeleteBundle_item)
+}</span>
+
+func (ctl *Controller) ListBundle_items(c *fiber.Ctx) error <span class="cov3" title="2">{
+        items, err := ctl.svc.List(c.Context())
+        if err != nil </span><span class="cov1" title="1">{
+                return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+        }</span>
+        <span class="cov1" title="1">return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": items, "message": "Bundle_items Retrieved Successfully"})</span>
+}
+
+func (ctl *Controller) GetBundle_item(c *fiber.Ctx) error <span class="cov4" title="3">{
+        idStr := c.Params("id")
+        id, err := uuid.Parse(idStr)
+        if err != nil </span><span class="cov1" title="1">{
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
+        }</span>
+        <span class="cov3" title="2">item, err := ctl.svc.Get(c.Context(), id)
+        if err != nil </span><span class="cov1" title="1">{
+                return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "not found"})
+        }</span>
+        <span class="cov1" title="1">return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": item, "message": "Bundle_item Retrieved Successfully"})</span>
+}
+
+func (ctl *Controller) CreateBundle_item(c *fiber.Ctx) error <span class="cov3" title="2">{
+        var dto CreateBundle_itemDTO
+        if err := middleware.BindAndValidate(c, &amp;dto); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov3" title="2">item, err := ctl.svc.Create(c.Context(), dto)
+        if err != nil </span><span class="cov1" title="1">{
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+        }</span>
+        <span class="cov1" title="1">return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": item, "message": "Bundle_item Created Successfully"})</span>
+}
+
+func (ctl *Controller) UpdateBundle_item(c *fiber.Ctx) error <span class="cov4" title="3">{
+        idStr := c.Params("id")
+        id, err := uuid.Parse(idStr)
+        if err != nil </span><span class="cov1" title="1">{
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
+        }</span>
+        <span class="cov3" title="2">var dto UpdateBundle_itemDTO
+        if err := middleware.BindAndValidate(c, &amp;dto); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov3" title="2">item, err := ctl.svc.Update(c.Context(), id, dto)
+        if err != nil </span><span class="cov1" title="1">{
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+        }</span>
+        <span class="cov1" title="1">return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": item, "message": "Bundle_item Updated Successfully"})</span>
+}
+
+func (ctl *Controller) DeleteBundle_item(c *fiber.Ctx) error <span class="cov4" title="3">{
+        idStr := c.Params("id")
+        id, err := uuid.Parse(idStr)
+        if err != nil </span><span class="cov1" title="1">{
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid uuid"})
+        }</span>
+        <span class="cov3" title="2">if err := ctl.svc.Delete(c.Context(), id); err != nil </span><span class="cov1" title="1">{
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+        }</span>
+        <span class="cov1" title="1">return c.Status(fiber.StatusAccepted).JSON(fiber.Map{"message": "Bundle_item Deleted Successfully"})</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package bundle_items
+
+import (
+        "github.com/gofiber/fiber/v2"
+        "freshease/backend/ent"
+)
+
+// RegisterModuleWithEnt wires Ent repo -&gt; service -&gt; controller and mounts routes.
+func RegisterModuleWithEnt(api fiber.Router, client *ent.Client) <span class="cov0" title="0">{
+        repo := NewEntRepo(client)
+        svc  := NewService(repo)
+        ctl  := NewController(svc)
+        Routes(api, ctl)
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package bundle_items
+
+import (
+        "context"
+
+        "freshease/backend/ent"
+        "freshease/backend/ent/bundle_item"
+        "freshease/backend/internal/common/errs"
+
+        "github.com/google/uuid"
+)
+
+type EntRepo struct{ c *ent.Client }
+
+func NewEntRepo(client *ent.Client) Repository <span class="cov8" title="5">{ return &amp;EntRepo{c: client} }</span>
+
+func (r *EntRepo) List(ctx context.Context) ([]*GetBundle_itemDTO, error) <span class="cov4" title="2">{
+        rows, err := r.c.Bundle_item.Query().
+                WithBundle().
+                WithProduct().
+                Order(ent.Asc(bundle_item.FieldID)).All(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov4" title="2">out := make([]*GetBundle_itemDTO, 0, len(rows))
+        for _, v := range rows </span><span class="cov4" title="2">{
+                dto := &amp;GetBundle_itemDTO{
+                        ID:  v.ID,
+                        Qty: v.Qty,
+                }
+                if v.Edges.Bundle != nil </span><span class="cov4" title="2">{
+                        dto.BundleID = v.Edges.Bundle.ID
+                }</span>
+                <span class="cov4" title="2">if v.Edges.Product != nil </span><span class="cov4" title="2">{
+                        dto.ProductID = v.Edges.Product.ID
+                }</span>
+                <span class="cov4" title="2">out = append(out, dto)</span>
+        }
+        <span class="cov4" title="2">return out, nil</span>
+}
+
+func (r *EntRepo) FindByID(ctx context.Context, id uuid.UUID) (*GetBundle_itemDTO, error) <span class="cov6" title="3">{
+        v, err := r.c.Bundle_item.Query().
+                WithBundle().
+                WithProduct().
+                Where(bundle_item.ID(id)).
+                Only(ctx)
+        if err != nil </span><span class="cov4" title="2">{
+                return nil, err
+        }</span>
+        <span class="cov1" title="1">dto := &amp;GetBundle_itemDTO{
+                ID:  v.ID,
+                Qty: v.Qty,
+        }
+        if v.Edges.Bundle != nil </span><span class="cov1" title="1">{
+                dto.BundleID = v.Edges.Bundle.ID
+        }</span>
+        <span class="cov1" title="1">if v.Edges.Product != nil </span><span class="cov1" title="1">{
+                dto.ProductID = v.Edges.Product.ID
+        }</span>
+        <span class="cov1" title="1">return dto, nil</span>
+}
+
+func (r *EntRepo) Create(ctx context.Context, dto *CreateBundle_itemDTO) (*GetBundle_itemDTO, error) <span class="cov10" title="7">{
+        bundle, err := r.c.Bundle.Get(ctx, dto.BundleID)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov9" title="6">product, err := r.c.Product.Get(ctx, dto.ProductID)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="5">row, err := r.c.Bundle_item.
+                Create().
+                SetID(dto.ID).
+                SetQty(dto.Qty).
+                SetBundle(bundle).
+                SetProduct(product).
+                Save(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="5">return &amp;GetBundle_itemDTO{
+                ID:        row.ID,
+                Qty:       row.Qty,
+                BundleID:  dto.BundleID,
+                ProductID: dto.ProductID,
+        }, nil</span>
+}
+
+func (r *EntRepo) Update(ctx context.Context, dto *UpdateBundle_itemDTO) (*GetBundle_itemDTO, error) <span class="cov7" title="4">{
+        q := r.c.Bundle_item.UpdateOneID(dto.ID)
+
+        if dto.Qty != nil </span><span class="cov6" title="3">{
+                q.SetQty(*dto.Qty)
+        }</span>
+
+        <span class="cov7" title="4">if len(q.Mutation().Fields()) == 0 </span><span class="cov1" title="1">{
+                return nil, errs.NoFieldsToUpdate
+        }</span>
+
+        <span class="cov6" title="3">row, err := q.Save(ctx)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, err
+        }</span>
+
+        // Reload with edges
+        <span class="cov4" title="2">v, err := r.c.Bundle_item.Query().
+                WithBundle().
+                WithProduct().
+                Where(bundle_item.ID(row.ID)).
+                Only(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov4" title="2">dtoOut := &amp;GetBundle_itemDTO{
+                ID:  v.ID,
+                Qty: v.Qty,
+        }
+        if v.Edges.Bundle != nil </span><span class="cov4" title="2">{
+                dtoOut.BundleID = v.Edges.Bundle.ID
+        }</span>
+        <span class="cov4" title="2">if v.Edges.Product != nil </span><span class="cov4" title="2">{
+                dtoOut.ProductID = v.Edges.Product.ID
+        }</span>
+        <span class="cov4" title="2">return dtoOut, nil</span>
+}
+
+func (r *EntRepo) Delete(ctx context.Context, id uuid.UUID) error <span class="cov1" title="1">{
+        return r.c.Bundle_item.DeleteOneID(id).Exec(ctx)
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package bundle_items
+
+import "github.com/gofiber/fiber/v2"
+
+// Routes keeps routes isolated from wiring; controller methods attach here.
+func Routes(app fiber.Router, ctl *Controller) <span class="cov0" title="0">{
+        grp := app.Group("/bundle_items")
+        ctl.Register(grp)
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package bundle_items
+
+import (
+        "context"
+
+        "github.com/google/uuid"
+)
+
+type Service interface {
+        List(ctx context.Context) ([]*GetBundle_itemDTO, error)
+        Get(ctx context.Context, id uuid.UUID) (*GetBundle_itemDTO, error)
+        Create(ctx context.Context, dto CreateBundle_itemDTO) (*GetBundle_itemDTO, error)
+        Update(ctx context.Context, id uuid.UUID, dto UpdateBundle_itemDTO) (*GetBundle_itemDTO, error)
+        Delete(ctx context.Context, id uuid.UUID) error
+}
+
+type service struct {
+        repo Repository
+}
+
+func NewService(r Repository) Service <span class="cov10" title="10">{ return &amp;service{repo: r} }</span>
+
+func (s *service) List(ctx context.Context) ([]*GetBundle_itemDTO, error) <span class="cov3" title="2">{
+        return s.repo.List(ctx)
+}</span>
+
+func (s *service) Get(ctx context.Context, id uuid.UUID) (*GetBundle_itemDTO, error) <span class="cov3" title="2">{
+        return s.repo.FindByID(ctx, id)
+}</span>
+
+func (s *service) Create(ctx context.Context, dto CreateBundle_itemDTO) (*GetBundle_itemDTO, error) <span class="cov3" title="2">{
+        return s.repo.Create(ctx, &amp;dto)
+}</span>
+
+func (s *service) Update(ctx context.Context, id uuid.UUID, dto UpdateBundle_itemDTO) (*GetBundle_itemDTO, error) <span class="cov3" title="2">{
+        dto.ID = id
+        return s.repo.Update(ctx, &amp;dto)
+}</span>
+
+func (s *service) Delete(ctx context.Context, id uuid.UUID) error <span class="cov3" title="2">{
+        return s.repo.Delete(ctx, id)
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

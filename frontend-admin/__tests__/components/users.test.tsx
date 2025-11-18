@@ -18,8 +18,10 @@ jest.mock('@/lib/resource', () => {
     get,
   }
   
+  // Store in module-level variable for test access
+  // This assignment happens when the mock is created
   if (typeof global !== 'undefined') {
-    (global as any).__mockUsersResource = resource
+    ;(global as any).__mockUsersResource = resource
   }
   
   return {
@@ -38,13 +40,16 @@ jest.mock('next/navigation', () => ({
 // Mock window.confirm
 window.confirm = jest.fn(() => true)
 
+// Import the component AFTER mocks are set up
 import UsersPage from '@/app/users/page'
 
 describe('UsersPage', () => {
+  // Get the mock resource from global after module is loaded
   const getMockResource = () => {
     if (typeof global !== 'undefined' && (global as any).__mockUsersResource) {
       return (global as any).__mockUsersResource
     }
+    // Fallback: access through the mocked module
     const resourceModule = require('@/lib/resource')
     const createResource = resourceModule.createResource as jest.Mock
     return createResource.mock.results[0].value
@@ -53,6 +58,7 @@ describe('UsersPage', () => {
   beforeEach(() => {
     const mocks = getMockResource()
     if (mocks) {
+      // Reset all mocks before each test
       mocks.list.mockClear()
       mocks.delete.mockClear()
       mocks.create.mockClear()
@@ -101,6 +107,7 @@ describe('UsersPage', () => {
   it('displays loading state initially', () => {
     const mocks = getMockResource()
     if (mocks) {
+      // Make the promise never resolve to test loading state
       mocks.list.mockImplementation(() => new Promise(() => {}))
     }
     
@@ -157,10 +164,7 @@ describe('UsersPage', () => {
       expect(screen.getByText('User One')).toBeInTheDocument()
     })
 
-    // Find delete button by finding all buttons and clicking the one with trash icon
-    // The delete button is the second button in the actions column (first is edit)
-    const allButtons = screen.getAllByRole('button')
-    // Find the button that's in the same row as "User One"
+    // Find delete button by finding the row with User One and clicking the trash icon button
     const userOneCell = screen.getByText('User One')
     const userOneRow = userOneCell.closest('tr')
     if (userOneRow) {
@@ -170,10 +174,11 @@ describe('UsersPage', () => {
         await userEvent.click(actionButtons[1])
         
         await waitFor(() => {
-          expect(mocks.delete).toHaveBeenCalled()
+          if (mocks) {
+            expect(mocks.delete).toHaveBeenCalled()
+          }
         }, { timeout: 3000 })
       }
     }
   })
 })
-

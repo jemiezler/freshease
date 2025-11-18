@@ -1,9 +1,10 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/app/di.dart';
 import 'package:frontend/core/health/health_controller.dart';
 import 'package:frontend/core/widgets/global_appbar.dart';
 import 'package:frontend/core/genai/widgets.dart';
+import 'package:frontend/core/platform_helper.dart';
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -89,9 +90,11 @@ class _HealthPageState extends State<HealthPage> {
                 if (hc.state == HealthState.authDenied)
                   _Hint(
                     icon: Icons.lock_outline,
-                    text: Platform.isAndroid
-                        ? 'Authorization denied. Open Health Connect and grant permissions.'
-                        : 'Authorization denied. Enable HealthKit permissions in Settings.',
+                    text: kIsWeb
+                        ? 'Health data is not available on web platform.'
+                        : (PlatformHelper.isAndroid
+                              ? 'Authorization denied. Open Health Connect and grant permissions.'
+                              : 'Authorization denied. Enable HealthKit permissions in Settings.'),
                   ),
                 if (hc.state == HealthState.fetching)
                   const Padding(

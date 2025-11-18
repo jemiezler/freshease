@@ -222,6 +222,40 @@ func TestEntRepo_Create(t *testing.T) {
 			},
 		},
 		{
+			name: "success - creates user with all optional fields",
+			createDTO: CreateUserDTO{
+				ID:          uuid.New(),
+				Email:       "full@example.com",
+				Password:    "password123",
+				Name:        "Full User",
+				Phone:       stringPtr("+1234567890"),
+				Bio:         stringPtr("Full user bio"),
+				Avatar:      stringPtr("https://example.com/avatar.jpg"),
+				Cover:       stringPtr("https://example.com/cover.jpg"),
+				DateOfBirth: stringPtr("1990-01-01T00:00:00Z"),
+				Sex:         stringPtr("male"),
+				Goal:        stringPtr("weight_loss"),
+				HeightCm:    floatPtr(175.0),
+				WeightKg:    floatPtr(70.0),
+				Status:      stringPtr("active"),
+			},
+			expectedError: false,
+			expectedUser: &GetUserDTO{
+				Email:       "full@example.com",
+				Name:        "Full User",
+				Phone:       stringPtr("+1234567890"),
+				Bio:         stringPtr("Full user bio"),
+				Avatar:      stringPtr("https://example.com/avatar.jpg"),
+				Cover:       stringPtr("https://example.com/cover.jpg"),
+				DateOfBirth: stringPtr("1990-01-01T00:00:00Z"),
+				Sex:         stringPtr("male"),
+				Goal:        stringPtr("weight_loss"),
+				HeightCm:    floatPtr(175.0),
+				WeightKg:    floatPtr(70.0),
+				Status:      stringPtr("active"),
+			},
+		},
+		{
 			name: "error - duplicate email",
 			createDTO: CreateUserDTO{
 				ID:       uuid.New(),
@@ -384,6 +418,189 @@ func TestEntRepo_Update(t *testing.T) {
 			expectedError: true,
 			expectedUser:  nil,
 		},
+		{
+			name: "success - update password",
+			setupData: func(client *ent.Client) (uuid.UUID, error) {
+				user, err := client.User.Create().
+					SetEmail("user@example.com").
+					SetName("Test User").
+					SetPassword("oldpassword").
+					Save(context.Background())
+				if err != nil {
+					return uuid.Nil, err
+				}
+				return user.ID, nil
+			},
+			updateDTO: UpdateUserDTO{
+				Password: stringPtr("newpassword123"),
+			},
+			expectedError: false,
+			expectedUser: &GetUserDTO{
+				Email: "user@example.com",
+				Name:  "Test User",
+			},
+		},
+		{
+			name: "success - update avatar and cover",
+			setupData: func(client *ent.Client) (uuid.UUID, error) {
+				user, err := client.User.Create().
+					SetEmail("user@example.com").
+					SetName("Test User").
+					SetPassword("password123").
+					Save(context.Background())
+				if err != nil {
+					return uuid.Nil, err
+				}
+				return user.ID, nil
+			},
+			updateDTO: UpdateUserDTO{
+				Avatar: stringPtr("https://example.com/new-avatar.jpg"),
+				Cover:  stringPtr("https://example.com/new-cover.jpg"),
+			},
+			expectedError: false,
+			expectedUser: &GetUserDTO{
+				Email:  "user@example.com",
+				Name:   "Test User",
+				Avatar: stringPtr("https://example.com/new-avatar.jpg"),
+				Cover:  stringPtr("https://example.com/new-cover.jpg"),
+			},
+		},
+		{
+			name: "success - update date of birth",
+			setupData: func(client *ent.Client) (uuid.UUID, error) {
+				user, err := client.User.Create().
+					SetEmail("user@example.com").
+					SetName("Test User").
+					SetPassword("password123").
+					Save(context.Background())
+				if err != nil {
+					return uuid.Nil, err
+				}
+				return user.ID, nil
+			},
+			updateDTO: UpdateUserDTO{
+				DateOfBirth: stringPtr("1995-05-15T00:00:00Z"),
+			},
+			expectedError: false,
+			expectedUser: &GetUserDTO{
+				Email:       "user@example.com",
+				Name:        "Test User",
+				DateOfBirth: stringPtr("1995-05-15T00:00:00Z"),
+			},
+		},
+		{
+			name: "success - update sex and goal",
+			setupData: func(client *ent.Client) (uuid.UUID, error) {
+				user, err := client.User.Create().
+					SetEmail("user@example.com").
+					SetName("Test User").
+					SetPassword("password123").
+					Save(context.Background())
+				if err != nil {
+					return uuid.Nil, err
+				}
+				return user.ID, nil
+			},
+			updateDTO: UpdateUserDTO{
+				Sex:  stringPtr("female"),
+				Goal: stringPtr("muscle_gain"),
+			},
+			expectedError: false,
+			expectedUser: &GetUserDTO{
+				Email: "user@example.com",
+				Name:  "Test User",
+				Sex:   stringPtr("female"),
+				Goal:  stringPtr("muscle_gain"),
+			},
+		},
+		{
+			name: "success - update height and weight",
+			setupData: func(client *ent.Client) (uuid.UUID, error) {
+				user, err := client.User.Create().
+					SetEmail("user@example.com").
+					SetName("Test User").
+					SetPassword("password123").
+					Save(context.Background())
+				if err != nil {
+					return uuid.Nil, err
+				}
+				return user.ID, nil
+			},
+			updateDTO: UpdateUserDTO{
+				HeightCm: floatPtr(180.0),
+				WeightKg: floatPtr(75.0),
+			},
+			expectedError: false,
+			expectedUser: &GetUserDTO{
+				Email:    "user@example.com",
+				Name:     "Test User",
+				HeightCm: floatPtr(180.0),
+				WeightKg: floatPtr(75.0),
+			},
+		},
+		{
+			name: "success - update status",
+			setupData: func(client *ent.Client) (uuid.UUID, error) {
+				user, err := client.User.Create().
+					SetEmail("user@example.com").
+					SetName("Test User").
+					SetPassword("password123").
+					SetStatus("active").
+					Save(context.Background())
+				if err != nil {
+					return uuid.Nil, err
+				}
+				return user.ID, nil
+			},
+			updateDTO: UpdateUserDTO{
+				Status: stringPtr("inactive"),
+			},
+			expectedError: false,
+			expectedUser: &GetUserDTO{
+				Email:  "user@example.com",
+				Name:   "Test User",
+				Status: stringPtr("inactive"),
+			},
+		},
+		{
+			name: "success - update all optional fields",
+			setupData: func(client *ent.Client) (uuid.UUID, error) {
+				user, err := client.User.Create().
+					SetEmail("user@example.com").
+					SetName("Test User").
+					SetPassword("password123").
+					Save(context.Background())
+				if err != nil {
+					return uuid.Nil, err
+				}
+				return user.ID, nil
+			},
+			updateDTO: UpdateUserDTO{
+				Bio:         stringPtr("Updated bio text"),
+				Avatar:      stringPtr("https://example.com/avatar.jpg"),
+				Cover:       stringPtr("https://example.com/cover.jpg"),
+				DateOfBirth: stringPtr("1990-01-01T00:00:00Z"),
+				Sex:         stringPtr("male"),
+				Goal:        stringPtr("weight_loss"),
+				HeightCm:    floatPtr(175.5),
+				WeightKg:    floatPtr(70.5),
+				Status:      stringPtr("active"),
+			},
+			expectedError: false,
+			expectedUser: &GetUserDTO{
+				Email:       "user@example.com",
+				Name:        "Test User",
+				Bio:         stringPtr("Updated bio text"),
+				Avatar:      stringPtr("https://example.com/avatar.jpg"),
+				Cover:       stringPtr("https://example.com/cover.jpg"),
+				DateOfBirth: stringPtr("1990-01-01T00:00:00Z"),
+				Sex:         stringPtr("male"),
+				Goal:        stringPtr("weight_loss"),
+				HeightCm:    floatPtr(175.5),
+				WeightKg:    floatPtr(70.5),
+				Status:      stringPtr("active"),
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -421,6 +638,27 @@ func TestEntRepo_Update(t *testing.T) {
 				}
 				if tt.expectedUser.Bio != nil {
 					assert.Equal(t, tt.expectedUser.Bio, result.Bio)
+				}
+				if tt.expectedUser.Avatar != nil {
+					assert.Equal(t, tt.expectedUser.Avatar, result.Avatar)
+				}
+				if tt.expectedUser.Cover != nil {
+					assert.Equal(t, tt.expectedUser.Cover, result.Cover)
+				}
+				if tt.expectedUser.DateOfBirth != nil {
+					assert.Equal(t, tt.expectedUser.DateOfBirth, result.DateOfBirth)
+				}
+				if tt.expectedUser.Sex != nil {
+					assert.Equal(t, tt.expectedUser.Sex, result.Sex)
+				}
+				if tt.expectedUser.Goal != nil {
+					assert.Equal(t, tt.expectedUser.Goal, result.Goal)
+				}
+				if tt.expectedUser.HeightCm != nil {
+					assert.Equal(t, tt.expectedUser.HeightCm, result.HeightCm)
+				}
+				if tt.expectedUser.WeightKg != nil {
+					assert.Equal(t, tt.expectedUser.WeightKg, result.WeightKg)
 				}
 			}
 		})
@@ -482,4 +720,9 @@ func TestEntRepo_Delete(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Helper function to create float64 pointers
+func floatPtr(f float64) *float64 {
+	return &f
 }

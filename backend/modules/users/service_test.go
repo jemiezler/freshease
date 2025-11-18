@@ -412,3 +412,174 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 }
+
+func TestService_UploadUserAvatar(t *testing.T) {
+	tests := []struct {
+		name           string
+		file           *multipart.FileHeader
+		mockSetup      func(*MockUploadsService, *multipart.FileHeader)
+		expectedResult string
+		expectedError  error
+	}{
+		{
+			name: "success - uploads avatar",
+			file: &multipart.FileHeader{
+				Filename: "avatar.jpg",
+				Size:     1024,
+			},
+			mockSetup: func(mockUploads *MockUploadsService, file *multipart.FileHeader) {
+				mockUploads.On("UploadImage", mock.Anything, file, "users/avatars").Return("users/avatars/avatar.jpg", nil)
+			},
+			expectedResult: "users/avatars/avatar.jpg",
+			expectedError:  nil,
+		},
+		{
+			name: "error - upload service returns error",
+			file: &multipart.FileHeader{
+				Filename: "avatar.jpg",
+				Size:     1024,
+			},
+			mockSetup: func(mockUploads *MockUploadsService, file *multipart.FileHeader) {
+				mockUploads.On("UploadImage", mock.Anything, file, "users/avatars").Return("", errors.New("upload failed"))
+			},
+			expectedResult: "",
+			expectedError:  errors.New("upload failed"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
+			tt.mockSetup(mockUploads, tt.file)
+
+			service := NewService(mockRepo, mockUploads)
+			ctx := context.Background()
+
+			result, err := service.UploadUserAvatar(ctx, tt.file)
+
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedError.Error(), err.Error())
+				assert.Empty(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedResult, result)
+			}
+
+			mockUploads.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_UploadUserCover(t *testing.T) {
+	tests := []struct {
+		name           string
+		file           *multipart.FileHeader
+		mockSetup      func(*MockUploadsService, *multipart.FileHeader)
+		expectedResult string
+		expectedError  error
+	}{
+		{
+			name: "success - uploads cover",
+			file: &multipart.FileHeader{
+				Filename: "cover.jpg",
+				Size:     2048,
+			},
+			mockSetup: func(mockUploads *MockUploadsService, file *multipart.FileHeader) {
+				mockUploads.On("UploadImage", mock.Anything, file, "users/covers").Return("users/covers/cover.jpg", nil)
+			},
+			expectedResult: "users/covers/cover.jpg",
+			expectedError:  nil,
+		},
+		{
+			name: "error - upload service returns error",
+			file: &multipart.FileHeader{
+				Filename: "cover.jpg",
+				Size:     2048,
+			},
+			mockSetup: func(mockUploads *MockUploadsService, file *multipart.FileHeader) {
+				mockUploads.On("UploadImage", mock.Anything, file, "users/covers").Return("", errors.New("upload failed"))
+			},
+			expectedResult: "",
+			expectedError:  errors.New("upload failed"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
+			tt.mockSetup(mockUploads, tt.file)
+
+			service := NewService(mockRepo, mockUploads)
+			ctx := context.Background()
+
+			result, err := service.UploadUserCover(ctx, tt.file)
+
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedError.Error(), err.Error())
+				assert.Empty(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedResult, result)
+			}
+
+			mockUploads.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetUserImageURL(t *testing.T) {
+	tests := []struct {
+		name           string
+		objectName     string
+		mockSetup      func(*MockUploadsService, string)
+		expectedResult string
+		expectedError  error
+	}{
+		{
+			name:       "success - returns image URL",
+			objectName: "users/avatars/avatar.jpg",
+			mockSetup: func(mockUploads *MockUploadsService, objectName string) {
+				mockUploads.On("GetImageURL", mock.Anything, objectName).Return("https://example.com/users/avatars/avatar.jpg", nil)
+			},
+			expectedResult: "https://example.com/users/avatars/avatar.jpg",
+			expectedError:  nil,
+		},
+		{
+			name:       "error - upload service returns error",
+			objectName: "users/avatars/avatar.jpg",
+			mockSetup: func(mockUploads *MockUploadsService, objectName string) {
+				mockUploads.On("GetImageURL", mock.Anything, objectName).Return("", errors.New("failed to generate URL"))
+			},
+			expectedResult: "",
+			expectedError:  errors.New("failed to generate URL"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := new(MockRepository)
+			mockUploads := new(MockUploadsService)
+			tt.mockSetup(mockUploads, tt.objectName)
+
+			service := NewService(mockRepo, mockUploads)
+			ctx := context.Background()
+
+			result, err := service.GetUserImageURL(ctx, tt.objectName)
+
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedError.Error(), err.Error())
+				assert.Empty(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedResult, result)
+			}
+
+			mockUploads.AssertExpectations(t)
+		})
+	}
+}

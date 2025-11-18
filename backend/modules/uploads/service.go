@@ -3,6 +3,7 @@ package uploads
 import (
 	"context"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/url"
 	"path/filepath"
@@ -22,8 +23,17 @@ type Service interface {
 	GetImageURL(ctx context.Context, objectName string) (string, error)
 }
 
+// MinIOClient interface abstracts MinIO operations for testability
+type MinIOClient interface {
+	PutObject(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (minio.UploadInfo, error)
+	RemoveObject(ctx context.Context, bucketName, objectName string, opts minio.RemoveObjectOptions) error
+	PresignedGetObject(ctx context.Context, bucketName, objectName string, expiry time.Duration, reqParams url.Values) (*url.URL, error)
+	BucketExists(ctx context.Context, bucketName string) (bool, error)
+	MakeBucket(ctx context.Context, bucketName string, opts minio.MakeBucketOptions) error
+}
+
 type service struct {
-	minioClient *minio.Client
+	minioClient MinIOClient
 	bucket      string
 	endpoint    string
 	useSSL      bool
@@ -59,6 +69,16 @@ func NewService(cfg config.MinIOConfig) (Service, error) {
 		endpoint:    cfg.Endpoint,
 		useSSL:      cfg.UseSSL,
 	}, nil
+}
+
+// NewServiceWithClient creates a service with a custom MinIO client (useful for testing)
+func NewServiceWithClient(client MinIOClient, bucket string) Service {
+	return &service{
+		minioClient: client,
+		bucket:      bucket,
+		endpoint:    "",
+		useSSL:      false,
+	}
 }
 
 func (s *service) UploadImage(ctx context.Context, file *multipart.FileHeader, folder string) (string, error) {

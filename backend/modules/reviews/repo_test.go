@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"freshease/backend/ent"
 	"freshease/backend/ent/enttest"
 
 	"github.com/google/uuid"
@@ -58,7 +57,7 @@ func TestEntRepo_List(t *testing.T) {
 	review1, err := client.Review.Create().
 		SetID(uuid.New()).
 		SetRating(5).
-		SetComment(&comment1).
+		SetNillableComment(&comment1).
 		AddUser(user).
 		AddProduct(product).
 		Save(ctx)
@@ -68,7 +67,7 @@ func TestEntRepo_List(t *testing.T) {
 	review2, err := client.Review.Create().
 		SetID(uuid.New()).
 		SetRating(4).
-		SetComment(&comment2).
+		SetNillableComment(&comment2).
 		AddUser(user).
 		AddProduct(product).
 		Save(ctx)
@@ -136,7 +135,7 @@ func TestEntRepo_FindByID(t *testing.T) {
 	createdReview, err := client.Review.Create().
 		SetID(uuid.New()).
 		SetRating(5).
-		SetComment(&comment).
+		SetNillableComment(&comment).
 		AddUser(user).
 		AddProduct(product).
 		Save(ctx)

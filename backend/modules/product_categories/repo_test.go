@@ -176,6 +176,28 @@ func TestRepository_Create(t *testing.T) {
 	dbPC, err := client.Product_category.Get(ctx, result.ID)
 	require.NoError(t, err)
 	assert.Equal(t, dto.ID, dbPC.ID)
+
+	// Test Create - error: product not found
+	nonExistentProductID := uuid.New()
+	createDTO2 := &CreateProductCategoryDTO{
+		ID:         uuid.New(),
+		ProductID:  nonExistentProductID,
+		CategoryID: category.ID,
+	}
+	_, err = repo.Create(ctx, createDTO2)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+
+	// Test Create - error: category not found
+	nonExistentCategoryID := uuid.New()
+	createDTO3 := &CreateProductCategoryDTO{
+		ID:         uuid.New(),
+		ProductID:  product.ID,
+		CategoryID: nonExistentCategoryID,
+	}
+	_, err = repo.Create(ctx, createDTO3)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
 }
 
 func TestRepository_Update(t *testing.T) {
@@ -263,6 +285,36 @@ func TestRepository_Update(t *testing.T) {
 	_, err = repo.Update(ctx, dto3)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no fields to update")
+
+	// Test Update - error: product not found
+	nonExistentProductID := uuid.New()
+	updateDTO4 := &UpdateProductCategoryDTO{
+		ID:        createdPC.ID,
+		ProductID: &nonExistentProductID,
+	}
+	_, err = repo.Update(ctx, updateDTO4)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+
+	// Test Update - error: category not found
+	nonExistentCategoryID := uuid.New()
+	updateDTO5 := &UpdateProductCategoryDTO{
+		ID:         createdPC.ID,
+		CategoryID: &nonExistentCategoryID,
+	}
+	_, err = repo.Update(ctx, updateDTO5)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+
+	// Test Update - error: product_category not found
+	nonExistentPCID := uuid.New()
+	updateDTO6 := &UpdateProductCategoryDTO{
+		ID:        nonExistentPCID,
+		ProductID: &product2.ID,
+	}
+	_, err = repo.Update(ctx, updateDTO6)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
 }
 
 func TestRepository_Delete(t *testing.T) {

@@ -3,7 +3,15 @@ package genai
 import (
 	"context"
 	"testing"
+	"time"
 
+	"freshease/backend/ent"
+	"freshease/backend/ent/enttest"
+	"freshease/backend/ent/meal_plan"
+	"freshease/backend/ent/user"
+	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -273,4 +281,235 @@ func TestRepository_Integration(t *testing.T) {
 		assert.Equal(t, plan1, repo.GetPlan("user1"))
 		assert.Equal(t, plan2, repo.GetPlan("user2"))
 	})
+}
+
+// EntRepo tests using actual Ent client
+func TestEntRepo_GetUserProfile(t *testing.T) {
+	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	repo := NewEntRepo(client)
+	ctx := context.Background()
+
+	tests := []struct {
+		name          string
+		setupUser     func() (*ent.User, error)
+		userID        string
+		expectedError bool
+		validate      func(*testing.T, *UserProfile)
+	}{
+		{
+			name: "success - returns profile with all fields",
+			setupUser: func() (*ent.User, error) {
+				sex := "male"
+				height := 175.0
+				weight := 70.0
+				goal := "weight_loss"
+				birthDate := time.Date(1995, 1, 1, 0, 0, 0, 0, time.UTC)
+				return client.User.Create().
+					SetEmail("test@example.com").
+					SetName("Test User").
+					SetPassword("password").
+					SetNillableSex(&sex).
+					SetNillableHeightCm(&height).
+					SetNillableWeightKg(&weight).
+					SetNillableGoal(&goal).
+					SetNillableDateOfBirth(&birthDate).
+					Save(ctx)
+			},
+			userID:        "", // Will be set after user creation
+			expectedError: false,
+			validate: func(t *testing.T, profile *UserProfile) {
+				assert.Equal(t, "male", profile.Gender)
+				assert.Greater(t, profile.Age, 0)
+				assert.Equal(t, 175.0, profile.HeightCm)
+				assert.Equal(t, 70.0, profile.WeightKg)
+				assert.Equal(t, "weight_loss", profile.Target)
+			},
+		},
+		{
+			name: "success - returns profile with partial fields",
+			setupUser: func() (*ent.User, error) {
+				sex := "female"
+				height := 165.0
+				return client.User.Create().
+					SetEmail("test2@example.com").
+					SetName("Test User 2").
+					SetPassword("password").
+					SetNillableSex(&sex).
+					SetNillableHeightCm(&height).
+					Save(ctx)
+			},
+			userID:        "", // Will be set after user creation
+			expectedError: false,
+			validate: func(t *testing.T, profile *UserProfile) {
+				assert.Equal(t, "female", profile.Gender)
+				assert.Equal(t, 165.0, profile.HeightCm)
+				assert.Equal(t, 0.0, profile.WeightKg) // Not set
+				assert.Equal(t, "", profile.Target)    // Not set
+			},
+		},
+		{
+			name: "error - invalid user ID format",
+			setupUser: func() (*ent.User, error) {
+				return nil, nil // No user needed
+			},
+			userID:        "invalid-uuid",
+			expectedError: true,
+			validate:      nil,
+		},
+		{
+			name: "error - user not found",
+			setupUser: func() (*ent.User, error) {
+				return nil, nil // No user needed
+			},
+			userID:        uuid.New().String(),
+			expectedError: true,
+			validate:      nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var userID string
+			if tt.setupUser != nil {
+				user, err := tt.setupUser()
+				if err != nil {
+					t.Fatalf("Failed to setup user: %v", err)
+				}
+				if user != nil {
+					userID = user.ID.String()
+				} else {
+					userID = tt.userID
+				}
+			} else {
+				userID = tt.userID
+			}
+
+			profile, err := repo.GetUserProfile(ctx, userID)
+
+			if tt.expectedError {
+				assert.Error(t, err)
+				assert.Nil(t, profile)
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, profile)
+				assert.Equal(t, userID, profile.UserID)
+				if tt.validate != nil {
+					tt.validate(t, profile)
+				}
+			}
+		})
+	}
+}
+
+func TestEntRepo_SaveGeneratedPlan(t *testing.T) {
+	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	repo := NewEntRepo(client)
+	ctx := context.Background()
+
+	tests := []struct {
+		name          string
+		setupUser     func() (*ent.User, error)
+		userID        string
+		planJSON      []byte
+		expectedError bool
+	}{
+		{
+			name: "success - saves plan with valid JSON",
+			setupUser: func() (*ent.User, error) {
+				return client.User.Create().
+					SetEmail("test@example.com").
+					SetName("Test User").
+					SetPassword("password").
+					Save(ctx)
+			},
+			userID:        "", // Will be set after user creation
+			planJSON:      []byte(`[{"day": "Monday", "meals": {"breakfast": "Oatmeal"}}]`),
+			expectedError: false,
+		},
+		{
+			name: "success - saves plan with empty JSON array",
+			setupUser: func() (*ent.User, error) {
+				return client.User.Create().
+					SetEmail("test2@example.com").
+					SetName("Test User 2").
+					SetPassword("password").
+					Save(ctx)
+			},
+			userID:        "", // Will be set after user creation
+			planJSON:      []byte(`[]`),
+			expectedError: false,
+		},
+		{
+			name: "success - saves plan with invalid JSON (handled gracefully)",
+			setupUser: func() (*ent.User, error) {
+				return client.User.Create().
+					SetEmail("test3@example.com").
+					SetName("Test User 3").
+					SetPassword("password").
+					Save(ctx)
+			},
+			userID:        "", // Will be set after user creation
+			planJSON:      []byte(`invalid json`),
+			expectedError: false, // Method handles invalid JSON gracefully
+		},
+		{
+			name: "error - invalid user ID format",
+			setupUser: func() (*ent.User, error) {
+				return nil, nil
+			},
+			userID:        "invalid-uuid",
+			planJSON:      []byte(`[{"day": "Monday"}]`),
+			expectedError: true,
+		},
+		{
+			name: "error - user not found",
+			setupUser: func() (*ent.User, error) {
+				return nil, nil
+			},
+			userID:        uuid.New().String(),
+			planJSON:      []byte(`[{"day": "Monday"}]`),
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var userID string
+			if tt.setupUser != nil {
+				user, err := tt.setupUser()
+				if err != nil {
+					t.Fatalf("Failed to setup user: %v", err)
+				}
+				if user != nil {
+					userID = user.ID.String()
+				} else {
+					userID = tt.userID
+				}
+			} else {
+				userID = tt.userID
+			}
+
+			err := repo.SaveGeneratedPlan(ctx, userID, tt.planJSON)
+
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				// Verify meal plan was created (if JSON was valid)
+				if len(tt.planJSON) > 0 && tt.planJSON[0] == '[' {
+					mealPlans, err := client.Meal_plan.Query().
+						Where(meal_plan.HasUserWith(user.ID(uuid.MustParse(userID)))).
+						All(ctx)
+					if err == nil && len(mealPlans) > 0 {
+						// At least one meal plan should exist
+						assert.Greater(t, len(mealPlans), 0)
+					}
+				}
+			}
+		})
+	}
 }

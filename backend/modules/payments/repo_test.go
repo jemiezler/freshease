@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"freshease/backend/ent"
 	"freshease/backend/ent/enttest"
 
 	"github.com/google/uuid"
@@ -114,7 +113,7 @@ func TestEntRepo_FindByID(t *testing.T) {
 	createdPayment, err := client.Payment.Create().
 		SetID(uuid.New()).
 		SetProvider("stripe").
-		SetProviderRef(&providerRef).
+		SetNillableProviderRef(&providerRef).
 		SetStatus("pending").
 		SetAmount(110.0).
 		AddOrder(order).

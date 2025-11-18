@@ -79,18 +79,18 @@ func TestController_ListBundles(t *testing.T) {
 						IsActive: true,
 					},
 				}
-				mockSvc.On("List", context.Background()).Return(expectedBundles, nil)
+				mockSvc.On("List", mock.Anything).Return(expectedBundles, nil)
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   map[string]string{"message": "Bundles Retrieved Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Bundles Retrieved Successfully"},
 		},
 		{
 			name: "error - service returns error",
 			mockSetup: func(mockSvc *MockService) {
-				mockSvc.On("List", context.Background()).Return([]*GetBundleDTO(nil), errors.New("database error"))
+				mockSvc.On("List", mock.Anything).Return([]*GetBundleDTO(nil), errors.New("database error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   map[string]string{"message": "database error"},
+			expectedBody:   map[string]interface{}{"message": "database error"},
 		},
 	}
 
@@ -138,7 +138,7 @@ func TestController_GetBundle(t *testing.T) {
 			name:     "success - returns bundle by ID",
 			bundleID: bundleID.String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
-				mockSvc.On("Get", context.Background(), id).Return(&GetBundleDTO{
+				mockSvc.On("Get", mock.Anything, id).Return(&GetBundleDTO{
 					ID:       id,
 					Name:     "Test Bundle",
 					Price:    99.99,
@@ -146,7 +146,7 @@ func TestController_GetBundle(t *testing.T) {
 				}, nil)
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   map[string]string{"message": "Bundle Retrieved Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Bundle Retrieved Successfully"},
 		},
 		{
 			name:     "error - invalid UUID",
@@ -155,16 +155,16 @@ func TestController_GetBundle(t *testing.T) {
 				// No mock setup needed for invalid UUID
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "invalid uuid"},
+			expectedBody:   map[string]interface{}{"message": "invalid uuid"},
 		},
 		{
 			name:     "error - bundle not found",
 			bundleID: bundleID.String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
-				mockSvc.On("Get", context.Background(), id).Return(nil, errors.New("not found"))
+				mockSvc.On("Get", mock.Anything, id).Return(nil, errors.New("not found"))
 			},
 			expectedStatus: http.StatusNotFound,
-			expectedBody:   map[string]string{"message": "not found"},
+			expectedBody:   map[string]interface{}{"message": "not found"},
 		},
 	}
 
@@ -220,7 +220,7 @@ func TestController_CreateBundle(t *testing.T) {
 				IsActive: true,
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateBundleDTO) {
-				mockSvc.On("Create", context.Background(), dto).Return(&GetBundleDTO{
+				mockSvc.On("Create", mock.Anything, dto).Return(&GetBundleDTO{
 					ID:       dto.ID,
 					Name:     dto.Name,
 					Price:    dto.Price,
@@ -228,7 +228,7 @@ func TestController_CreateBundle(t *testing.T) {
 				}, nil)
 			},
 			expectedStatus: http.StatusCreated,
-			expectedBody:   map[string]string{"message": "Bundle Created Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Bundle Created Successfully"},
 		},
 		{
 			name: "error - service returns error",
@@ -239,10 +239,10 @@ func TestController_CreateBundle(t *testing.T) {
 				IsActive: true,
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateBundleDTO) {
-				mockSvc.On("Create", context.Background(), dto).Return(nil, errors.New("validation error"))
+				mockSvc.On("Create", mock.Anything, dto).Return(nil, errors.New("validation error"))
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "validation error"},
+			expectedBody:   map[string]interface{}{"message": "validation error"},
 		},
 	}
 
@@ -299,7 +299,7 @@ func TestController_UpdateBundle(t *testing.T) {
 				Name: &newName,
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateBundleDTO) {
-				mockSvc.On("Update", context.Background(), id, dto).Return(&GetBundleDTO{
+				mockSvc.On("Update", mock.Anything, id, dto).Return(&GetBundleDTO{
 					ID:       id,
 					Name:     newName,
 					Price:    99.99,
@@ -307,7 +307,7 @@ func TestController_UpdateBundle(t *testing.T) {
 				}, nil)
 			},
 			expectedStatus: http.StatusCreated,
-			expectedBody:   map[string]string{"message": "Bundle Updated Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Bundle Updated Successfully"},
 		},
 		{
 			name:     "error - invalid UUID",
@@ -319,7 +319,7 @@ func TestController_UpdateBundle(t *testing.T) {
 				// No mock setup needed for invalid UUID
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "invalid uuid"},
+			expectedBody:   map[string]interface{}{"message": "invalid uuid"},
 		},
 	}
 
@@ -373,10 +373,10 @@ func TestController_DeleteBundle(t *testing.T) {
 			name:     "success - deletes bundle",
 			bundleID: bundleID.String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
-				mockSvc.On("Delete", context.Background(), id).Return(nil)
+				mockSvc.On("Delete", mock.Anything, id).Return(nil)
 			},
 			expectedStatus: http.StatusAccepted,
-			expectedBody:   map[string]string{"message": "Bundle Deleted Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Bundle Deleted Successfully"},
 		},
 		{
 			name:     "error - invalid UUID",
@@ -385,16 +385,16 @@ func TestController_DeleteBundle(t *testing.T) {
 				// No mock setup needed for invalid UUID
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "invalid uuid"},
+			expectedBody:   map[string]interface{}{"message": "invalid uuid"},
 		},
 		{
 			name:     "error - service returns error",
 			bundleID: bundleID.String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
-				mockSvc.On("Delete", context.Background(), id).Return(errors.New("database error"))
+				mockSvc.On("Delete", mock.Anything, id).Return(errors.New("database error"))
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "database error"},
+			expectedBody:   map[string]interface{}{"message": "database error"},
 		},
 	}
 

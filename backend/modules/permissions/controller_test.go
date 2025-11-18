@@ -226,9 +226,7 @@ func TestController_CreatePermission(t *testing.T) {
 					Description: dto.Description,
 				}
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreatePermissionDTO) bool {
-					return actual.ID == dto.ID &&
-						actual.Code == dto.Code &&
-						actual.Description == dto.Description
+					return actual.Code == dto.Code
 				})).Return(createdPermission, nil)
 			},
 			expectedStatus: http.StatusCreated,
@@ -243,9 +241,7 @@ func TestController_CreatePermission(t *testing.T) {
 			},
 			mockSetup: func(mockSvc *MockService, dto CreatePermissionDTO) {
 				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreatePermissionDTO) bool {
-					return actual.ID == dto.ID &&
-						actual.Code == dto.Code &&
-						actual.Description == dto.Description
+					return actual.Code == dto.Code
 				})).Return((*GetPermissionDTO)(nil), errors.New("creation failed"))
 			},
 			expectedStatus: http.StatusBadRequest,

@@ -21,16 +21,49 @@ func TestRepository_List(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test vendor (required for inventory)
+	vendor, err := client.Vendor.Create().
+		SetID(uuid.New()).
+		SetName("Test Vendor").
+		SetContact("vendor@example.com").
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Create test products (required for inventory)
+	product1, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Product 1").
+		SetSku("SKU-001").
+		SetPrice(10.0).
+		SetUnitLabel("unit").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	product2, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Product 2").
+		SetSku("SKU-002").
+		SetPrice(20.0).
+		SetUnitLabel("unit").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Create test inventories
 	inventory1, err := client.Inventory.Create().
 		SetQuantity(100).
 		SetReorderLevel(50).
+		SetProduct(product1).
+		SetVendor(vendor).
 		Save(ctx)
 	require.NoError(t, err)
 
 	inventory2, err := client.Inventory.Create().
 		SetQuantity(200).
 		SetReorderLevel(75).
+		SetProduct(product2).
+		SetVendor(vendor).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -59,10 +92,31 @@ func TestRepository_FindByID(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test vendor (required for inventory)
+	vendor, err := client.Vendor.Create().
+		SetID(uuid.New()).
+		SetName("Test Vendor").
+		SetContact("vendor@example.com").
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Create test product (required for inventory)
+	product, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Test Product").
+		SetSku("SKU-TEST").
+		SetPrice(15.0).
+		SetUnitLabel("unit").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Create test inventory
 	createdInventory, err := client.Inventory.Create().
 		SetQuantity(150).
 		SetReorderLevel(60).
+		SetProduct(product).
+		SetVendor(vendor).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -88,9 +142,30 @@ func TestRepository_Create(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test vendor (required for inventory)
+	vendor, err := client.Vendor.Create().
+		SetID(uuid.New()).
+		SetName("Test Vendor").
+		SetContact("vendor@example.com").
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Create test product (required for inventory)
+	product, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Test Product").
+		SetSku("SKU-CREATE").
+		SetPrice(30.0).
+		SetUnitLabel("unit").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
 	dto := &CreateInventoryDTO{
 		Quantity:      300,
 		ReorderLevel: 100,
+		ProductID:     &product.ID,
+		VendorID:      &vendor.ID,
 		UpdatedAt:     time.Now(),
 	}
 
@@ -116,10 +191,31 @@ func TestRepository_Update(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test vendor (required for inventory)
+	vendor, err := client.Vendor.Create().
+		SetID(uuid.New()).
+		SetName("Test Vendor").
+		SetContact("vendor@example.com").
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Create test product (required for inventory)
+	product, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Test Product").
+		SetSku("SKU-TEST").
+		SetPrice(10.0).
+		SetUnitLabel("unit").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Create test inventory
 	createdInventory, err := client.Inventory.Create().
 		SetQuantity(100).
 		SetReorderLevel(50).
+		SetProduct(product).
+		SetVendor(vendor).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -175,10 +271,31 @@ func TestRepository_Delete(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test vendor (required for inventory)
+	vendor, err := client.Vendor.Create().
+		SetID(uuid.New()).
+		SetName("Test Vendor").
+		SetContact("vendor@example.com").
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Create test product (required for inventory)
+	product, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Test Product").
+		SetSku("SKU-TEST").
+		SetPrice(20.0).
+		SetUnitLabel("unit").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Create test inventory
 	createdInventory, err := client.Inventory.Create().
 		SetQuantity(200).
 		SetReorderLevel(80).
+		SetProduct(product).
+		SetVendor(vendor).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -203,16 +320,49 @@ func TestRepository_Integration(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test vendor (required for inventory)
+	vendor, err := client.Vendor.Create().
+		SetID(uuid.New()).
+		SetName("Test Vendor").
+		SetContact("vendor@example.com").
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Create test products (required for inventory)
+	product1, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Product 1").
+		SetSku("SKU-INT1").
+		SetPrice(10.0).
+		SetUnitLabel("unit").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	product2, err := client.Product.Create().
+		SetID(uuid.New()).
+		SetName("Product 2").
+		SetSku("SKU-INT2").
+		SetPrice(20.0).
+		SetUnitLabel("unit").
+		SetIsActive(true).
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Create multiple inventories
 	dto1 := &CreateInventoryDTO{
 		Quantity:      100,
 		ReorderLevel: 50,
+		ProductID:     &product1.ID,
+		VendorID:      &vendor.ID,
 		UpdatedAt:     time.Now(),
 	}
 
 	dto2 := &CreateInventoryDTO{
 		Quantity:      200,
 		ReorderLevel: 75,
+		ProductID:     &product2.ID,
+		VendorID:      &vendor.ID,
 		UpdatedAt:     time.Now(),
 	}
 

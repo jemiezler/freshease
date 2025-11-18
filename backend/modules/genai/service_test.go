@@ -127,6 +127,57 @@ func TestService_GenerateWeeklyMeals(t *testing.T) {
 			expectedError: true,
 			errorContains: "generate failed",
 		},
+		{
+			name: "success - partial profile loading (some fields provided)",
+			request: &GenerateMealsReq{
+				UserID:        "user123",
+				Gender:        "male", // Provided
+				Age:           0,     // Missing - should load from repo
+				HeightCm:      175.0,  // Provided
+				WeightKg:      0,     // Missing - should load from repo
+				StepsToday:    8000,
+				ActiveKcal24h: 2000.0,
+				Allergies:     []string{},
+				Preferences:   []string{},
+				Target:        "maintenance",
+			},
+			mockSetup: func(mockRepo *ServiceMockRepository, req *GenerateMealsReq) {
+				profile := &UserProfile{
+					UserID:        "user123",
+					Gender:        "male",
+					Age:           30,
+					HeightCm:      175.0,
+					WeightKg:      70.0,
+					Allergies:     []string{"dairy"},
+					Preferences:   []string{"vegan"},
+					Target:        "weight_loss",
+					StepsToday:    10000,
+					ActiveKcal24h: 1800.0,
+				}
+				mockRepo.On("GetUserProfile", mock.Anything, req.UserID).Return(profile, nil)
+				mockRepo.On("SaveGeneratedPlan", mock.Anything, req.UserID, mock.AnythingOfType("[]uint8")).Return(nil)
+			},
+			expectedError: false,
+		},
+		{
+			name: "success - repo is nil (no persistence)",
+			request: &GenerateMealsReq{
+				UserID:        "",
+				Gender:        "male",
+				Age:           30,
+				HeightCm:      175.0,
+				WeightKg:      70.0,
+				StepsToday:    8000,
+				ActiveKcal24h: 2000.0,
+				Allergies:     []string{"nuts"},
+				Preferences:   []string{"vegetarian"},
+				Target:        "maintenance",
+			},
+			mockSetup: func(mockRepo *ServiceMockRepository, req *GenerateMealsReq) {
+				// No mock setup - repo is nil
+			},
+			expectedError: false,
+		},
 	}
 
 	for _, tt := range tests {

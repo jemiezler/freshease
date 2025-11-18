@@ -8,7 +8,6 @@ import 'package:frontend/core/theme/app_theme.dart';
 import 'package:frontend/features/account/presentation/state/user_cubit.dart';
 import 'package:frontend/router/app_router.dart';
 import 'package:frontend/app/di.dart';
-import 'package:health/health.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -35,13 +34,11 @@ enum HealthState {
   PERMISSIONS_NOT_REVOKED,
 }
 
-final health = Health();
-
 class AppState extends State<App> {
   @override
   void initState() {
-    health.configure();
-    health.getHealthConnectSdkStatus();
+    // Health initialization is now handled in HealthService/HealthController
+    // and is conditional based on platform (mobile only)
     super.initState();
   }
 

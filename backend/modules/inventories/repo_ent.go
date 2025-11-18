@@ -51,6 +51,21 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateInventoryDTO) (*GetInve
 		SetQuantity(dto.Quantity).
 		SetReorderLevel(dto.ReorderLevel)
 
+	if dto.ProductID != nil {
+		product, err := r.c.Product.Get(ctx, *dto.ProductID)
+		if err != nil {
+			return nil, err
+		}
+		q.SetProduct(product)
+	}
+	if dto.VendorID != nil {
+		vendor, err := r.c.Vendor.Get(ctx, *dto.VendorID)
+		if err != nil {
+			return nil, err
+		}
+		q.SetVendor(vendor)
+	}
+
 	row, err := q.Save(ctx)
 	if err != nil {
 		return nil, err

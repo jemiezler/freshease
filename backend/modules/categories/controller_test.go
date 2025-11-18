@@ -78,18 +78,18 @@ func TestController_ListCategories(t *testing.T) {
 						Slug: "category-two",
 					},
 				}
-				mockSvc.On("List", context.Background()).Return(expectedCategories, nil)
+				mockSvc.On("List", mock.Anything).Return(expectedCategories, nil)
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   map[string]string{"message": "Categories Retrieved Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Categories Retrieved Successfully"},
 		},
 		{
 			name: "error - service returns error",
 			mockSetup: func(mockSvc *MockService) {
-				mockSvc.On("List", context.Background()).Return([]*GetCategoryDTO(nil), errors.New("database error"))
+				mockSvc.On("List", mock.Anything).Return([]*GetCategoryDTO(nil), errors.New("database error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   map[string]string{"message": "database error"},
+			expectedBody:   map[string]interface{}{"message": "database error"},
 		},
 	}
 
@@ -137,14 +137,14 @@ func TestController_GetCategory(t *testing.T) {
 			name:       "success - returns category by ID",
 			categoryID: categoryID.String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
-				mockSvc.On("Get", context.Background(), id).Return(&GetCategoryDTO{
+				mockSvc.On("Get", mock.Anything, id).Return(&GetCategoryDTO{
 					ID:   id,
 					Name: "Test Category",
 					Slug: "test-category",
 				}, nil)
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   map[string]string{"message": "Category Retrieved Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Category Retrieved Successfully"},
 		},
 		{
 			name:       "error - invalid UUID",
@@ -153,16 +153,16 @@ func TestController_GetCategory(t *testing.T) {
 				// No mock setup needed for invalid UUID
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "invalid uuid"},
+			expectedBody:   map[string]interface{}{"message": "invalid uuid"},
 		},
 		{
 			name:       "error - category not found",
 			categoryID: categoryID.String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
-				mockSvc.On("Get", context.Background(), id).Return(nil, errors.New("not found"))
+				mockSvc.On("Get", mock.Anything, id).Return(nil, errors.New("not found"))
 			},
 			expectedStatus: http.StatusNotFound,
-			expectedBody:   map[string]string{"message": "not found"},
+			expectedBody:   map[string]interface{}{"message": "not found"},
 		},
 	}
 
@@ -220,14 +220,14 @@ func TestController_CreateCategory(t *testing.T) {
 				UpdatedAt: now,
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateCategoryDTO) {
-				mockSvc.On("Create", context.Background(), dto).Return(&GetCategoryDTO{
+				mockSvc.On("Create", mock.Anything, mock.Anything).Return(&GetCategoryDTO{
 					ID:   dto.ID,
 					Name: dto.Name,
 					Slug: dto.Slug,
 				}, nil)
 			},
 			expectedStatus: http.StatusCreated,
-			expectedBody:   map[string]string{"message": "Category Created Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Category Created Successfully"},
 		},
 		{
 			name: "error - service returns error",
@@ -239,10 +239,10 @@ func TestController_CreateCategory(t *testing.T) {
 				UpdatedAt: now,
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateCategoryDTO) {
-				mockSvc.On("Create", context.Background(), dto).Return(nil, errors.New("validation error"))
+				mockSvc.On("Create", mock.Anything, mock.Anything).Return(nil, errors.New("validation error"))
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "validation error"},
+			expectedBody:   map[string]interface{}{"message": "validation error"},
 		},
 	}
 
@@ -300,14 +300,14 @@ func TestController_UpdateCategory(t *testing.T) {
 				UpdatedAt: time.Now(),
 			},
 			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateCategoryDTO) {
-				mockSvc.On("Update", context.Background(), id, dto).Return(&GetCategoryDTO{
+				mockSvc.On("Update", mock.Anything, id, mock.Anything).Return(&GetCategoryDTO{
 					ID:   id,
 					Name: newName,
 					Slug: "test-category",
 				}, nil)
 			},
 			expectedStatus: http.StatusCreated,
-			expectedBody:   map[string]string{"message": "Category Updated Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Category Updated Successfully"},
 		},
 		{
 			name:       "error - invalid UUID",
@@ -320,7 +320,7 @@ func TestController_UpdateCategory(t *testing.T) {
 				// No mock setup needed for invalid UUID
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "invalid uuid"},
+			expectedBody:   map[string]interface{}{"message": "invalid uuid"},
 		},
 	}
 
@@ -374,10 +374,10 @@ func TestController_DeleteCategory(t *testing.T) {
 			name:       "success - deletes category",
 			categoryID: categoryID.String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
-				mockSvc.On("Delete", context.Background(), id).Return(nil)
+				mockSvc.On("Delete", mock.Anything, id).Return(nil)
 			},
 			expectedStatus: http.StatusAccepted,
-			expectedBody:   map[string]string{"message": "Category Deleted Successfully"},
+			expectedBody:   map[string]interface{}{"message": "Category Deleted Successfully"},
 		},
 		{
 			name:       "error - invalid UUID",
@@ -386,16 +386,16 @@ func TestController_DeleteCategory(t *testing.T) {
 				// No mock setup needed for invalid UUID
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "invalid uuid"},
+			expectedBody:   map[string]interface{}{"message": "invalid uuid"},
 		},
 		{
 			name:       "error - service returns error",
 			categoryID: categoryID.String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
-				mockSvc.On("Delete", context.Background(), id).Return(errors.New("database error"))
+				mockSvc.On("Delete", mock.Anything, id).Return(errors.New("database error"))
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   map[string]string{"message": "database error"},
+			expectedBody:   map[string]interface{}{"message": "database error"},
 		},
 	}
 

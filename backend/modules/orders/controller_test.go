@@ -92,7 +92,10 @@ func TestController_CreateOrder(t *testing.T) {
 					PlacedAt:   dto.PlacedAt,
 					UpdatedAt:   time.Now(),
 				}
-				mockSvc.On("Create", mock.Anything, dto).Return(expectedOrder, nil)
+				// Use MatchedBy to ignore time comparison issues
+				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateOrderDTO) bool {
+					return actual.ID == dto.ID && actual.OrderNo == dto.OrderNo && actual.UserID == dto.UserID
+				})).Return(expectedOrder, nil)
 			},
 			expectedStatus: http.StatusCreated,
 		},
@@ -109,7 +112,9 @@ func TestController_CreateOrder(t *testing.T) {
 				UserID:      userID,
 			},
 			mockSetup: func(mockSvc *MockService, dto CreateOrderDTO) {
-				mockSvc.On("Create", mock.Anything, dto).Return((*GetOrderDTO)(nil), errors.New("creation failed"))
+				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateOrderDTO) bool {
+					return actual.ID == dto.ID && actual.OrderNo == dto.OrderNo
+				})).Return((*GetOrderDTO)(nil), errors.New("creation failed"))
 			},
 			expectedStatus: http.StatusBadRequest,
 		},

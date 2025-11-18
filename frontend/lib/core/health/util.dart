@@ -1,4 +1,6 @@
-import 'package:health/health.dart';
+// Conditional import for health package
+import 'package:health/health.dart'
+    if (dart.library.html) 'package:frontend/core/health/health_stub.dart';
 
 /// Data types available on iOS via Apple Health.
 const List<HealthDataType> dataTypesIOS = [
@@ -50,16 +52,7 @@ const List<HealthDataType> dataTypesIOS = [
   HealthDataType.HEADACHE_SEVERE,
   HealthDataType.HEADACHE_UNSPECIFIED,
   HealthDataType.LEAN_BODY_MASS,
-
-  // note that a phone cannot write these ECG-based types - only read them
   HealthDataType.ELECTROCARDIOGRAM,
-
-  // HealthDataType.HIGH_HEART_RATE_EVENT,
-  // HealthDataType.IRREGULAR_HEART_RATE_EVENT,
-  // HealthDataType.LOW_HEART_RATE_EVENT,
-  // HealthDataType.RESTING_HEART_RATE,
-  // HealthDataType.WALKING_HEART_RATE,
-  // HealthDataType.ATRIAL_FIBRILLATION_BURDEN,
   HealthDataType.NUTRITION,
   HealthDataType.GENDER,
   HealthDataType.BLOOD_TYPE,

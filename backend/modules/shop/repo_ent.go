@@ -21,12 +21,14 @@ func (r *EntRepo) GetActiveProducts(ctx context.Context, filters ShopSearchFilte
 	query := r.c.Product.Query().
 		Where(product.IsActive(true)).
 		WithVendor().
-		WithProductCategories().
+		WithProductCategories(func(q *ent.ProductCategoryQuery) {
+			q.WithCategory()
+		}).
 		WithInventories()
 
 	// Apply filters
 	if filters.CategoryID != nil {
-		query = query.Where(product.HasProductCategoriesWith(product_category.ID(*filters.CategoryID)))
+		query = query.Where(product.HasProductCategoriesWith(product_category.HasCategoryWith(category.ID(*filters.CategoryID))))
 	}
 	if filters.VendorID != nil {
 		query = query.Where(product.HasVendorWith(vendor.ID(*filters.VendorID)))
@@ -128,7 +130,9 @@ func (r *EntRepo) GetProductByID(ctx context.Context, id uuid.UUID) (*ShopProduc
 	p, err := r.c.Product.Query().
 		Where(product.ID(id), product.IsActive(true)).
 		WithVendor().
-		WithProductCategories().
+		WithProductCategories(func(q *ent.ProductCategoryQuery) {
+			q.WithCategory()
+		}).
 		WithInventories().
 		First(ctx)
 	if err != nil {

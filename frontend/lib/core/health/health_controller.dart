@@ -1,15 +1,21 @@
 // lib/core/health/health_controller.dart
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:health/health.dart';
 import 'package:frontend/core/health/health_repository.dart';
-import 'package:frontend/core/health/util.dart'; // <- where you keep dataTypesAndroid/dataTypesIOS
+import 'package:frontend/core/health/util.dart';
 import 'package:frontend/core/genai/genai_service.dart';
 import 'package:frontend/core/genai/models.dart';
 import 'package:frontend/features/account/domain/entities/user_profile.dart';
 import 'package:frontend/features/account/domain/repositories/user_repository.dart';
 import 'package:frontend/app/di.dart';
+import 'package:frontend/core/platform_helper.dart';
+
+// Conditional imports for mobile-only packages
+import 'package:health/health.dart'
+    if (dart.library.html) 'package:frontend/core/health/health_stub.dart'
+    as health_pkg;
+import 'package:permission_handler/permission_handler.dart'
+    if (dart.library.html) 'package:frontend/core/health/permission_stub.dart'
+    as permission_pkg;
 
 enum HealthState { idle, fetching, ready, noData, authDenied, error }
 
@@ -18,12 +24,12 @@ class HealthController extends ChangeNotifier {
     : _repo = repository ?? NoopHealthRepository(),
       _genAiService = genAiService;
 
-  final Health _health = Health();
+  final health_pkg.Health _health = health_pkg.Health();
   final HealthRepository _repo;
   final GenAiService? _genAiService;
 
   HealthState state = HealthState.idle;
-  HealthConnectSdkStatus? hcStatus;
+  health_pkg.HealthConnectSdkStatus? hcStatus;
 
   // ====== What the page wants ======
   int stepsToday = 0;
@@ -52,38 +58,49 @@ class HealthController extends ChangeNotifier {
   static const Duration _cacheValidityDuration = Duration(hours: 24);
 
   // ====== What you want to save ======
-  List<HealthDataPoint> allPoints = [];
+  List<health_pkg.HealthDataPoint> allPoints = [];
 
   // Types: collect EVERYTHING supported for the platform
-  List<HealthDataType> get _allTypes => Platform.isAndroid
-      ? dataTypesAndroid // from your util.dart (same as in your sample)
-      : (Platform.isIOS ? dataTypesIOS : const []);
+  List<health_pkg.HealthDataType> get _allTypes {
+    if (kIsWeb) return const [];
+    return PlatformHelper.isAndroid
+        ? dataTypesAndroid
+        : (PlatformHelper.isIOS ? dataTypesIOS : const []);
+  }
 
   // READ/WRITE where allowed; READ-only for iOS-restricted types is handled below
-  List<HealthDataAccess> get _permissions => _allTypes.map((type) {
-    const iosReadOnly = <HealthDataType>{
-      HealthDataType.GENDER,
-      HealthDataType.BLOOD_TYPE,
-      HealthDataType.BIRTH_DATE,
-      HealthDataType.APPLE_MOVE_TIME,
-      HealthDataType.APPLE_STAND_HOUR,
-      HealthDataType.APPLE_STAND_TIME,
-      HealthDataType.WALKING_HEART_RATE,
-      HealthDataType.ELECTROCARDIOGRAM,
-      HealthDataType.HIGH_HEART_RATE_EVENT,
-      HealthDataType.LOW_HEART_RATE_EVENT,
-      HealthDataType.IRREGULAR_HEART_RATE_EVENT,
-      HealthDataType.EXERCISE_TIME,
+  List<health_pkg.HealthDataAccess> get _permissions => _allTypes.map((type) {
+    const iosReadOnly = <health_pkg.HealthDataType>{
+      health_pkg.HealthDataType.GENDER,
+      health_pkg.HealthDataType.BLOOD_TYPE,
+      health_pkg.HealthDataType.BIRTH_DATE,
+      health_pkg.HealthDataType.APPLE_MOVE_TIME,
+      health_pkg.HealthDataType.APPLE_STAND_HOUR,
+      health_pkg.HealthDataType.APPLE_STAND_TIME,
+      health_pkg.HealthDataType.WALKING_HEART_RATE,
+      health_pkg.HealthDataType.ELECTROCARDIOGRAM,
+      health_pkg.HealthDataType.HIGH_HEART_RATE_EVENT,
+      health_pkg.HealthDataType.LOW_HEART_RATE_EVENT,
+      health_pkg.HealthDataType.IRREGULAR_HEART_RATE_EVENT,
+      health_pkg.HealthDataType.EXERCISE_TIME,
     };
-    if (Platform.isIOS && iosReadOnly.contains(type)) {
-      return HealthDataAccess.READ;
+    if (!kIsWeb) {
+      if (PlatformHelper.isIOS && iosReadOnly.contains(type)) {
+        return health_pkg.HealthDataAccess.READ;
+      }
     }
-    return HealthDataAccess.READ_WRITE;
+    return health_pkg.HealthDataAccess.READ_WRITE;
   }).toList();
 
   Future<void> init() async {
+    if (kIsWeb) {
+      await _loadUserData();
+      notifyListeners();
+      return;
+    }
+
     _health.configure();
-    if (Platform.isAndroid) {
+    if (PlatformHelper.isAndroid) {
       hcStatus = await _health.getHealthConnectSdkStatus();
     }
     await _loadUserData();
@@ -142,10 +159,17 @@ class HealthController extends ChangeNotifier {
   }
 
   Future<void> authorize() async {
+    if (kIsWeb) {
+      state = HealthState.authDenied;
+      notifyListeners();
+      return;
+    }
+
     try {
-      if (Platform.isAndroid) {
-        await Permission.activityRecognition.request();
-        await Permission.location.request(); // some calories/workouts gate this
+      if (PlatformHelper.isAndroid) {
+        await permission_pkg.Permission.activityRecognition.request();
+        await permission_pkg.Permission.location
+            .request(); // some calories/workouts gate this
       }
 
       bool? has = await _health.hasPermissions(
@@ -180,6 +204,12 @@ class HealthController extends ChangeNotifier {
 
   /// Fetches ALL points for last 24h (saved) + computes only two KPIs for UI.
   Future<void> fetchAll24hAndComputeKpis() async {
+    if (kIsWeb) {
+      state = HealthState.noData;
+      notifyListeners();
+      return;
+    }
+
     state = HealthState.fetching;
     notifyListeners();
 
@@ -215,7 +245,7 @@ class HealthController extends ChangeNotifier {
       // Calories: sum TOTAL_CALORIES_BURNED points (kcal)
       double sumKcal = 0;
       for (final p in allPoints) {
-        if (p.type == HealthDataType.TOTAL_CALORIES_BURNED) {
+        if (p.type == health_pkg.HealthDataType.TOTAL_CALORIES_BURNED) {
           final v = p.value;
           if (v is num) {
             final parsed = double.tryParse(v.toString());

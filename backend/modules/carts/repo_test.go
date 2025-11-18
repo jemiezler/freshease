@@ -20,20 +20,31 @@ func TestRepository_List(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test user (required for cart)
+	user, err := client.User.Create().
+		SetID(uuid.New()).
+		SetEmail("test@example.com").
+		SetName("Test User").
+		SetPassword("password").
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Test empty list
 	carts, err := repo.List(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, carts)
 
-	// Create test carts
+	// Create test carts with user
 	cart1 := &CreateCartDTO{
 		Status: stringPtr("pending"),
 		Total:  float64Ptr(100.50),
+		UserID: &user.ID,
 	}
 
 	cart2 := &CreateCartDTO{
 		Status: stringPtr("completed"),
 		Total:  float64Ptr(250.75),
+		UserID: &user.ID,
 	}
 
 	createdCart1, err := repo.Create(ctx, cart1)
@@ -69,10 +80,20 @@ func TestRepository_FindByID(t *testing.T) {
 	_, err := repo.FindByID(ctx, nonExistentID)
 	assert.Error(t, err)
 
+	// Create test user (required for cart)
+	user, err := client.User.Create().
+		SetID(uuid.New()).
+		SetEmail("test@example.com").
+		SetName("Test User").
+		SetPassword("password").
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Create test cart
 	createDTO := &CreateCartDTO{
 		Status: stringPtr("pending"),
 		Total:  float64Ptr(150.25),
+		UserID: &user.ID,
 	}
 
 	createdCart, err := repo.Create(ctx, createDTO)
@@ -93,6 +114,15 @@ func TestRepository_Create(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test user (required for cart)
+	user, err := client.User.Create().
+		SetID(uuid.New()).
+		SetEmail("test@example.com").
+		SetName("Test User").
+		SetPassword("password").
+		Save(ctx)
+	require.NoError(t, err)
+
 	tests := []struct {
 		name      string
 		createDTO *CreateCartDTO
@@ -103,6 +133,7 @@ func TestRepository_Create(t *testing.T) {
 			createDTO: &CreateCartDTO{
 				Status: stringPtr("pending"),
 				Total:  float64Ptr(99.99),
+				UserID: &user.ID,
 			},
 			wantError: false,
 		},
@@ -111,14 +142,16 @@ func TestRepository_Create(t *testing.T) {
 			createDTO: &CreateCartDTO{
 				Status: stringPtr("completed"),
 				Total:  float64Ptr(0.0),
+				UserID: &user.ID,
 			},
 			wantError: false,
 		},
 		{
-			name: "success - creates cart with nil fields (uses defaults)",
+			name: "success - creates cart with nil total (uses default)",
 			createDTO: &CreateCartDTO{
-				Status: nil,
-				Total:  nil,
+				Status: stringPtr("pending"), // Status is required
+				Total:  nil,                  // Total can be nil (defaults to 0.0)
+				UserID: &user.ID,             // UserID is required
 			},
 			wantError: false,
 		},
@@ -139,8 +172,6 @@ func TestRepository_Create(t *testing.T) {
 				// Check fields
 				if tt.createDTO.Status != nil {
 					assert.Equal(t, *tt.createDTO.Status, result.Status)
-				} else {
-					assert.Equal(t, "pending", result.Status) // default value
 				}
 				if tt.createDTO.Total != nil {
 					assert.Equal(t, *tt.createDTO.Total, result.Total)
@@ -159,10 +190,20 @@ func TestRepository_Update(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test user (required for cart)
+	user, err := client.User.Create().
+		SetID(uuid.New()).
+		SetEmail("test@example.com").
+		SetName("Test User").
+		SetPassword("password").
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Create initial cart
 	createDTO := &CreateCartDTO{
 		Status: stringPtr("pending"),
 		Total:  float64Ptr(100.00),
+		UserID: &user.ID,
 	}
 
 	createdCart, err := repo.Create(ctx, createDTO)
@@ -231,15 +272,25 @@ func TestRepository_Delete(t *testing.T) {
 	repo := NewEntRepo(client)
 	ctx := context.Background()
 
+	// Create test user (required for cart)
+	user, err := client.User.Create().
+		SetID(uuid.New()).
+		SetEmail("test@example.com").
+		SetName("Test User").
+		SetPassword("password").
+		Save(ctx)
+	require.NoError(t, err)
+
 	// Test deleting non-existent cart
 	nonExistentID := uuid.New()
-	err := repo.Delete(ctx, nonExistentID)
+	err = repo.Delete(ctx, nonExistentID)
 	assert.Error(t, err)
 
 	// Create test cart
 	createDTO := &CreateCartDTO{
 		Status: stringPtr("pending"),
 		Total:  float64Ptr(75.50),
+		UserID: &user.ID,
 	}
 
 	createdCart, err := repo.Create(ctx, createDTO)

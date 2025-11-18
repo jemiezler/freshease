@@ -354,6 +354,30 @@ func TestController_UpdateUser(t *testing.T) {
 			expectedBody:   map[string]string{"message": "invalid uuid"},
 		},
 		{
+			name:   "error - unauthorized (no user_id in token)",
+			userID: uuid.New().String(),
+			requestBody: UpdateUserDTO{
+				Email: stringPtr("updated@example.com"),
+			},
+			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateUserDTO) {
+				// No mock setup needed as it fails before service call
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   map[string]string{"message": "user not found in token"},
+		},
+		{
+			name:   "error - forbidden (user_id doesn't match)",
+			userID: uuid.New().String(),
+			requestBody: UpdateUserDTO{
+				Email: stringPtr("updated@example.com"),
+			},
+			mockSetup: func(mockSvc *MockService, id uuid.UUID, dto UpdateUserDTO) {
+				// No mock setup needed as it fails before service call
+			},
+			expectedStatus: http.StatusForbidden,
+			expectedBody:   map[string]string{"message": "forbidden: can only update own profile"},
+		},
+		{
 			name:   "error - service returns error",
 			userID: uuid.New().String(),
 			requestBody: UpdateUserDTO{
@@ -379,8 +403,17 @@ func TestController_UpdateUser(t *testing.T) {
 			controller := NewController(mockSvc)
 			app := fiber.New()
 			
-			// Set user_id in locals for authentication
-			if tt.userID != "invalid-uuid" {
+			// Set user_id in locals for authentication based on test case
+			if tt.name == "error - unauthorized (no user_id in token)" {
+				// Don't set user_id - test unauthorized case
+			} else if tt.name == "error - forbidden (user_id doesn't match)" {
+				// Set different user_id to test forbidden case
+				app.Use(func(c *fiber.Ctx) error {
+					c.Locals("user_id", uuid.New().String()) // Different user ID
+					return c.Next()
+				})
+			} else if tt.userID != "invalid-uuid" {
+				// Set matching user_id for success case
 				app.Use(func(c *fiber.Ctx) error {
 					c.Locals("user_id", tt.userID)
 					return c.Next()
@@ -440,6 +473,24 @@ func TestController_DeleteUser(t *testing.T) {
 			expectedBody:   map[string]string{"message": "invalid uuid"},
 		},
 		{
+			name:   "error - unauthorized (no user_id in token)",
+			userID: uuid.New().String(),
+			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
+				// No mock setup needed as it fails before service call
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   map[string]string{"message": "user not found in token"},
+		},
+		{
+			name:   "error - forbidden (user_id doesn't match)",
+			userID: uuid.New().String(),
+			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
+				// No mock setup needed as it fails before service call
+			},
+			expectedStatus: http.StatusForbidden,
+			expectedBody:   map[string]string{"message": "forbidden: can only delete own profile"},
+		},
+		{
 			name:   "error - service returns error",
 			userID: uuid.New().String(),
 			mockSetup: func(mockSvc *MockService, id uuid.UUID) {
@@ -462,8 +513,17 @@ func TestController_DeleteUser(t *testing.T) {
 			controller := NewController(mockSvc)
 			app := fiber.New()
 			
-			// Set user_id in locals for authentication
-			if tt.userID != "invalid-uuid" {
+			// Set user_id in locals for authentication based on test case
+			if tt.name == "error - unauthorized (no user_id in token)" {
+				// Don't set user_id - test unauthorized case
+			} else if tt.name == "error - forbidden (user_id doesn't match)" {
+				// Set different user_id to test forbidden case
+				app.Use(func(c *fiber.Ctx) error {
+					c.Locals("user_id", uuid.New().String()) // Different user ID
+					return c.Next()
+				})
+			} else if tt.userID != "invalid-uuid" {
+				// Set matching user_id for success case
 				app.Use(func(c *fiber.Ctx) error {
 					c.Locals("user_id", tt.userID)
 					return c.Next()
@@ -485,6 +545,11 @@ func TestController_DeleteUser(t *testing.T) {
 				err = json.NewDecoder(resp.Body).Decode(&responseBody)
 				require.NoError(t, err)
 				assert.IsType(t, map[string]interface{}{}, responseBody)
+				if tt.expectedBody != nil {
+					bodyMap := responseBody.(map[string]interface{})
+					expectedMap := tt.expectedBody.(map[string]string)
+					assert.Equal(t, expectedMap["message"], bodyMap["message"])
+				}
 			}
 
 			mockSvc.AssertExpectations(t)

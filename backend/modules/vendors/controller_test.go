@@ -268,6 +268,37 @@ func TestController_CreateVendor(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  true,
 		},
+		{
+			name: "error - invalid JSON body",
+			requestBody: CreateVendorDTO{},
+			mockSetup: func(mockSvc *MockService, dto CreateVendorDTO) {
+				// Service might still be called with empty DTO
+				mockSvc.On("Create", mock.Anything, mock.Anything).Return((*GetVendorDTO)(nil), errors.New("validation failed")).Maybe()
+			},
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  true,
+		},
+		{
+			name: "success - creates vendor with nil ID (auto-generated)",
+			requestBody: CreateVendorDTO{
+				ID:      uuid.Nil,
+				Name:    stringPtr("Auto ID Vendor"),
+				Contact: stringPtr("auto@example.com"),
+			},
+			mockSetup: func(mockSvc *MockService, dto CreateVendorDTO) {
+				generatedID := uuid.New()
+				createdVendor := &GetVendorDTO{
+					ID:      generatedID,
+					Name:    dto.Name,
+					Contact: dto.Contact,
+				}
+				mockSvc.On("Create", mock.Anything, mock.MatchedBy(func(actual CreateVendorDTO) bool {
+					return actual.ID == uuid.Nil && actual.Name != nil && actual.Contact != nil
+				})).Return(createdVendor, nil)
+			},
+			expectedStatus: http.StatusCreated,
+			expectedError:  false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -279,13 +310,19 @@ func TestController_CreateVendor(t *testing.T) {
 			app := fiber.New()
 			app.Post("/vendors", controller.CreateVendor)
 
-			jsonBody, err := json.Marshal(tt.requestBody)
-			require.NoError(t, err)
+			var req *http.Request
+			if tt.name == "error - invalid JSON body" {
+				// Send invalid JSON
+				req = httptest.NewRequest(http.MethodPost, "/vendors", bytes.NewBufferString(`{"invalid": json}`))
+				req.Header.Set("Content-Type", "application/json")
+			} else {
+				jsonBody, err := json.Marshal(tt.requestBody)
+				require.NoError(t, err)
+				req = httptest.NewRequest(http.MethodPost, "/vendors", bytes.NewBuffer(jsonBody))
+				req.Header.Set("Content-Type", "application/json")
+			}
 
-			req := httptest.NewRequest(http.MethodPost, "/vendors", bytes.NewBuffer(jsonBody))
-			req.Header.Set("Content-Type", "application/json")
 			resp, err := app.Test(req)
-
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
@@ -297,7 +334,10 @@ func TestController_CreateVendor(t *testing.T) {
 				assert.Contains(t, responseBody, "message")
 			}
 
-			mockSvc.AssertExpectations(t)
+			// Only assert expectations if we didn't expect an early error
+			if tt.name != "error - invalid JSON body" {
+				mockSvc.AssertExpectations(t)
+			}
 		})
 	}
 }

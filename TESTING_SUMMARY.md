@@ -106,6 +106,39 @@ Comprehensive test cases organized by component:
 - **Repository Layer**: Database interaction tests (existing)
 - **Integration**: Example patterns for end-to-end testing
 
+### Recent Coverage Improvements
+
+#### Upload Service Methods - 100% Coverage ✅
+All upload-related service methods across users, products, and vendors modules have achieved **100% test coverage**:
+
+**Users Module:**
+- `UploadUserAvatar` - 100% coverage
+- `UploadUserCover` - 100% coverage
+- `GetUserImageURL` - 100% coverage
+
+**Products Module:**
+- `UploadProductImage` - 100% coverage
+- `GetProductImageURL` - 100% coverage
+
+**Vendors Module:**
+- `UploadVendorLogo` - 100% coverage
+- `GetVendorImageURL` - 100% coverage
+
+**Total**: 7 upload methods with 100% coverage
+
+#### Authorization Tests ✅
+Comprehensive authorization testing for user-specific operations:
+- `UpdateUser` - Tests for unauthorized (no token) and forbidden (wrong user) scenarios
+- `DeleteUser` - Tests for unauthorized (no token) and forbidden (wrong user) scenarios
+
+**Total**: 4 authorization test cases covering security edge cases
+
+#### Bundle Items Module - Complete Test Suite ✅
+Full test coverage for bundle_items module:
+- Service layer: List, Get, Create, Update, Delete (100% coverage)
+- Controller layer: All endpoints tested with success and error scenarios
+- Coverage: 40.6% overall module coverage
+
 ### Frontend (Flutter)
 - **BLoC/Cubit**: State management tests (existing + new)
 - **Controllers**: Business logic tests (new)
@@ -177,9 +210,27 @@ The tests are designed to run in CI/CD pipelines:
 3. **On Release Branches**: Full test suite including E2E tests
 4. **Nightly**: Full regression suite
 
+## Test Patterns Established
+
+### Upload Service Test Pattern
+Consistent test pattern implemented across all modules with upload functionality:
+1. **Success Case**: Upload file and return object name/path
+2. **Error Case**: Upload service returns error (network, validation, etc.)
+
+### Image URL Generation Test Pattern
+Consistent test pattern for presigned URL generation:
+1. **Success Case**: Returns valid presigned URL
+2. **Error Case**: URL generation fails (service error, invalid object name)
+
+### Authorization Test Pattern
+Security-focused testing for user-specific operations:
+1. **Unauthorized**: No user_id in token (401 Unauthorized)
+2. **Forbidden**: user_id doesn't match resource ID (403 Forbidden)
+3. **Success**: Proper authorization with matching user_id
+
 ## Next Steps
 
-1. **Increase Coverage**: Aim for 80%+ coverage across all modules
+1. **Increase Coverage**: Continue improving coverage for remaining modules (meal_plan_items, meal_plans, notifications, order_items, recipe_items, uploads)
 2. **Add E2E Tests**: Implement full end-to-end tests with real database
 3. **Performance Tests**: Add load testing for critical endpoints
 4. **Visual Regression**: Add screenshot testing for UI components

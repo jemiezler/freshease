@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:frontend/core/health/health_controller.dart';
 import 'package:frontend/core/health/health_repository.dart';
 import 'package:frontend/core/health/health_service.dart';
@@ -20,10 +21,10 @@ final getIt = GetIt.instance;
 Future<void> configureDependencies({String envFile = ".env"}) async {
   await dotenv.load(fileName: envFile);
   getIt.registerLazySingleton<DioClient>(() => DioClient());
-  
+
   // Register all API clients
   api_di.registerApiClients(getIt);
-  
+
   // Register feature dependencies
   auth_di.registerAuthDependencies(getIt);
   account_di.registerAccountDependencies(getIt);
@@ -48,5 +49,8 @@ Future<void> configureDependencies({String envFile = ".env"}) async {
     () => CartController(getIt<CartRepository>()),
   );
 
-  await getIt<HealthController>().init();
+  // Initialize HealthController only on mobile platforms
+  if (!kIsWeb) {
+    await getIt<HealthController>().init();
+  }
 }

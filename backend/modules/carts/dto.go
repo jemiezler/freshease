@@ -7,8 +7,9 @@ import (
 )
 
 type CreateCartDTO struct {
-	Status *string  `json:"status,omitempty" validate:"omitempty"`
-	Total  *float64 `json:"total,omitempty" validate:"omitempty"`
+	Status *string     `json:"status,omitempty" validate:"omitempty"`
+	Total  *float64    `json:"total,omitempty" validate:"omitempty"`
+	UserID *uuid.UUID  `json:"user_id,omitempty" validate:"omitempty,uuid"`
 }
 
 type UpdateCartDTO struct {

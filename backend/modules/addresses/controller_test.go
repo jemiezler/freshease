@@ -298,6 +298,42 @@ func TestController_CreateAddress(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   map[string]string{"message": "address already exists"},
 		},
+		{
+			name: "error - invalid JSON body",
+			requestBody: CreateAddressDTO{},
+			mockSetup: func(mockSvc *MockService, dto CreateAddressDTO) {
+				// Service might still be called with empty DTO
+				mockSvc.On("Create", mock.Anything, mock.Anything).Return((*GetAddressDTO)(nil), errors.New("validation failed")).Maybe()
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "success - creates address without Line2",
+			requestBody: CreateAddressDTO{
+				ID:        uuid.New(),
+				Line1:     "123 Main St",
+				Line2:     nil, // No Line2
+				City:      "New York",
+				Province:  "NY",
+				Country:   "USA",
+				PostalCode: "10001",
+				IsDefault: false,
+			},
+			mockSetup: func(mockSvc *MockService, dto CreateAddressDTO) {
+				expectedAddress := &GetAddressDTO{
+					ID:        dto.ID,
+					Line1:     dto.Line1,
+					Line2:     "", // Empty string when Line2 is nil
+					City:      dto.City,
+					Province:  dto.Province,
+					Country:   dto.Country,
+					PostalCode: dto.PostalCode,
+					IsDefault: dto.IsDefault,
+				}
+				mockSvc.On("Create", mock.Anything, dto).Return(expectedAddress, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
 	}
 
 	for _, tt := range tests {
@@ -309,23 +345,32 @@ func TestController_CreateAddress(t *testing.T) {
 			app := fiber.New()
 			app.Post("/addresses", controller.CreateAddress)
 
-			jsonBody, err := json.Marshal(tt.requestBody)
-			require.NoError(t, err)
+			var req *http.Request
+			if tt.name == "error - invalid JSON body" {
+				// Send invalid JSON
+				req = httptest.NewRequest(http.MethodPost, "/addresses", bytes.NewBufferString(`{"invalid": json}`))
+				req.Header.Set("Content-Type", "application/json")
+			} else {
+				jsonBody, err := json.Marshal(tt.requestBody)
+				require.NoError(t, err)
+				req = httptest.NewRequest(http.MethodPost, "/addresses", bytes.NewBuffer(jsonBody))
+				req.Header.Set("Content-Type", "application/json")
+			}
 
-			req := httptest.NewRequest(http.MethodPost, "/addresses", bytes.NewBuffer(jsonBody))
-			req.Header.Set("Content-Type", "application/json")
 			resp, err := app.Test(req)
-
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
 			var responseBody interface{}
 			err = json.NewDecoder(resp.Body).Decode(&responseBody)
-			require.NoError(t, err)
+			if err == nil {
+				assert.IsType(t, map[string]interface{}{}, responseBody)
+			}
 
-			assert.IsType(t, map[string]interface{}{}, responseBody)
-
-			mockSvc.AssertExpectations(t)
+			// Only assert expectations if we didn't expect an early error
+			if tt.name != "error - invalid JSON body" {
+				mockSvc.AssertExpectations(t)
+			}
 		})
 	}
 }

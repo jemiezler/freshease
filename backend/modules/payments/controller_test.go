@@ -218,11 +218,11 @@ func TestController_CreatePayment(t *testing.T) {
 	paidAt := time.Now()
 
 	tests := []struct {
-		name           string
-		requestBody    CreatePaymentDTO
-		mockSetup      func(*MockService, CreatePaymentDTO)
-		expectedStatus int
-		expectedBody   map[string]interface{}
+		name            string
+		requestBody     CreatePaymentDTO
+		mockSetup       func(*MockService, CreatePaymentDTO)
+		expectedStatus  int
+		expectedMessage string
 	}{
 		{
 			name: "success - creates payment",
@@ -236,7 +236,7 @@ func TestController_CreatePayment(t *testing.T) {
 				OrderID:     orderID,
 			},
 			mockSetup: func(mockSvc *MockService, dto CreatePaymentDTO) {
-				mockSvc.On("Create", mock.Anything, dto).Return(&GetPaymentDTO{
+				mockSvc.On("Create", mock.Anything, mock.Anything).Return(&GetPaymentDTO{
 					ID:          dto.ID,
 					Provider:    dto.Provider,
 					ProviderRef: dto.ProviderRef,
@@ -259,7 +259,7 @@ func TestController_CreatePayment(t *testing.T) {
 				OrderID:  orderID,
 			},
 			mockSetup: func(mockSvc *MockService, dto CreatePaymentDTO) {
-				mockSvc.On("Create", mock.Anything, dto).Return(nil, errors.New("validation error"))
+				mockSvc.On("Create", mock.Anything, mock.Anything).Return(nil, errors.New("validation error"))
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedMessage: "validation error",
@@ -304,12 +304,12 @@ func TestController_UpdatePayment(t *testing.T) {
 	newStatus := "completed"
 
 	tests := []struct {
-		name           string
-		paymentID      string
-		requestBody    UpdatePaymentDTO
-		mockSetup      func(*MockService, uuid.UUID, UpdatePaymentDTO)
-		expectedStatus int
-		expectedBody   map[string]interface{}
+		name            string
+		paymentID       string
+		requestBody     UpdatePaymentDTO
+		mockSetup       func(*MockService, uuid.UUID, UpdatePaymentDTO)
+		expectedStatus  int
+		expectedMessage string
 	}{
 		{
 			name:      "success - updates payment",
@@ -383,11 +383,11 @@ func TestController_DeletePayment(t *testing.T) {
 	paymentID := uuid.New()
 
 	tests := []struct {
-		name           string
-		paymentID      string
-		mockSetup      func(*MockService, uuid.UUID)
-		expectedStatus int
-		expectedBody   map[string]interface{}
+		name            string
+		paymentID       string
+		mockSetup       func(*MockService, uuid.UUID)
+		expectedStatus  int
+		expectedMessage string
 	}{
 		{
 			name:      "success - deletes payment",

@@ -1,214 +1,91 @@
-name: Build and Push Docker Images
+name: Build & Push Multi-arch Docker Images
 
 on:
   push:
     branches:
       - deployment
-    paths:
-      - 'backend/**'
-      - 'frontend-admin/**'
-      - '.github/workflows/build-and-push.yml'
-  pull_request:
-    branches:
-      - deployment
-    paths:
-      - 'backend/**'
-      - 'frontend-admin/**'
-      - '.github/workflows/build-and-push.yml'
   workflow_dispatch:
-    inputs:
-      service:
-        description: 'Service to build (api, admin, or both)'
-        required: true
-        default: 'both'
-        type: choice
-        options:
-          - both
-          - api
-          - admin
+
+permissions:
+  contents: read
 
 env:
-  REGISTRY: asia-southeast1-docker.pkg.dev
-  PROJECT_ID: nodal-kite-477007-s4
-  REPOSITORY: freshease
+  IMAGE_NAMESPACE: ${{ secrets.IMAGE_NAMESPACE || github.repository_owner }}
 
 jobs:
-  build-and-push-api:
-    name: Build and Push API Image
+  prepare:
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'both' || github.event.inputs.service == 'api') ||
-      github.event_name == 'push' || github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      id-token: write
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker to use gcloud as a credential helper
-        run: |
-          gcloud auth configure-docker $REGISTRY --quiet
-
-      - name: Extract metadata for API
-        id: meta-api
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/api
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: --debug
 
-      - name: Build and push API image
-        uses: docker/build-push-action@v5
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Export refs
+        run: |
+          echo "GITHUB_REF_NAME=$(echo ${GITHUB_REF} | awk -F'/' '{print $NF}')" >> $GITHUB_ENV
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+  build-and-push:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64,linux/arm64]
+      fail-fast: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # === Backend ===
+      - name: Build & push backend (multi-arch)
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           file: ./backend/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta-api.outputs.tags }}
-          labels: ${{ steps.meta-api.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-
-      - name: Output image digest
-        run: echo "Image pushed with digest ${{ steps.meta-api.outputs.digest }}"
-
-  build-and-push-admin:
-    name: Build and Push Admin Image
-    runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'both' || github.event.inputs.service == 'admin') ||
-      github.event_name == 'push' || github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker to use gcloud as a credential helper
-        run: |
-          gcloud auth configure-docker $REGISTRY --quiet
-
-      - name: Extract metadata for Admin
-        id: meta-admin
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/admin
+          platforms: ${{ matrix.platform }}
+          push: true
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            ${{ env.IMAGE_NAMESPACE }}/freshease-backend:latest
+            ${{ env.IMAGE_NAMESPACE }}/freshease-backend:${{ env.GITHUB_REF_NAME }}
+            ${{ env.IMAGE_NAMESPACE }}/freshease-backend:${{ env.SHORT_SHA }}
+          cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/freshease-backend:cache
+          cache-to: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/freshease-backend:cache,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push Admin image
-        uses: docker/build-push-action@v5
+      # === Frontend ===
+      - name: Build & push frontend (multi-arch)
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend-admin
           file: ./frontend-admin/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta-admin.outputs.tags }}
-          labels: ${{ steps.meta-admin.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:latest
+            ${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:${{ env.GITHUB_REF_NAME }}
+            ${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:${{ env.SHORT_SHA }}
+          cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:cache
+          cache-to: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:cache,mode=max
           build-args: |
-            NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL || 'https://freshease.jemiezler.site/api' }}
+            BUILDKIT_INLINE_CACHE=1
 
-      - name: Output image digest
-        run: echo "Image pushed with digest ${{ steps.meta-admin.outputs.digest }}"
-
-  notify-jenkins:
-    name: Notify Jenkins
-    runs-on: ubuntu-latest
-    needs: [build-and-push-api, build-and-push-admin]
-    if: github.event_name != 'pull_request' && (needs.build-and-push-api.result == 'success' || needs.build-and-push-admin.result == 'success')
-    steps:
-      - name: Trigger Jenkins deployment
-        env:
-          JENKINS_URL: ${{ secrets.JENKINS_URL }}
-          JENKINS_JOB: ${{ secrets.JENKINS_JOB }}
-          JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+      - name: Show pushed images
         run: |
-          # Sanity checks
-          if [ -z "$JENKINS_URL" ] || [ -z "$JENKINS_JOB" ]; then
-            echo "❌ Missing JENKINS_URL or JENKINS_JOB secret — skipping Jenkins notify"
-            exit 0
-          fi
-          
-          # --- FIX 1: Trim whitespace/slash from URL ---
-          CLEAN_JENKINS_URL=$(echo "$JENKINS_URL" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | sed 's/\/$//')
-          
-          # --- FIX 2: Trim whitespace (including newlines) from job name ---
-          # This removes the problematic newline character (%0A)
-          CLEAN_JENKINS_JOB=$(echo "$JENKINS_JOB" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-
-          # --- FIX 3: URL-encode the *cleaned* job name ---
-          ENCODED_JENKINS_JOB=$(echo "$CLEAN_JENKINS_JOB" | jq -sRr @uri)
-          
-          # Build trigger URL with the *cleaned* and *encoded* variables
-          TRIGGER_URL="${CLEAN_JENKINS_URL}/job/${ENCODED_JENKINS_JOB}/buildWithParameters"
-          
-          echo "Sending webhook to Jenkins job '${JENKINS_JOB}' at '${TRIGGER_URL}' (not printing token)."
-          
-          # Prepare payload
-          API_SUCCESS="${{ needs.build-and-push-api.result == 'success' && 'true' || 'false' }}"
-          ADMIN_SUCCESS="${{ needs.build-and-push-admin.result == 'success' && 'true' || 'false' }}"
-          PAYLOAD=$(printf '{"branch":"%s","commit":"%s","services":{"api":%s,"admin":%s}}' \
-            "${{ github.ref_name }}" \
-            "${{ github.sha }}" \
-            "$API_SUCCESS" \
-            "$ADMIN_SUCCESS")
-          
-          # Send webhook
-          if [ -n "$JENKINS_TOKEN" ]; then
-            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}?token=${JENKINS_TOKEN}&target=both" \
-              -H "Content-Type: application/json" \
-              -d "${PAYLOAD}" || echo "000")
-          else
-            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${TRIGGER_URL}?target=both" \
-              -H "Content-Type: application/json" \
-              -d "${PAYLOAD}" || echo "000")
-          fi
-          
-          # Check response
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "302" ]; then
-            echo "✅ Jenkins webhook triggered successfully (HTTP $HTTP_CODE)"
-          else
-            echo "⚠️ Jenkins webhook notification returned HTTP $HTTP_CODE (this is optional)"
-          fi
+          echo "Pushed:"
+          echo "${{ env.IMAGE_NAMESPACE }}/freshease-backend:latest -> ${{ env.SHORT_SHA }}"
+          echo "${{ env.IMAGE_NAMESPACE }}/freshease-frontend-admin:latest -> ${{ env.SHORT_SHA }}"

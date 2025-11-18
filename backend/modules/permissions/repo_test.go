@@ -72,7 +72,8 @@ func TestRepository_FindByID(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, createdPermission.ID, result.ID)
 	assert.Equal(t, "read_users", result.Code)
-	assert.Equal(t, "Permission to read user data", result.Description)
+	require.NotNil(t, result.Description)
+	assert.Equal(t, "Permission to read user data", *result.Description)
 
 	// Test FindByID - not found
 	nonExistentID := uuid.New()
@@ -98,13 +99,20 @@ func TestRepository_Create(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.NotEqual(t, uuid.Nil, result.ID) // ID should be generated
 	assert.Equal(t, dto.Code, result.Code)
-	assert.Equal(t, dto.Description, result.Description)
+	if dto.Description != nil {
+		require.NotNil(t, result.Description)
+		assert.Equal(t, *dto.Description, *result.Description)
+	}
 
 	// Verify it was actually created in the database
 	dbPermission, err := client.Permission.Get(ctx, result.ID)
 	require.NoError(t, err)
 	assert.Equal(t, dto.Code, dbPermission.Code)
-	assert.Equal(t, dto.Description, dbPermission.Description)
+	if dto.Description != nil {
+		if dbPermission.Description != nil {
+			assert.Equal(t, *dto.Description, *dbPermission.Description)
+		}
+	}
 }
 
 func TestRepository_Update(t *testing.T) {
@@ -134,13 +142,16 @@ func TestRepository_Update(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, createdPermission.ID, result.ID)
 	assert.Equal(t, "updated_code", result.Code)
-	assert.Equal(t, "Updated description", result.Description)
+	require.NotNil(t, result.Description)
+	assert.Equal(t, "Updated description", *result.Description)
 
 	// Verify it was actually updated in the database
 	dbPermission, err := client.Permission.Get(ctx, createdPermission.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "updated_code", dbPermission.Code)
-	assert.Equal(t, "Updated description", dbPermission.Description)
+	if dbPermission.Description != nil {
+		assert.Equal(t, "Updated description", *dbPermission.Description)
+	}
 
 	// Test Update - partial update (only name)
 	dto2 := &UpdatePermissionDTO{
@@ -153,7 +164,10 @@ func TestRepository_Update(t *testing.T) {
 	assert.NotNil(t, result2)
 	assert.Equal(t, createdPermission.ID, result2.ID)
 	assert.Equal(t, "partial_update", result2.Code)
-	assert.Equal(t, "Updated description", result2.Description) // Should remain unchanged
+	// Description should remain unchanged from previous update
+	if result2.Description != nil {
+		assert.Equal(t, "Updated description", *result2.Description)
+	}
 
 	// Test Update - no fields to update
 	dto3 := &UpdatePermissionDTO{

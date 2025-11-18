@@ -57,10 +57,10 @@ func (m *MockService) Delete(ctx context.Context, id uuid.UUID) error {
 
 func TestController_ListRecipes(t *testing.T) {
 	tests := []struct {
-		name           string
-		mockSetup      func(*MockService)
-		expectedStatus int
-		expectedBody   map[string]interface{}
+		name            string
+		mockSetup       func(*MockService)
+		expectedStatus  int
+		expectedMessage string
 	}{
 		{
 			name: "success - returns recipes list",
@@ -114,7 +114,9 @@ func TestController_ListRecipes(t *testing.T) {
 			err = json.NewDecoder(resp.Body).Decode(&responseBody)
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			if tt.expectedMessage != "" {
+				assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			}
 
 			if tt.expectedStatus == http.StatusOK {
 				assert.Contains(t, responseBody, "data")
@@ -133,7 +135,7 @@ func TestController_GetRecipe(t *testing.T) {
 		recipeID       string
 		mockSetup      func(*MockService, uuid.UUID)
 		expectedStatus int
-		expectedBody   map[string]interface{}
+		expectedMessage string
 	}{
 		{
 			name:     "success - returns recipe by ID",
@@ -192,7 +194,9 @@ func TestController_GetRecipe(t *testing.T) {
 			err = json.NewDecoder(resp.Body).Decode(&responseBody)
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			if tt.expectedMessage != "" {
+				assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			}
 
 			if tt.expectedStatus == http.StatusOK {
 				assert.Contains(t, responseBody, "data")
@@ -211,7 +215,7 @@ func TestController_CreateRecipe(t *testing.T) {
 		requestBody    CreateRecipeDTO
 		mockSetup      func(*MockService, CreateRecipeDTO)
 		expectedStatus int
-		expectedBody   map[string]interface{}
+		expectedMessage string
 	}{
 		{
 			name: "success - creates recipe",
@@ -267,7 +271,9 @@ func TestController_CreateRecipe(t *testing.T) {
 			err = json.NewDecoder(resp.Body).Decode(&responseBody)
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			if tt.expectedMessage != "" {
+				assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			}
 
 			if tt.expectedStatus == http.StatusCreated {
 				assert.Contains(t, responseBody, "data")
@@ -288,7 +294,7 @@ func TestController_UpdateRecipe(t *testing.T) {
 		requestBody    UpdateRecipeDTO
 		mockSetup      func(*MockService, uuid.UUID, UpdateRecipeDTO)
 		expectedStatus int
-		expectedBody   map[string]interface{}
+		expectedMessage string
 	}{
 		{
 			name:     "success - updates recipe",
@@ -346,7 +352,9 @@ func TestController_UpdateRecipe(t *testing.T) {
 			err = json.NewDecoder(resp.Body).Decode(&responseBody)
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			if tt.expectedMessage != "" {
+				assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			}
 
 			if tt.expectedStatus == http.StatusCreated {
 				assert.Contains(t, responseBody, "data")
@@ -365,7 +373,7 @@ func TestController_DeleteRecipe(t *testing.T) {
 		recipeID       string
 		mockSetup      func(*MockService, uuid.UUID)
 		expectedStatus int
-		expectedBody   map[string]interface{}
+		expectedMessage string
 	}{
 		{
 			name:     "success - deletes recipe",
@@ -418,7 +426,9 @@ func TestController_DeleteRecipe(t *testing.T) {
 			err = json.NewDecoder(resp.Body).Decode(&responseBody)
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			if tt.expectedMessage != "" {
+				assert.Equal(t, tt.expectedMessage, responseBody["message"])
+			}
 
 			mockSvc.AssertExpectations(t)
 		})

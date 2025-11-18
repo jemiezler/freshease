@@ -25,7 +25,7 @@ func TestEntRepo_List(t *testing.T) {
 	recipe1, err := client.Recipe.Create().
 		SetID(uuid.New()).
 		SetName("Recipe One").
-		SetInstructions(&instructions1).
+		SetNillableInstructions(&instructions1).
 		SetKcal(500).
 		Save(ctx)
 	require.NoError(t, err)
@@ -34,7 +34,7 @@ func TestEntRepo_List(t *testing.T) {
 	recipe2, err := client.Recipe.Create().
 		SetID(uuid.New()).
 		SetName("Recipe Two").
-		SetInstructions(&instructions2).
+		SetNillableInstructions(&instructions2).
 		SetKcal(600).
 		Save(ctx)
 	require.NoError(t, err)
@@ -68,7 +68,7 @@ func TestEntRepo_FindByID(t *testing.T) {
 	createdRecipe, err := client.Recipe.Create().
 		SetID(uuid.New()).
 		SetName("Test Recipe").
-		SetInstructions(&instructions).
+		SetNillableInstructions(&instructions).
 		SetKcal(500).
 		Save(ctx)
 	require.NoError(t, err)

@@ -1,74 +1,88 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:frontend/core/health/util.dart';
-import 'package:health/health.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:frontend/core/platform_helper.dart';
+
+// Conditional imports for mobile-only packages
+import 'package:health/health.dart'
+    if (dart.library.html) 'package:frontend/core/health/health_stub.dart'
+    as health_pkg;
+import 'package:permission_handler/permission_handler.dart'
+    if (dart.library.html) 'package:frontend/core/health/permission_stub.dart'
+    as permission_pkg;
 
 class HealthService {
   HealthService._();
   static final HealthService instance = HealthService._();
 
-  final Health _health = Health();
-  HealthConnectSdkStatus? _hcStatus;
+  final health_pkg.Health _health = health_pkg.Health();
+  health_pkg.HealthConnectSdkStatus? _hcStatus;
 
   // Cached
-  List<HealthDataPoint> _lastData = [];
+  List<health_pkg.HealthDataPoint> _lastData = [];
   int _lastSteps = 0;
 
-  List<HealthDataPoint> get lastData => _lastData;
+  List<health_pkg.HealthDataPoint> get lastData => _lastData;
   int get lastSteps => _lastSteps;
-  HealthConnectSdkStatus? get healthConnectStatus => _hcStatus;
+  health_pkg.HealthConnectSdkStatus? get healthConnectStatus => _hcStatus;
 
   /// Data types you want to work with (platform-aware)
-  List<HealthDataType> get types => Platform.isAndroid
-      ? dataTypesAndroid
-      : Platform.isIOS
-      ? dataTypesIOS
-      : const [];
+  List<health_pkg.HealthDataType> get types {
+    if (kIsWeb) return const [];
+    if (PlatformHelper.isAndroid) {
+      return dataTypesAndroid;
+    } else if (PlatformHelper.isIOS) {
+      return dataTypesIOS;
+    }
+    return const [];
+  }
 
   /// READ / WRITE matrix (iOS has READ-only for some types)
-  List<HealthDataAccess> get permissions => types
+  List<health_pkg.HealthDataAccess> get permissions => types
       .map(
         (type) =>
             const {
-              HealthDataType.GENDER,
-              HealthDataType.BLOOD_TYPE,
-              HealthDataType.BIRTH_DATE,
-              HealthDataType.APPLE_MOVE_TIME,
-              HealthDataType.APPLE_STAND_HOUR,
-              HealthDataType.APPLE_STAND_TIME,
-              HealthDataType.WALKING_HEART_RATE,
-              HealthDataType.ELECTROCARDIOGRAM,
-              HealthDataType.HIGH_HEART_RATE_EVENT,
-              HealthDataType.LOW_HEART_RATE_EVENT,
-              HealthDataType.IRREGULAR_HEART_RATE_EVENT,
-              HealthDataType.EXERCISE_TIME,
+              health_pkg.HealthDataType.GENDER,
+              health_pkg.HealthDataType.BLOOD_TYPE,
+              health_pkg.HealthDataType.BIRTH_DATE,
+              health_pkg.HealthDataType.APPLE_MOVE_TIME,
+              health_pkg.HealthDataType.APPLE_STAND_HOUR,
+              health_pkg.HealthDataType.APPLE_STAND_TIME,
+              health_pkg.HealthDataType.WALKING_HEART_RATE,
+              health_pkg.HealthDataType.ELECTROCARDIOGRAM,
+              health_pkg.HealthDataType.HIGH_HEART_RATE_EVENT,
+              health_pkg.HealthDataType.LOW_HEART_RATE_EVENT,
+              health_pkg.HealthDataType.IRREGULAR_HEART_RATE_EVENT,
+              health_pkg.HealthDataType.EXERCISE_TIME,
             }.contains(type)
-            ? HealthDataAccess.READ
-            : HealthDataAccess.READ_WRITE,
+            ? health_pkg.HealthDataAccess.READ
+            : health_pkg.HealthDataAccess.READ_WRITE,
       )
       .toList();
 
   /// Call this once at startup (before you use any methods).
   Future<void> init() async {
+    if (kIsWeb) return;
     _health.configure();
 
-    if (Platform.isAndroid) {
+    if (PlatformHelper.isAndroid) {
       _hcStatus = await _health.getHealthConnectSdkStatus();
     }
   }
 
   /// (Android) deep link to HC install
   Future<void> installHealthConnect() async {
-    if (!Platform.isAndroid) return;
+    if (kIsWeb) return;
+    if (!PlatformHelper.isAndroid) return;
     await _health.installHealthConnect();
   }
 
   Future<bool> authorize() async {
+    if (kIsWeb) return false;
+
     // For steps/workouts/sleep etc.
-    await Permission.activityRecognition.request();
+    await permission_pkg.Permission.activityRecognition.request();
     // For distance in workouts
-    await Permission.location.request();
+    await permission_pkg.Permission.location.request();
 
     try {
       final ok = await _health.requestAuthorization(
@@ -84,9 +98,14 @@ class HealthService {
     }
   }
 
-  Future<List<HealthDataPoint>> fetchLatest24h({
-    List<RecordingMethod> exclude = const [],
+  Future<List<health_pkg.HealthDataPoint>> fetchLatest24h({
+    List<health_pkg.RecordingMethod> exclude = const [],
   }) async {
+    if (kIsWeb) {
+      _lastData = [];
+      return _lastData;
+    }
+
     final now = DateTime.now();
     final yesterday = now.subtract(const Duration(hours: 24));
     try {
@@ -107,10 +126,11 @@ class HealthService {
     return _lastData;
   }
 
-  Future<HealthDataPoint?> fetchByUUID({
+  Future<health_pkg.HealthDataPoint?> fetchByUUID({
     required String uuid,
-    required HealthDataType type,
+    required health_pkg.HealthDataType type,
   }) async {
+    if (kIsWeb) return null;
     try {
       return await _health.getHealthDataByUUID(uuid: uuid, type: type);
     } catch (e) {
@@ -120,11 +140,21 @@ class HealthService {
   }
 
   Future<int> fetchTodaySteps({bool includeManual = true}) async {
+    if (kIsWeb) {
+      _lastSteps = 0;
+      return _lastSteps;
+    }
+
     final now = DateTime.now();
     final midnight = DateTime(now.year, now.month, now.day);
 
-    bool ok = await _health.hasPermissions([HealthDataType.STEPS]) ?? false;
-    if (!ok) ok = await _health.requestAuthorization([HealthDataType.STEPS]);
+    bool ok =
+        await _health.hasPermissions([health_pkg.HealthDataType.STEPS]) ??
+        false;
+    if (!ok)
+      ok = await _health.requestAuthorization([
+        health_pkg.HealthDataType.STEPS,
+      ]);
 
     if (!ok) {
       _lastSteps = 0;
@@ -146,6 +176,7 @@ class HealthService {
   }
 
   Future<bool> revokePermissions() async {
+    if (kIsWeb) return false;
     try {
       await _health.revokePermissions();
       return true;
@@ -158,11 +189,13 @@ class HealthService {
   /// Examples of writing/deleting (trim to your needs)
   Future<bool> writeSample({
     required double value,
-    required HealthDataType type,
+    required health_pkg.HealthDataType type,
     required DateTime start,
     DateTime? end,
-    RecordingMethod recordingMethod = RecordingMethod.manual,
+    health_pkg.RecordingMethod recordingMethod =
+        health_pkg.RecordingMethod.manual,
   }) async {
+    if (kIsWeb) return false;
     try {
       return await _health.writeHealthData(
         value: value,
@@ -178,10 +211,11 @@ class HealthService {
   }
 
   Future<bool> deleteRange({
-    required HealthDataType type,
+    required health_pkg.HealthDataType type,
     required DateTime start,
     required DateTime end,
   }) async {
+    if (kIsWeb) return false;
     try {
       return await _health.delete(type: type, startTime: start, endTime: end);
     } catch (e) {
