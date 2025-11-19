@@ -220,7 +220,7 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 						/>
 						{imagePreview && (
 							<div className="mt-2">
-								<img src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/uploads/${imagePreview}`} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
+								<img src={`${imagePreview}`} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
 								<p className="text-xs text-muted-foreground mt-1">Image preview</p>
 							</div>
 						)}

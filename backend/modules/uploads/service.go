@@ -35,10 +35,10 @@ type MinIOClient interface {
 }
 
 type service struct {
-	minioClient MinIOClient
-	bucket      string
-	endpoint    string
-	useSSL      bool
+	minioClient   MinIOClient
+	bucket        string
+	endpoint      string
+	useSSL        bool
 	publicBaseURL string // Public base URL for image access via nginx
 }
 
@@ -67,10 +67,10 @@ func NewService(cfg config.MinIOConfig) (Service, error) {
 	}
 
 	return &service{
-		minioClient: minioClient,
-		bucket:      cfg.Bucket,
-		endpoint:    cfg.Endpoint,
-		useSSL:      cfg.UseSSL,
+		minioClient:   minioClient,
+		bucket:        cfg.Bucket,
+		endpoint:      cfg.Endpoint,
+		useSSL:        cfg.UseSSL,
 		publicBaseURL: cfg.PublicBaseURL,
 	}, nil
 }
@@ -78,10 +78,10 @@ func NewService(cfg config.MinIOConfig) (Service, error) {
 // NewServiceWithClient creates a service with a custom MinIO client (useful for testing)
 func NewServiceWithClient(client MinIOClient, bucket string) Service {
 	return &service{
-		minioClient: client,
-		bucket:      bucket,
-		endpoint:    "",
-		useSSL:      false,
+		minioClient:   client,
+		bucket:        bucket,
+		endpoint:      "",
+		useSSL:        false,
 		publicBaseURL: "",
 	}
 }

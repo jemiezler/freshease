@@ -188,7 +188,7 @@ export function EditVendorDialog({
 							)}
 							{logoUrl && !uploadingLogo && (
 								<div className="mt-2">
-									<img src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/uploads/${logoUrl}`} alt="Logo preview" className="max-w-full h-32 object-contain border rounded" />
+									<img src={`${logoUrl}`} alt="Logo preview" className="max-w-full h-32 object-contain border rounded" />
 									<p className="text-xs text-muted-foreground mt-1">Current logo</p>
 								</div>
 							)}

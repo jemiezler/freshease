@@ -269,7 +269,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                 // Goal Field
                 DropdownButtonFormField<String>(
-                  initialValue: _selectedGoal,
+                  value: _selectedGoal,
                   decoration: const InputDecoration(
                     labelText: 'Goal',
                     border: OutlineInputBorder(),
@@ -282,7 +282,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: Text('Maintenance'),
                     ),
                     DropdownMenuItem(
-                      value: 'loss weight',
+                      value: 'weight_loss',
                       child: Text('Weight Loss'),
                     ),
                     DropdownMenuItem(

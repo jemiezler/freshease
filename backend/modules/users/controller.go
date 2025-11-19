@@ -1,6 +1,9 @@
 package users
 
 import (
+	"encoding/json"
+	"strings"
+
 	"freshease/backend/internal/common/middleware"
 
 	"github.com/gofiber/fiber/v2"
@@ -148,6 +151,26 @@ func (ctl *Controller) UpdateUser(c *fiber.Ctx) error {
 	var dto UpdateUserDTO
 	dto.ID = id
 
+	// Normalize goal in request body before validation
+	contentType := string(c.Request().Header.ContentType())
+	if strings.Contains(contentType, "application/json") {
+		// Read and normalize goal in JSON body before validation
+		bodyBytes := c.Body()
+		if len(bodyBytes) > 0 {
+			var rawBody map[string]interface{}
+			if err := json.Unmarshal(bodyBytes, &rawBody); err == nil {
+				if goal, ok := rawBody["goal"].(string); ok {
+					normalized := normalizeGoal(goal)
+					rawBody["goal"] = normalized
+					// Re-set the body with normalized value
+					if newBodyBytes, err := json.Marshal(rawBody); err == nil {
+						c.Request().SetBody(newBodyBytes)
+					}
+				}
+			}
+		}
+	}
+
 	// Use binding helper to handle both multipart/form-data and JSON
 	// allowEmptyPayload=true for updates (allows image-only updates)
 	_, err = middleware.BindMultipartForm(c, &dto, "", true)
@@ -220,4 +243,26 @@ func (ctl *Controller) DeleteUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
 	}
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// normalizeGoal converts common goal variations to the expected format
+func normalizeGoal(goal string) string {
+	goalLower := strings.ToLower(strings.TrimSpace(goal))
+
+	// Map common variations to expected values
+	switch goalLower {
+	case "loss weight", "lose weight", "weight loss", "weightloss":
+		return "weight_loss"
+	case "gain weight", "weight gain", "weightgain":
+		return "weight_gain"
+	case "maintain", "maintenance", "maintain weight":
+		return "maintenance"
+	default:
+		// If it already matches one of the expected values, return as-is
+		if goalLower == "weight_loss" || goalLower == "weight_gain" || goalLower == "maintenance" {
+			return goalLower
+		}
+		// Default to maintenance if unknown
+		return "maintenance"
+	}
 }

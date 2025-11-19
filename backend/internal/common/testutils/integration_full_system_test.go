@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -12,11 +13,12 @@ import (
 
 	"freshease/backend/ent/enttest"
 	"freshease/backend/internal/common/config"
-	"freshease/backend/internal/common/http"
+	httpserver "freshease/backend/internal/common/http"
 	"freshease/backend/modules/uploads"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -43,6 +45,17 @@ func (m *MockUploadsService) GetImageURL(ctx context.Context, objectName string)
 	return args.String(0), args.Error(1)
 }
 
+func (m *MockUploadsService) GetImage(ctx context.Context, objectName string) (io.ReadCloser, *minio.ObjectInfo, error) {
+	args := m.Called(ctx, objectName)
+	if args.Get(0) == nil {
+		return nil, nil, args.Error(2)
+	}
+	if args.Get(1) == nil {
+		return args.Get(0).(io.ReadCloser), nil, args.Error(2)
+	}
+	return args.Get(0).(io.ReadCloser), args.Get(1).(*minio.ObjectInfo), args.Error(2)
+}
+
 // TestFullSystem_OrderFlow tests the complete order flow from product creation to payment
 func TestFullSystem_OrderFlow(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&_fk=1")
@@ -55,7 +68,8 @@ func TestFullSystem_OrderFlow(t *testing.T) {
 		DatabaseURL: "sqlite3://:memory:",
 	}
 	mockUploads := new(MockUploadsService)
-	http.RegisterRoutes(app, client, cfg)
+	apiGroup := app.Group("/api")
+	httpserver.RegisterRoutes(apiGroup, app, client, cfg)
 
 	ctx := context.Background()
 
@@ -242,7 +256,8 @@ func TestFullSystem_ProductManagementFlow(t *testing.T) {
 	mockUploads.On("UploadImage", mock.Anything, mock.Anything, mock.Anything).Return("test-image-url", nil)
 	mockUploads.On("GetImageURL", mock.Anything, mock.Anything).Return("https://example.com/image.jpg", nil)
 
-	http.RegisterRoutes(app, client, cfg)
+	apiGroup := app.Group("/api")
+	httpserver.RegisterRoutes(apiGroup, app, client, cfg)
 
 	ctx := context.Background()
 
@@ -333,7 +348,8 @@ func TestFullSystem_UserFlow(t *testing.T) {
 		DatabaseURL: "sqlite3://:memory:",
 	}
 	mockUploads := new(MockUploadsService)
-	http.RegisterRoutes(app, client, cfg)
+	apiGroup := app.Group("/api")
+	httpserver.RegisterRoutes(apiGroup, app, client, cfg)
 
 	ctx := context.Background()
 
@@ -438,7 +454,8 @@ func TestFullSystem_ErrorHandling(t *testing.T) {
 		DatabaseURL: "sqlite3://:memory:",
 	}
 	mockUploads := new(MockUploadsService)
-	http.RegisterRoutes(app, client, cfg)
+	apiGroup := app.Group("/api")
+	httpserver.RegisterRoutes(apiGroup, app, client, cfg)
 
 	t.Run("Invalid UUID handling", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/products/invalid-uuid", nil)
@@ -483,7 +500,8 @@ func TestFullSystem_HealthCheck(t *testing.T) {
 		DatabaseURL: "sqlite3://:memory:",
 	}
 	mockUploads := new(MockUploadsService)
-	http.RegisterRoutes(app, client, cfg)
+	apiGroup := app.Group("/api")
+	httpserver.RegisterRoutes(apiGroup, app, client, cfg)
 
 	t.Run("Health check", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/health", nil)

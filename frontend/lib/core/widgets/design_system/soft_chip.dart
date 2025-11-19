@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/constants/app_colors.dart';
 import 'package:frontend/core/theme/design_tokens.dart';
 
-/// A neumorphic chip widget
+/// A soft neumorphic chip widget
 class SoftChip extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -23,17 +23,45 @@ class SoftChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine background color based on selection
     final effectiveBackgroundColor = isSelected
         ? (selectedColor ?? AppColors.primary)
         : (backgroundColor ?? AppColors.surface);
 
-    final textColor = isSelected ? Colors.white : AppColors.textPrimary;
+    // Determine text color
+    final textColor = isSelected
+        ? Colors.white
+        : Theme.of(context).textTheme.bodyMedium?.color ??
+              const Color(0xFF111827);
 
+    // Determine shadows for neumorphic effect
     final shadows = isSelected
-        ? DesignTokens.raisedShadow
-        : DesignTokens.insetShadow;
+        ? [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              offset: const Offset(2, 2),
+              blurRadius: 4,
+            ),
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.7),
+              offset: const Offset(-2, -2),
+              blurRadius: 4,
+            ),
+          ]
+        : [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              offset: const Offset(2, 2),
+              blurRadius: 6,
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(0.7),
+              offset: const Offset(-2, -2),
+              blurRadius: 6,
+            ),
+          ];
 
-    Widget chip = Container(
+    Widget chipContent = Container(
       padding: const EdgeInsets.symmetric(
         horizontal: DesignTokens.paddingMedium,
         vertical: DesignTokens.paddingSmall,
@@ -55,17 +83,27 @@ class SoftChip extends StatelessWidget {
             style: TextStyle(
               color: textColor,
               fontSize: 14,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+              height: 1, // Proper text height
             ),
           ),
         ],
       ),
     );
 
+    // Wrap with InkWell for ripple effect if onTap is provided
     if (onTap != null) {
-      return GestureDetector(onTap: onTap, child: chip);
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLarge),
+          onTap: onTap,
+          child: chipContent,
+        ),
+      );
     }
 
-    return chip;
+    return chipContent;
   }
 }

@@ -3,10 +3,13 @@ package users
 import (
 	"context"
 	"errors"
+	"io"
 	"mime/multipart"
 	"testing"
 
+	"freshease/backend/modules/uploads"
 	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -68,6 +71,17 @@ func (m *MockUploadsService) DeleteImage(ctx context.Context, objectName string)
 func (m *MockUploadsService) GetImageURL(ctx context.Context, objectName string) (string, error) {
 	args := m.Called(ctx, objectName)
 	return args.String(0), args.Error(1)
+}
+
+func (m *MockUploadsService) GetImage(ctx context.Context, objectName string) (io.ReadCloser, *minio.ObjectInfo, error) {
+	args := m.Called(ctx, objectName)
+	if args.Get(0) == nil {
+		return nil, nil, args.Error(2)
+	}
+	if args.Get(1) == nil {
+		return args.Get(0).(io.ReadCloser), nil, args.Error(2)
+	}
+	return args.Get(0).(io.ReadCloser), args.Get(1).(*minio.ObjectInfo), args.Error(2)
 }
 
 func TestService_List(t *testing.T) {

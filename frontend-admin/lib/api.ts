@@ -37,7 +37,10 @@ export class ApiClient {
       headers: this.buildHeaders(init?.headers),
       cache: "no-store",
     });
-    if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: `GET ${path} failed: ${res.status}` }));
+      throw new Error(errorData.message || errorData.error || `GET ${path} failed: ${res.status}`);
+    }
     return (await res.json()) as T;
   }
 
@@ -48,7 +51,10 @@ export class ApiClient {
       headers: this.buildHeaders(init?.headers),
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: `POST ${path} failed: ${res.status}` }));
+      throw new Error(errorData.message || errorData.error || `POST ${path} failed: ${res.status}`);
+    }
     return (await res.json()) as T;
   }
 
@@ -59,7 +65,10 @@ export class ApiClient {
       headers: this.buildHeaders(init?.headers),
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`PATCH ${path} failed: ${res.status}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: `PATCH ${path} failed: ${res.status}` }));
+      throw new Error(errorData.message || errorData.error || `PATCH ${path} failed: ${res.status}`);
+    }
     return (await res.json()) as T;
   }
 
@@ -69,7 +78,10 @@ export class ApiClient {
       method: "DELETE",
       headers: this.buildHeaders(init?.headers),
     });
-    if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: `DELETE ${path} failed: ${res.status}` }));
+      throw new Error(errorData.message || errorData.error || `DELETE ${path} failed: ${res.status}`);
+    }
     return (await res.json()) as T;
   }
 

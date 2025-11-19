@@ -27,15 +27,13 @@ class _ProgressPageState extends State<ProgressPage> {
       initialIndex: 0,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Progress'),
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'Overview'),
-              Tab(text: 'Orders'),
-              Tab(text: 'Subscriptions'),
-            ],
-          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          title: const Text('Progress', style: TextStyle(color: Colors.white)),
+          bottom: const TabBar(isScrollable: true, tabs: [
+            Tab(text: 'Overview'),
+            Tab(text: 'Orders'),
+            Tab(text: 'Subscriptions'),
+          ]),
         ),
         body: TabBarView(
           children: [

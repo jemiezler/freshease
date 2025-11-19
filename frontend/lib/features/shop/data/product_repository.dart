@@ -5,7 +5,8 @@ import 'sources/shop_api.dart';
 abstract class ProductRepository {
   Future<List<Product>> list({
     String q = '',
-    String category = 'All',
+    String? categoryId,
+    String category = 'All', // Deprecated, use categoryId instead
     double min = 0,
     double max = 99999,
     int limit = 20,
@@ -26,6 +27,7 @@ class ApiProductRepository implements ProductRepository {
   @override
   Future<List<Product>> list({
     String q = '',
+    String? categoryId,
     String category = 'All',
     double min = 0,
     double max = 99999,
@@ -34,6 +36,7 @@ class ApiProductRepository implements ProductRepository {
   }) async {
     try {
       final filters = ShopSearchFilters(
+        categoryId: categoryId,
         searchTerm: q.isNotEmpty ? q : null,
         minPrice: min > 0 ? min : null,
         maxPrice: max < 99999 ? max : null,
@@ -127,6 +130,7 @@ class MockProductRepository implements ProductRepository {
   @override
   Future<List<Product>> list({
     String q = '',
+    String? categoryId,
     String category = 'All',
     double min = 0,
     double max = 99999,

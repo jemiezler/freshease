@@ -15,7 +15,11 @@ class CartPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            title: const Text('Your Cart'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            title: const Text(
+              'Your Cart',
+              style: TextStyle(color: Colors.white),
+            ),
             actions: [
               if (cart.lines.isNotEmpty)
                 IconButton(

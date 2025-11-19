@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"freshease/backend/ent"
@@ -16,6 +17,36 @@ import (
 type EntRepo struct{ c *ent.Client }
 
 func NewEntRepo(client *ent.Client) Repository { return &EntRepo{c: client} }
+
+// parseDateOfBirth tries multiple date formats to handle various ISO 8601 variations
+func parseDateOfBirth(dateStr string) (time.Time, error) {
+	// Try RFC3339 first (standard format with timezone: 2005-11-27T00:00:00Z)
+	if t, err := time.Parse(time.RFC3339, dateStr); err == nil {
+		return t, nil
+	}
+	// Try RFC3339Nano (with nanoseconds: 2005-11-27T00:00:00.000000000Z)
+	if t, err := time.Parse(time.RFC3339Nano, dateStr); err == nil {
+		return t, nil
+	}
+	// Try ISO 8601 format with milliseconds but no timezone (2005-11-27T00:00:00.000)
+	// Note: Go's time.Parse uses .000 for milliseconds, but we need to handle variable length
+	layouts := []string{
+		"2006-01-02T15:04:05.000Z07:00", // with timezone
+		"2006-01-02T15:04:05.000Z",      // with Z timezone
+		"2006-01-02T15:04:05.000",       // no timezone (what frontend sends)
+		"2006-01-02T15:04:05Z07:00",     // without milliseconds, with timezone
+		"2006-01-02T15:04:05Z",          // without milliseconds, with Z
+		"2006-01-02T15:04:05",           // without milliseconds, no timezone
+		"2006-01-02",                     // date-only format
+	}
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, dateStr); err == nil {
+			return t, nil
+		}
+	}
+	// If all formats fail, return an error
+	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
+}
 
 func (r *EntRepo) List(ctx context.Context) ([]*GetUserDTO, error) {
 	rows, err := r.c.User.
@@ -85,7 +116,7 @@ func (r *EntRepo) Create(ctx context.Context, dto *CreateUserDTO) (*GetUserDTO, 
 		q.SetNillableCover(dto.Cover)
 	}
 	if dto.DateOfBirth != nil {
-		if parsedTime, err := time.Parse(time.RFC3339, *dto.DateOfBirth); err == nil {
+		if parsedTime, err := parseDateOfBirth(*dto.DateOfBirth); err == nil {
 			q.SetDateOfBirth(parsedTime)
 		}
 	}
@@ -164,7 +195,7 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateUserDTO) (*GetUserDTO, 
 		q.SetNillableCover(dto.Cover)
 	}
 	if dto.DateOfBirth != nil {
-		if parsedTime, err := time.Parse(time.RFC3339, *dto.DateOfBirth); err == nil {
+		if parsedTime, err := parseDateOfBirth(*dto.DateOfBirth); err == nil {
 			q.SetDateOfBirth(parsedTime)
 		}
 	}

@@ -56,7 +56,10 @@ class _AccountPageState extends State<AccountPage> {
     return BlocProvider.value(
       value: _userCubit,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Account')),
+        appBar: AppBar(
+          title: const Text('Account', style: TextStyle(color: Colors.white)),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
         body: BlocBuilder<UserCubit, UserState>(
           bloc: _userCubit,
           builder: (context, state) {
