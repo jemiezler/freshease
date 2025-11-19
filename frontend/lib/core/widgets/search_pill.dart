@@ -45,7 +45,6 @@ class SearchPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? AppColors.surface,
         borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
-        boxShadow: DesignTokens.insetShadow,
       ),
       padding: padding,
       child: Row(

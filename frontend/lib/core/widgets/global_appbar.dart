@@ -45,13 +45,10 @@ class GlobalAppBar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
 
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       centerTitle: true,
       elevation: 0,
-      title: Text(
-        title,
-        style: theme.appBarTheme.titleTextStyle,
-      ),
+      title: Text(title, style: TextStyle(color: Colors.white)),
       leading: showBackButton && Navigator.canPop(context)
           ? Padding(
               padding: const EdgeInsets.only(left: 8),

@@ -177,7 +177,7 @@ export default function ProductsPage() {
           const product = row.original;
           return product.image_url ? (
             <img 
-              src={product.image_url} 
+              src={`${product.image_url}`} 
               alt={product.name} 
               className="w-16 h-16 object-cover rounded border"
               onError={(e) => {

@@ -75,22 +75,23 @@ class _SoftIconButtonState extends State<SoftIconButton>
     final effectiveIconColor = widget.iconColor ?? AppColors.textPrimary;
     final effectiveBackgroundColor =
         widget.backgroundColor ?? AppColors.surface;
-    final shadows = _isPressed
-        ? DesignTokens.pressedShadow
-        : DesignTokens.raisedShadow;
 
-    Widget button = Container(
-      width: effectiveSize,
-      height: effectiveSize,
-      decoration: BoxDecoration(
-        color: effectiveBackgroundColor,
-        shape: BoxShape.circle,
-        boxShadow: shadows,
-      ),
-      child: Icon(
-        widget.icon,
-        color: effectiveIconColor,
-        size: effectiveSize * 0.5,
+    Widget button = Material(
+      shape: const CircleBorder(),
+      child: Container(
+        width: effectiveSize,
+        height: effectiveSize,
+        decoration: BoxDecoration(
+          color: effectiveBackgroundColor,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Icon(
+            widget.icon,
+            color: effectiveIconColor,
+            size: effectiveSize * 0.5,
+          ),
+        ),
       ),
     );
 

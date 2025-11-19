@@ -9,9 +9,13 @@ import { createResource } from "@/lib/resource";
 import { apiClient } from "@/lib/api";
 import { useState, useEffect } from "react";
 import type { Product, ProductPayload } from "@/types/product";
+import type { Category, CategoryPayload } from "@/types/catagory";
+import type { ProductCategory } from "@/types/product-category";
 import type { EditDialogProps } from "@/types/dialog";
 
 const products = createResource<Product, ProductPayload, ProductPayload>({ basePath: "/products" });
+const categories = createResource<Category, CategoryPayload, CategoryPayload>({ basePath: "/categories" });
+const productCategories = createResource<ProductCategory, ProductCategory, ProductCategory>({ basePath: "/product_categories" });
 
 export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps) {
 	const [name, setName] = useState("");
@@ -20,6 +24,8 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 	const [, setImageUrl] = useState("");
 	const [imageFile, setImageFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string>("");
+	const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+	const [categoryItems, setCategoryItems] = useState<Category[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -28,14 +34,33 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 		let cancelled = false;
 		(async () => {
 			try {
-				const res = await products.get(id);
-				const p = res.data as Product | undefined;
+				// Load product, categories, and product categories in parallel
+				const [productRes, categoriesRes, productCategoriesRes] = await Promise.all([
+					products.get(id),
+					categories.list(),
+					productCategories.list(),
+				]);
+
+				const p = productRes.data as Product | undefined;
 				if (!cancelled && p) {
 					setName(p.name ?? "");
 					setPrice(p.price != null ? String(p.price) : "");
 					setDescription(p.description ?? "");
 					setImageUrl(p.image_url ?? "");
 					setImagePreview(p.image_url ?? "");
+				}
+
+				// Set available categories
+				if (!cancelled) {
+					setCategoryItems(categoriesRes.data ?? []);
+				}
+
+				// Set selected categories for this product
+				if (!cancelled) {
+					const productCats = (productCategoriesRes.data ?? []).filter(
+						(pc) => pc.product_id === id
+					);
+					setSelectedCategoryIds(productCats.map((pc) => pc.category_id));
 				}
 			} catch (e) {
 				setError(e instanceof Error ? e.message : "Failed to load");
@@ -111,6 +136,43 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 					console.info("No fields changed, skipping update");
 				}
 			}
+			// Update product categories if they changed
+			// First, get current product categories
+			const currentProductCatsRes = await productCategories.list();
+			const currentProductCats = (currentProductCatsRes.data ?? []).filter(
+				(pc) => pc.product_id === id
+			);
+			const currentCategoryIds = currentProductCats.map((pc) => pc.category_id);
+
+			// Find categories to add and remove
+			const toAdd = selectedCategoryIds.filter((cid) => !currentCategoryIds.includes(cid));
+			const toRemove = currentCategoryIds.filter((cid) => !selectedCategoryIds.includes(cid));
+
+			// Add new product categories
+			for (const categoryId of toAdd) {
+				try {
+					await productCategories.create({
+						id: crypto.randomUUID(),
+						product_id: id,
+						category_id: categoryId,
+					});
+				} catch (e) {
+					console.error(`Failed to add category ${categoryId}:`, e);
+				}
+			}
+
+			// Remove old product categories
+			for (const categoryId of toRemove) {
+				const pcToDelete = currentProductCats.find((pc) => pc.category_id === categoryId);
+				if (pcToDelete) {
+					try {
+						await productCategories.delete(pcToDelete.id);
+					} catch (e) {
+						console.error(`Failed to remove category ${categoryId}:`, e);
+					}
+				}
+			}
+
 			await onSaved();
 		} catch (e) {
 			let errorMessage = "Failed to update product";
@@ -163,11 +225,45 @@ export function EditProductDialog({ id, onOpenChange, onSaved }: EditDialogProps
 						/>
 						{imagePreview && (
 							<div className="mt-2">
-								<img src={imagePreview} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
+								<img src={`${imagePreview}`} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
 								<p className="text-xs text-muted-foreground mt-1">
 									{imageFile ? "New image preview" : "Current image"}
 								</p>
 							</div>
+						)}
+					</Field>
+					<Field>
+						<FieldLabel htmlFor="edit-product-categories">Categories</FieldLabel>
+						<div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+							{categoryItems.length === 0 ? (
+								<p className="text-sm text-muted-foreground">No categories available</p>
+							) : (
+								categoryItems.map((cat) => (
+									<label
+										key={cat.id}
+										className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+									>
+										<input
+											type="checkbox"
+											checked={selectedCategoryIds.includes(cat.id)}
+											onChange={(e) => {
+												if (e.target.checked) {
+													setSelectedCategoryIds([...selectedCategoryIds, cat.id]);
+												} else {
+													setSelectedCategoryIds(selectedCategoryIds.filter((id) => id !== cat.id));
+												}
+											}}
+											className="h-4 w-4 rounded border-gray-300"
+										/>
+										<span className="text-sm">{cat.name}</span>
+									</label>
+								))
+							)}
+						</div>
+						{selectedCategoryIds.length > 0 && (
+							<p className="text-xs text-muted-foreground mt-1">
+								{selectedCategoryIds.length} categor{selectedCategoryIds.length === 1 ? "y" : "ies"} selected
+							</p>
 						)}
 					</Field>
 					{error && <p style={{ color: "red" }}>{error}</p>}

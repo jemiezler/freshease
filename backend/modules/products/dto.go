@@ -7,18 +7,19 @@ import (
 )
 
 type CreateProductDTO struct {
-	ID           uuid.UUID `json:"id" validate:"required"`
-	Name         string    `json:"name" validate:"required,min=2,max=60"`
-	SKU          string    `json:"sku" validate:"required"`
-	Price        float64   `json:"price" validate:"required,gt=0"`
-	Description  *string   `json:"description,omitempty"`
-	UnitLabel    string    `json:"unit_label" validate:"required"`
-	ImageURL     *string   `json:"image_url,omitempty"`
-	IsActive     bool      `json:"is_active"`
-	CreatedAt    time.Time `json:"created_at" validate:"required"`
-	UpdatedAt    time.Time `json:"updated_at" validate:"required"`
-	Quantity     int       `json:"quantity" validate:"required,gt=0"`
-	ReorderLevel int       `json:"reorder_level" validate:"required,gt=0"`
+	ID           uuid.UUID   `json:"id" validate:"required"`
+	Name         string      `json:"name" validate:"required,min=2,max=60"`
+	SKU          string      `json:"sku" validate:"required"`
+	Price        float64     `json:"price" validate:"required,gt=0"`
+	Description  *string     `json:"description,omitempty"`
+	UnitLabel    string      `json:"unit_label" validate:"required"`
+	ImageURL     *string     `json:"image_url,omitempty"`
+	IsActive     bool        `json:"is_active"`
+	CreatedAt    time.Time   `json:"created_at" validate:"required"`
+	UpdatedAt    time.Time   `json:"updated_at" validate:"required"`
+	Quantity     int         `json:"quantity" validate:"required,gt=0"`
+	ReorderLevel int         `json:"reorder_level" validate:"required,gt=0"`
+	CategoryIDs  []uuid.UUID `json:"category_ids,omitempty"` // Optional: categories to associate with product
 }
 
 type UpdateProductDTO struct {

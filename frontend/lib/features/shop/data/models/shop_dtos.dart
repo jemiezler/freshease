@@ -89,7 +89,7 @@ class ShopCategoryDTO {
     return ShopCategoryDTO(
       id: json['id'] as String,
       name: json['name'] as String,
-      description: json['description'] as String,
+      description: json['description'] as String? ?? json['slug'] as String? ?? '',
     );
   }
 

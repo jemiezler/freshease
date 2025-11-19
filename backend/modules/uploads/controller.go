@@ -1,6 +1,7 @@
 package uploads
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -19,7 +20,9 @@ func (ctl *Controller) Register(r fiber.Router) {
 	r.Post("/images", ctl.UploadImage)
 	r.Post("/images/:folder", ctl.UploadImageToFolder)
 	r.Delete("/images/:path", ctl.DeleteImage)
-	// Register global GET endpoint - matches any path except "images" (handled above)
+	// Register GET /uploads (base path) to return JSON info
+	r.Get("/", ctl.GetUploadsInfo)
+	// Register global GET endpoint - matches any path except "/" (handled above)
 	// Use wildcard to capture paths with slashes like "products/uuid.jpg"
 	r.Get("/*", ctl.GetImage)
 }
@@ -140,13 +143,56 @@ func (ctl *Controller) UploadImageToFolder(c *fiber.Ctx) error {
 	})
 }
 
-// GetImage godoc
-// @Summary      Get image URL
-// @Description  Get presigned URL for an image by object path. The path can include slashes (e.g., 'products/uuid.jpg' or 'users/avatars/uuid.png'). Fiber's wildcard route will capture the full path.
+// GetUploadsInfo godoc
+// @Summary      Get uploads information
+// @Description  Get information about the uploads endpoint. Returns JSON with available endpoints and usage information.
 // @Tags         uploads
 // @Produce      json
-// @Param        path path string true "Object path (e.g., 'products/uuid.jpg' or 'users/avatars/uuid.png')"
 // @Success      200 {object} map[string]interface{}
+// @Router       /uploads [get]
+func (ctl *Controller) GetUploadsInfo(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Uploads API endpoint",
+		"endpoints": fiber.Map{
+			"upload_image": fiber.Map{
+				"method":      "POST",
+				"path":        "/api/uploads/images",
+				"description": "Upload an image file. Supports: jpg, jpeg, png, gif, webp. Max size: 10MB",
+			},
+			"upload_to_folder": fiber.Map{
+				"method":      "POST",
+				"path":        "/api/uploads/images/{folder}",
+				"description": "Upload an image to a specific folder",
+			},
+			"get_image": fiber.Map{
+				"method":      "GET",
+				"path":        "/api/uploads/{path}",
+				"description": "Get image file by path (e.g., products/uuid.jpg)",
+			},
+			"delete_image": fiber.Map{
+				"method":      "DELETE",
+				"path":        "/api/uploads/images/{path}",
+				"description": "Delete an image file",
+			},
+		},
+		"usage": fiber.Map{
+			"upload":   "POST /api/uploads/images with multipart/form-data containing 'file' and optional 'folder'",
+			"retrieve": "GET /api/uploads/{object_path} to retrieve the image file",
+			"delete":   "DELETE /api/uploads/images/{object_path} to delete an image",
+		},
+	})
+}
+
+// GetImage godoc
+// @Summary      Get image file
+// @Description  Get image file directly by object path. The path can include slashes (e.g., 'products/uuid.jpg' or 'users/avatars/uuid.png'). Returns the actual image file, not JSON.
+// @Tags         uploads
+// @Produce      image/jpeg
+// @Produce      image/png
+// @Produce      image/gif
+// @Produce      image/webp
+// @Param        path path string true "Object path (e.g., 'products/uuid.jpg' or 'users/avatars/uuid.png')"
+// @Success      200 {file} file "Image file"
 // @Failure      400 {object} map[string]interface{}
 // @Failure      404 {object} map[string]interface{}
 // @Failure      500 {object} map[string]interface{}
@@ -162,31 +208,40 @@ func (ctl *Controller) GetImage(c *fiber.Ctx) error {
 
 	// Remove leading slash if present (wildcard may include it)
 	path = strings.TrimPrefix(path, "/")
-	
+
 	// Prevent accessing /uploads/images via GET (that route is for POST only)
 	if path == "images" {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "not found",
 		})
 	}
-	
+
 	// Decode URL-encoded path (handle %2F for slashes in case of double encoding)
 	path = strings.ReplaceAll(path, "%2F", "/")
-	
-	// Generate presigned URL for the image
-	url, err := ctl.svc.GetImageURL(c.Context(), path)
+
+	// Get image from MinIO
+	object, info, err := ctl.svc.GetImage(c.Context(), path)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "failed to generate image URL",
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "image not found",
 			"error":   err.Error(),
 		})
 	}
+	defer object.Close()
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"image_url": url,
-		"object_name": path,
-		"message": "Image URL retrieved successfully",
-	})
+	// Set content type from object info
+	contentType := "application/octet-stream"
+	if info.ContentType != "" {
+		contentType = info.ContentType
+	}
+
+	// Set headers
+	c.Set("Content-Type", contentType)
+	c.Set("Content-Length", fmt.Sprintf("%d", info.Size))
+	c.Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year
+
+	// Stream the image
+	return c.Status(fiber.StatusOK).SendStream(object, int(info.Size))
 }
 
 // DeleteImage godoc

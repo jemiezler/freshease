@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:frontend/core/constants/app_colors.dart';
 import 'package:frontend/core/state/cart_controller.dart';
@@ -11,6 +12,7 @@ import 'package:frontend/core/widgets/design_system/soft_card.dart';
 import 'package:frontend/core/theme/design_tokens.dart';
 import 'package:frontend/core/health/health_controller.dart';
 import 'package:frontend/features/shop/data/product_repository.dart';
+import 'package:frontend/features/shop/data/models/shop_dtos.dart';
 import 'package:frontend/features/shop/domain/product.dart';
 import 'package:frontend/features/shop/widgets/product_card.dart';
 import 'package:go_router/go_router.dart';
@@ -26,26 +28,24 @@ class _ShopPageState extends State<ShopPage> {
   final _repo = GetIt.instance<ProductRepository>();
   final _healthController = GetIt.instance<HealthController>();
   final _search = TextEditingController();
-  String _category = 'All';
+  String? _selectedCategoryId; // null means "All"
   RangeValues _range = const RangeValues(0, 150);
   Timer? _debounce;
   List<Product> _items = [];
   bool _isLoading = false;
-  final List<BannerItem> _banners = const [
-    BannerItem(imageUrl: 'https://picsum.photos/1200/400?1', route: '/promo/1'),
-    BannerItem(imageUrl: 'https://picsum.photos/1200/400?2', route: '/promo/2'),
-    BannerItem(
-      imageUrl: 'https://picsum.photos/1200/400?3',
-      // or custom onTap if you don’t want a route:
-      // onTap: () => debugPrint('clicked banner 3'),
-    ),
-  ];
-  List<String> get _chips => const [
-    'All',
-    'Prepared Food',
-    'Veggies',
-    'Fruits',
-  ];
+  List<BannerItem> _banners = [];
+  List<ShopCategoryDTO> _categories = [];
+
+  List<String> get _chipLabels => ['All', ..._categories.map((c) => c.name)];
+
+  String? _getCategoryIdByName(String name) {
+    if (name == 'All' || _categories.isEmpty) return null;
+    try {
+      return _categories.firstWhere((c) => c.name == name).id;
+    } catch (e) {
+      return null;
+    }
+  }
 
   Future<void> _load() async {
     if (_isLoading) return;
@@ -55,21 +55,65 @@ class _ShopPageState extends State<ShopPage> {
     try {
       final list = await _repo.list(
         q: _search.text,
-        category: _category,
+        categoryId: _selectedCategoryId,
         min: _range.start,
         max: _range.end,
       );
-      setState(() => _items = list);
+      setState(() {
+        _items = list;
+        _updateBanners();
+      });
     } catch (e) {
-      setState(() => _items = []);
+      setState(() {
+        _items = [];
+        _banners = [];
+      });
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  void _updateBanners() {
+    if (_items.isEmpty) {
+      _banners = [];
+      return;
+    }
+
+    // Get up to 5 random products
+    final random = Random();
+    final shuffled = List<Product>.from(_items)..shuffle(random);
+    final selectedProducts = shuffled.take(5).toList();
+
+    _banners = selectedProducts
+        .where((product) => product.image.isNotEmpty)
+        .map(
+          (product) => BannerItem(
+            imageUrl: product.image,
+            route: '/shop/product/${product.id}',
+            semanticLabel: product.name,
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _repo.getCategories();
+      if (mounted) {
+        setState(() => _categories = categories);
+      }
+    } catch (e) {
+      // If categories fail to load, keep empty list
+      if (mounted) {
+        setState(() => _categories = []);
+      }
     }
   }
 
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     _load();
 
     // Trigger meal plan generation when user visits shop page
@@ -108,6 +152,7 @@ class _ShopPageState extends State<ShopPage> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: SearchPill(
               controller: _search,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               onFilterTap: () => _openFilterSheet().then((_) => _load()),
             ),
           ),
@@ -115,7 +160,10 @@ class _ShopPageState extends State<ShopPage> {
       ),
 
       body: RefreshIndicator(
-        onRefresh: _load,
+        onRefresh: () async {
+          await _loadCategories();
+          await _load();
+        },
         child: LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth;
@@ -150,22 +198,28 @@ class _ShopPageState extends State<ShopPage> {
 
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 50,
+                    height: 64,
                     child: ListView.separated(
                       padding: const EdgeInsets.symmetric(
                         horizontal: DesignTokens.paddingMedium,
                         vertical: DesignTokens.paddingSmall,
                       ),
                       scrollDirection: Axis.horizontal,
-                      itemCount: _chips.length,
+                      itemCount: _chipLabels.length,
                       separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
-                        final label = _chips[i];
-                        final selected = _category == label;
+                        final label = _chipLabels[i];
+                        final categoryId = label == 'All'
+                            ? null
+                            : _getCategoryIdByName(label);
+                        final selected = _selectedCategoryId == categoryId;
                         return SoftChip(
                           label: label,
                           isSelected: selected,
-                          onTap: () => setState(() => _category = label),
+                          onTap: () {
+                            setState(() => _selectedCategoryId = categoryId);
+                            _load();
+                          },
                         );
                       },
                     ),
@@ -200,8 +254,8 @@ class _ShopPageState extends State<ShopPage> {
                       }, childCount: _items.length),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
-                        mainAxisSpacing: 0,
-                        crossAxisSpacing: 0,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
                         childAspectRatio: aspectRatio,
                       ),
                     ),

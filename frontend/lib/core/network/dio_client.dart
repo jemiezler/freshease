@@ -7,7 +7,7 @@ class DioClient {
     BaseOptions(
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 20),
-      baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://api.freshease.local',
+      baseUrl: dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080',
     ),
   )..interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
 

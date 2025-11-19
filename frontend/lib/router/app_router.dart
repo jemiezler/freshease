@@ -18,6 +18,7 @@ import 'package:frontend/features/shop/presentation/pages/product_detail_page.da
 import 'package:frontend/core/widgets/design_system/soft_bottom_nav.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/pages/login_page.dart';
+import '../features/auth/presentation/pages/auth_callback_page.dart';
 import '../features/shop/presentation/pages/shop_page.dart';
 import '../core/state/cart_controller.dart';
 import '../features/onboarding/onboarding_page.dart';
@@ -35,6 +36,9 @@ GoRouter buildRouter() {
 
       // Login
       GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
+
+      // OAuth callback (for web)
+      GoRoute(path: '/auth/callback', builder: (_, _) => const AuthCallbackPage()),
 
       //signup
       GoRoute(path: '/signup', builder: (_, _) => const SignupPage()),

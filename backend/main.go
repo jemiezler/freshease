@@ -23,8 +23,10 @@ import (
 func main() {
 	cfg := config.Load()
 
-	// Build HTTP app (no routes yet)
+	// Build HTTP app
 	app := httpserver.New()
+
+	// CORS
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
@@ -32,6 +34,7 @@ func main() {
 		ExposeHeaders:    "Content-Length",
 		AllowCredentials: false,
 	}))
+
 	// DB connect + ping with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -43,14 +46,15 @@ func main() {
 	defer func() { _ = closeDB(context.Background()) }()
 
 	// Migrate
-	if err := client.Schema.Create(ctx); err != nil {
+	if err := client.Schema.Create(ctx); err != nil && err.Error() != "schema is not empty" {
 		log.Fatal("[Fatal] ent schema: ", err)
 	}
 
-	// Register routes, grouped under /api
-	httpserver.RegisterRoutes(app, client, cfg)
+	// --- Group all routes under /api ---
+	apiGroup := app.Group("/api") // <--- base path
+	httpserver.RegisterRoutes(apiGroup, app, client, cfg)
 
-	// Start server
+	// Start server in a goroutine
 	go func() {
 		log.Infof("[HTTP] listening on %s", cfg.HTTPPort)
 		if err := app.Listen(cfg.HTTPPort); err != nil {

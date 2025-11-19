@@ -26,5 +26,6 @@ export type ProductPayload = {
 	updated_at: string;
 	quantity: number;
 	reorder_level: number;
+	category_ids?: string[]; // Optional array of category IDs
 };
 

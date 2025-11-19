@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -12,35 +13,19 @@ import (
 
 	"freshease/backend/ent/enttest"
 	"freshease/backend/modules/products"
+	"freshease/backend/modules/uploads"
 	"freshease/backend/modules/users"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
 	_ "github.com/mattn/go-sqlite3" // SQLite driver
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-// MockUploadsService is a mock implementation of uploads.Service for testing
-type MockUploadsService struct {
-	mock.Mock
-}
-
-func (m *MockUploadsService) UploadImage(ctx context.Context, file *multipart.FileHeader, folder string) (string, error) {
-	args := m.Called(ctx, file, folder)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockUploadsService) DeleteImage(ctx context.Context, objectName string) error {
-	args := m.Called(ctx, objectName)
-	return args.Error(0)
-}
-
-func (m *MockUploadsService) GetImageURL(ctx context.Context, objectName string) (string, error) {
-	args := m.Called(ctx, objectName)
-	return args.String(0), args.Error(1)
-}
+// MockUploadsService is declared in integration_full_system_test.go to avoid duplication
 
 func TestUsersAPI_Integration(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", ":memory:?mode=memory&_fk=1")

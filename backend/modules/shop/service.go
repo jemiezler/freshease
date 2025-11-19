@@ -3,6 +3,8 @@ package shop
 import (
 	"context"
 
+	"freshease/backend/modules/uploads"
+
 	"github.com/google/uuid"
 )
 
@@ -27,10 +29,17 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	repo       Repository
+	uploadsSvc uploads.Service
 }
 
-func NewService(r Repository) Service { return &service{repo: r} }
+func NewService(r Repository) Service {
+	return &service{repo: r}
+}
+
+func NewServiceWithUploads(r Repository, uploadsSvc uploads.Service) Service {
+	return &service{repo: r, uploadsSvc: uploadsSvc}
+}
 
 func (s *service) SearchProducts(ctx context.Context, filters ShopSearchFilters) (*ShopSearchResponse, error) {
 	// Set default pagination values
@@ -46,6 +55,18 @@ func (s *service) SearchProducts(ctx context.Context, filters ShopSearchFilters)
 		return nil, err
 	}
 
+	// Convert image object names to URLs if uploads service is available
+	if s.uploadsSvc != nil {
+		for _, product := range products {
+			if product.ImageURL != "" {
+				url, err := s.uploadsSvc.GetImageURL(ctx, product.ImageURL)
+				if err == nil {
+					product.ImageURL = url
+				}
+			}
+		}
+	}
+
 	hasMore := filters.Offset+filters.Limit < total
 
 	return &ShopSearchResponse{
@@ -58,7 +79,20 @@ func (s *service) SearchProducts(ctx context.Context, filters ShopSearchFilters)
 }
 
 func (s *service) GetProduct(ctx context.Context, id uuid.UUID) (*ShopProductDTO, error) {
-	return s.repo.GetProductByID(ctx, id)
+	product, err := s.repo.GetProductByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert image object name to URL if uploads service is available
+	if s.uploadsSvc != nil && product.ImageURL != "" {
+		url, err := s.uploadsSvc.GetImageURL(ctx, product.ImageURL)
+		if err == nil {
+			product.ImageURL = url
+		}
+	}
+
+	return product, nil
 }
 
 func (s *service) GetCategories(ctx context.Context) ([]*ShopCategoryDTO, error) {

@@ -53,8 +53,9 @@ func TestRegisterRoutes(t *testing.T) {
 		defer client.Close()
 
 		// This should not panic
+		apiGroup := app.Group("/api")
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, client, config.Config{})
+			RegisterRoutes(apiGroup, app, client, config.Config{})
 		})
 
 		// Verify that routes are registered
@@ -67,7 +68,8 @@ func TestRegisterRoutes(t *testing.T) {
 		client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 		defer client.Close()
 
-		RegisterRoutes(app, client, config.Config{})
+		apiGroup := app.Group("/api")
+		RegisterRoutes(apiGroup, app, client, config.Config{})
 
 		// Check that API routes are registered
 		routes := app.GetRoutes()
@@ -84,8 +86,9 @@ func TestRegisterRoutes(t *testing.T) {
 		app := fiber.New()
 
 		// This should not panic even with nil client
+		apiGroup := app.Group("/api")
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, nil, config.Config{})
+			RegisterRoutes(apiGroup, app, nil, config.Config{})
 		})
 	})
 }
@@ -466,8 +469,9 @@ func TestRouterEdgeCases(t *testing.T) {
 		defer client.Close()
 
 		// This should not panic
+		apiGroup := app.Group("/api")
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, client, config.Config{})
+			RegisterRoutes(apiGroup, app, client, config.Config{})
 		})
 	})
 
@@ -481,8 +485,9 @@ func TestRouterEdgeCases(t *testing.T) {
 		app.Get("/status", func(c *fiber.Ctx) error { return c.JSON("ok") })
 
 		// This should not panic
+		apiGroup := app.Group("/api")
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, client, config.Config{})
+			RegisterRoutes(apiGroup, app, client, config.Config{})
 		})
 	})
 
@@ -493,9 +498,10 @@ func TestRouterEdgeCases(t *testing.T) {
 		defer client.Close()
 
 		// Register routes multiple times
+		apiGroup := app.Group("/api")
 		assert.NotPanics(t, func() {
-			RegisterRoutes(app, client, cfg)
-			RegisterRoutes(app, client, cfg)
+			RegisterRoutes(apiGroup, app, client, cfg)
+			RegisterRoutes(apiGroup, app, client, cfg)
 		})
 	})
 }

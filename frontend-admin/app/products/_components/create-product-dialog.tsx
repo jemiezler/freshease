@@ -23,7 +23,7 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 	const [imagePreview, setImagePreview] = useState<string>("");
 	const [unitLabel, setUnitLabel] = useState("kg");
 	const [isActive, setIsActive] = useState("active");
-	const [categoryId, setCategoryId] = useState<string>("");
+	const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
 	const [quantity, setQuantity] = useState<string>("0");
 	const [restockAmount, setRestockAmount] = useState<string>("0");
 	const [categoryItems, setCategoryItems] = useState<Category[]>([]);
@@ -74,7 +74,7 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 		setSubmitting(true);
 		setError(null);
 
-		// Validate required fields
+		// Validate required fields (categories are optional)
 		if (!name || !sku || !price || !description || !imageFile || !unitLabel || !isActive || !quantity || !restockAmount) {
 			setError("Please fill in all required fields");
 			setSubmitting(false);
@@ -119,6 +119,7 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 				updated_at: now,
 				quantity: quantityNum,
 				reorder_level: restockAmountNum,
+				category_ids: selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined,
 			};
 
 			// Use postWithImage to send both image and product data
@@ -140,7 +141,7 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 			setImagePreview("");
 			setUnitLabel("kg");
 			setIsActive("active");
-			setCategoryId("");
+			setSelectedCategoryIds([]);
 			setQuantity("0");
 			setRestockAmount("0");
 		} catch (e) {
@@ -219,7 +220,7 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 						/>
 						{imagePreview && (
 							<div className="mt-2">
-								<img src={imagePreview} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
+								<img src={`${imagePreview}`} alt="Preview" className="max-w-full h-32 object-contain border rounded" />
 								<p className="text-xs text-muted-foreground mt-1">Image preview</p>
 							</div>
 						)}
@@ -248,20 +249,38 @@ export function CreateProductDialog({ open, onOpenChange, onSaved }: DialogProps
 						</select>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="product-category">Category</FieldLabel>
-						<select
-							id="product-category"
-							value={categoryId}
-							onChange={(e) => setCategoryId(e.target.value)}
-							className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							<option value="">None</option>
-							{categoryItems.map((cat) => (
-								<option key={cat.id} value={cat.id}>
-									{cat.name}
-								</option>
-							))}
-						</select>
+						<FieldLabel htmlFor="product-categories">Categories</FieldLabel>
+						<div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+							{categoryItems.length === 0 ? (
+								<p className="text-sm text-muted-foreground">No categories available</p>
+							) : (
+								categoryItems.map((cat) => (
+									<label
+										key={cat.id}
+										className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+									>
+										<input
+											type="checkbox"
+											checked={selectedCategoryIds.includes(cat.id)}
+											onChange={(e) => {
+												if (e.target.checked) {
+													setSelectedCategoryIds([...selectedCategoryIds, cat.id]);
+												} else {
+													setSelectedCategoryIds(selectedCategoryIds.filter((id) => id !== cat.id));
+												}
+											}}
+											className="h-4 w-4 rounded border-gray-300"
+										/>
+										<span className="text-sm">{cat.name}</span>
+									</label>
+								))
+							)}
+						</div>
+						{selectedCategoryIds.length > 0 && (
+							<p className="text-xs text-muted-foreground mt-1">
+								{selectedCategoryIds.length} categor{selectedCategoryIds.length === 1 ? "y" : "ies"} selected
+							</p>
+						)}
 					</Field>
 					<Field>
 						<FieldLabel htmlFor="product-quantity">Initial Quantity *</FieldLabel>
