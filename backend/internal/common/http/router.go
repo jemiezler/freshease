@@ -75,7 +75,7 @@ func RegisterRoutes(api fiber.Router, app *fiber.App, client *ent.Client, cfg co
 	bundle_items.RegisterModuleWithEnt(api, client)
 	bundles.RegisterModuleWithEnt(api, client)
 	cart_items.RegisterModuleWithEnt(api, client)
-	carts.RegisterModuleWithEnt(api, client)
+	// carts moved to secured area below
 	categories.RegisterModuleWithEnt(api, client)
 	deliveries.RegisterModuleWithEnt(api, client)
 	inventories.RegisterModuleWithEnt(api, client)
@@ -104,6 +104,8 @@ func RegisterRoutes(api fiber.Router, app *fiber.App, client *ent.Client, cfg co
 	secured := api.Group("", middleware.RequireAuth())
 
 	// Mount protected modules on the secured router
+	// Carts require authentication for user-specific operations
+	carts.RegisterModuleWithEnt(secured, client)
 	// addresses.RegisterModuleWithEnt(secured, client)
 	// bundle_items.RegisterModuleWithEnt(secured, client)
 	// bundles.RegisterModuleWithEnt(secured, client)

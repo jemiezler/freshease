@@ -5,6 +5,7 @@ import (
 
 	"freshease/backend/ent"
 	"freshease/backend/ent/cart"
+	"freshease/backend/ent/user"
 	"freshease/backend/internal/common/errs"
 
 	"github.com/google/uuid"
@@ -111,4 +112,117 @@ func (r *EntRepo) Update(ctx context.Context, dto *UpdateCartDTO) (*GetCartDTO, 
 
 func (r *EntRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.c.Cart.DeleteOneID(id).Exec(ctx)
+}
+
+func (r *EntRepo) FindByUserID(ctx context.Context, userID uuid.UUID) (*GetCartDTO, error) {
+	v, err := r.c.Cart.Query().
+		Where(cart.HasUserWith(user.ID(userID))).
+		WithItems(func(q *ent.CartItemQuery) {
+			q.WithProduct()
+		}).
+		Order(ent.Desc(cart.FieldUpdatedAt)).
+		First(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.cartToDTO(v), nil
+}
+
+func (r *EntRepo) GetOrCreateCartForUser(ctx context.Context, userID uuid.UUID) (*GetCartDTO, error) {
+	// Try to find existing cart
+	cartEntity, err := r.c.Cart.Query().
+		Where(cart.HasUserWith(user.ID(userID))).
+		WithItems(func(q *ent.CartItemQuery) {
+			q.WithProduct()
+		}).
+		Order(ent.Desc(cart.FieldUpdatedAt)).
+		First(ctx)
+	
+	if err == nil {
+		return r.cartToDTO(cartEntity), nil
+	}
+	
+	// If not found, create a new cart
+	userEntity, err := r.c.User.Get(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	
+	newCart, err := r.c.Cart.Create().
+		SetStatus("pending").
+		SetSubtotal(0.0).
+		SetDiscount(0.0).
+		SetTotal(0.0).
+		AddUser(userEntity).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Reload with items (empty)
+	v, err := r.c.Cart.Query().
+		Where(cart.ID(newCart.ID)).
+		WithItems(func(q *ent.CartItemQuery) {
+			q.WithProduct()
+		}).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	return r.cartToDTO(v), nil
+}
+
+// Helper function to convert ent.Cart to GetCartDTO with items
+func (r *EntRepo) cartToDTO(c *ent.Cart) *GetCartDTO {
+	dto := &GetCartDTO{
+		ID:            c.ID,
+		Status:        c.Status,
+		Subtotal:      c.Subtotal,
+		Discount:      c.Discount,
+		Total:         c.Total,
+		Shipping:      0.0, // Will be calculated in service
+		Tax:           0.0, // Will be calculated in service
+		Items:         []CartItemDTO{},
+		PromoCode:     nil,
+		PromoDiscount: 0.0,
+		CreatedAt:     c.UpdatedAt, // Using UpdatedAt as fallback
+		UpdatedAt:     c.UpdatedAt,
+	}
+	
+		// Convert cart items
+		if c.Edges.Items != nil {
+			dto.Items = make([]CartItemDTO, 0, len(c.Edges.Items))
+			for _, item := range c.Edges.Items {
+				itemDTO := CartItemDTO{
+					ID:          item.ID,
+					Quantity:    item.Qty,
+					ProductPrice: item.UnitPrice,
+					LineTotal:   item.LineTotal,
+					ProductName: "", // Default empty
+					ProductImage: nil, // Default nil
+				}
+				
+				if item.Edges.Product != nil {
+					itemDTO.ProductID = item.Edges.Product.ID
+					itemDTO.ProductName = item.Edges.Product.Name
+					if item.Edges.Product.ImageURL != nil {
+						imageURL := *item.Edges.Product.ImageURL
+						itemDTO.ProductImage = &imageURL
+					} else {
+						emptyStr := ""
+						itemDTO.ProductImage = &emptyStr
+					}
+				} else {
+					// If product is nil, set empty values
+					emptyStr := ""
+					itemDTO.ProductImage = &emptyStr
+					// ProductID will be zero UUID which is fine
+				}
+				
+				dto.Items = append(dto.Items, itemDTO)
+			}
+		}
+	
+	return dto
 }

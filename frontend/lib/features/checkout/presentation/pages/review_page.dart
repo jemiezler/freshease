@@ -51,7 +51,7 @@ class ReviewPage extends StatelessWidget {
                 child: isPlan
                     ? _PlanSummaryBlock(
                         title: co.selectedPlan!.title,
-                        subtitle: co.selectedPlan!.subtitle,
+                        subtitle: co.selectedPlan!.subtitle ?? '',
                         price: co.selectedPlan!.price,
                       )
                     : co.isPlanCheckout
@@ -65,11 +65,13 @@ class ReviewPage extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            co.selectedPlan!.subtitle,
-                            style: const TextStyle(color: Colors.grey),
-                          ),
+                          if (co.selectedPlan!.subtitle != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              co.selectedPlan!.subtitle!,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -367,8 +369,10 @@ class _PlanSummaryBlock extends StatelessWidget {
           title,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 6),
-        Text(subtitle, style: const TextStyle(color: Colors.grey)),
+        if (subtitle.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(subtitle, style: const TextStyle(color: Colors.grey)),
+        ],
         const SizedBox(height: 12),
         const Divider(height: 24),
         _Line('Subtotal', price),

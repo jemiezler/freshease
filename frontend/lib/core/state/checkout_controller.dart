@@ -31,15 +31,15 @@ class OrderResult {
 }
 
 class PlanOrder {
-  final int id;
+  final String id;
   final String title;
   final double price;
-  final String subtitle;
+  final String? subtitle;
   const PlanOrder({
     required this.id,
     required this.title,
     required this.price,
-    required this.subtitle,
+    this.subtitle,
   });
 }
 

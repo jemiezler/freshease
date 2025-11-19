@@ -31,14 +31,26 @@ class ApiCartRepository implements CartRepository {
   @override
   Future<CartDTO> addToCart(Product product, {int quantity = 1}) async {
     try {
+      // Ensure product ID is valid and not empty
+      if (product.id.isEmpty) {
+        throw Exception('Product ID is empty');
+      }
+      
+      // Debug: Log the product ID being sent
+      print('Adding product to cart - Product ID: ${product.id}, Name: ${product.name}');
+      
       final request = AddToCartRequest(
-        productId: product.id,
+        productId: product.id.trim(), // Trim any whitespace
         quantity: quantity,
       );
+      
+      print('Cart request - product_id: ${request.productId}, quantity: ${request.quantity}');
+      
       return await _apiService.addToCart(request);
     } catch (e) {
       // Log error for debugging
       print('Error adding to cart: $e');
+      print('Product details - ID: ${product.id}, Name: ${product.name}');
       // Rethrow so controller can handle the error and show it to user
       rethrow;
     }

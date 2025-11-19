@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/repositories/plans_repository.dart';
+import '../../data/models/bundle_dtos.dart';
 
 class PlansPage extends StatefulWidget {
   const PlansPage({super.key});
@@ -9,44 +11,41 @@ class PlansPage extends StatefulWidget {
 }
 
 class _PlansPageState extends State<PlansPage> {
-  final _plans = const [
-    {
-      "id": 1,
-      "title": "Fresh Starter Plan",
-      "subtitle": "7-Day Clean Eating Challenge",
-      "price": 499.0,
-      "features": [
-        "Daily meal plan & recipes",
-        "Auto-generated grocery bundle",
-        "Basic nutrition coaching",
-      ],
-      "color": Colors.green,
-    },
-    {
-      "id": 2,
-      "title": "Balanced Weekly Plan",
-      "subtitle": "Perfect for busy professionals",
-      "price": 899.0,
-      "features": [
-        "5 curated dinners per week",
-        "One-click grocery ordering",
-        "AI meal recommendations",
-      ],
-      "color": Colors.orange,
-    },
-    {
-      "id": 3,
-      "title": "Pro Wellness Plan",
-      "subtitle": "Monthly personalized plan",
-      "price": 2499.0,
-      "features": [
-        "Full AI personalization",
-        "Private nutrition coach",
-        "Progress tracking dashboard",
-      ],
-      "color": Colors.teal,
-    },
-  ];
+  final PlansRepository _repository = PlansRepository();
+  List<BundleDTO> _bundles = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBundles();
+  }
+
+  Future<void> _loadBundles() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final bundles = await _repository.getActiveBundles();
+      setState(() {
+        _bundles = bundles;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Color _getColorForIndex(int index) {
+    final colors = [Colors.green, Colors.orange, Colors.teal, Colors.blue, Colors.purple];
+    return colors[index % colors.length];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,53 +57,77 @@ class _PlansPageState extends State<PlansPage> {
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 900;
-          final crossAxisCount = isWide
-              ? 3
-              : (constraints.maxWidth > 600 ? 2 : 1);
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: isWide ? 1.1 : 0.95,
-            ),
-            itemCount: _plans.length,
-            itemBuilder: (_, i) {
-              final plan = _plans[i];
-              return _PlanCard(
-                title: plan["title"] as String,
-                subtitle: plan["subtitle"] as String,
-                price: plan["price"] as double,
-                features: (plan["features"] as List).cast<String>(),
-                color: plan["color"] as Color,
-                onSubscribe: () =>
-                    context.go('/plans/${plan["id"]}', extra: plan),
-              );
-            },
-          );
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Error loading plans',
+                        style: TextStyle(color: Colors.red[700]),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _error!,
+                        style: TextStyle(color: Colors.grey[600]),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadBundles,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : _bundles.isEmpty
+                  ? const Center(
+                      child: Text('No plans available'),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isWide = constraints.maxWidth >= 900;
+                        final crossAxisCount = isWide
+                            ? 3
+                            : (constraints.maxWidth > 600 ? 2 : 1);
+                        return GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: isWide ? 1.1 : 0.95,
+                          ),
+                          itemCount: _bundles.length,
+                          itemBuilder: (_, i) {
+                            final bundle = _bundles[i];
+                            final color = _getColorForIndex(i);
+                            return _PlanCard(
+                              bundle: bundle,
+                              color: color,
+                              onSubscribe: () => context.go(
+                                '/plans/${bundle.id}',
+                                extra: bundle,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
     );
   }
 }
 
 class _PlanCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final double price;
-  final List<String> features;
+  final BundleDTO bundle;
   final Color color;
   final VoidCallback onSubscribe;
 
   const _PlanCard({
-    required this.title,
-    required this.subtitle,
-    required this.price,
-    required this.features,
+    required this.bundle,
     required this.color,
     required this.onSubscribe,
   });
@@ -130,47 +153,28 @@ class _PlanCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              title,
+              bundle.name,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(color: Colors.grey[600])),
+            if (bundle.description != null && bundle.description!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                bundle.description!,
+                style: TextStyle(color: Colors.grey[600]),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
             const SizedBox(height: 12),
             Text(
-              '฿${price.toStringAsFixed(0)} / plan',
+              '฿${bundle.price.toStringAsFixed(0)} / plan',
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Colors.green,
               ),
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                itemCount: features.length,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (_, i) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          features[i],
-                          style: const TextStyle(height: 1.2),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            const Spacer(),
             const SizedBox(height: 8),
             FilledButton.icon(
               onPressed: onSubscribe,

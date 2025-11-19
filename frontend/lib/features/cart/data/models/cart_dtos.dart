@@ -18,14 +18,31 @@ class CartItemDTO {
   });
 
   factory CartItemDTO.fromJson(Map<String, dynamic> json) {
+    // Handle product_image which can be null or a string
+    final productImageValue = json['product_image'];
+    final productImage = productImageValue is String 
+        ? productImageValue 
+        : productImageValue?.toString() ?? '';
+    
+    // Handle UUID fields - ensure they're strings
+    final idValue = json['id'];
+    final idString = idValue is String 
+        ? idValue 
+        : idValue?.toString() ?? '';
+    
+    final productIdValue = json['product_id'];
+    final productIdString = productIdValue is String 
+        ? productIdValue 
+        : productIdValue?.toString() ?? '';
+    
     return CartItemDTO(
-      id: json['id'] as String,
-      productId: json['product_id'] as String,
-      productName: json['product_name'] as String,
-      productImage: json['product_image'] as String,
-      productPrice: (json['product_price'] as num).toDouble(),
-      quantity: json['quantity'] as int,
-      lineTotal: (json['line_total'] as num).toDouble(),
+      id: idString,
+      productId: productIdString,
+      productName: json['product_name'] as String? ?? '',
+      productImage: productImage,
+      productPrice: (json['product_price'] as num?)?.toDouble() ?? 0.0,
+      quantity: json['quantity'] as int? ?? 0,
+      lineTotal: (json['line_total'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -70,20 +87,30 @@ class CartDTO {
   });
 
   factory CartDTO.fromJson(Map<String, dynamic> json) {
+    // Handle UUID id field - ensure it's a string
+    final idValue = json['id'];
+    final idString = idValue is String 
+        ? idValue 
+        : idValue?.toString() ?? '';
+    
     return CartDTO(
-      id: json['id'] as String,
-      status: json['status'] as String,
-      subtotal: (json['subtotal'] as num).toDouble(),
-      shipping: (json['shipping'] as num).toDouble(),
-      tax: (json['tax'] as num).toDouble(),
-      total: (json['total'] as num).toDouble(),
-      items: (json['items'] as List)
-          .map((item) => CartItemDTO.fromJson(item as Map<String, dynamic>))
-          .toList(),
+      id: idString,
+      status: json['status'] as String? ?? 'pending',
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      shipping: (json['shipping'] as num?)?.toDouble() ?? 0.0,
+      tax: (json['tax'] as num?)?.toDouble() ?? 0.0,
+      total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      items: (json['items'] as List?)
+          ?.map((item) => CartItemDTO.fromJson(item as Map<String, dynamic>))
+          .toList() ?? [],
       promoCode: json['promo_code'] as String?,
       promoDiscount: (json['promo_discount'] as num?)?.toDouble() ?? 0.0,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),
     );
   }
 
@@ -111,7 +138,15 @@ class AddToCartRequest {
   AddToCartRequest({required this.productId, required this.quantity});
 
   Map<String, dynamic> toJson() {
-    return {'product_id': productId, 'quantity': quantity};
+    // Ensure product_id is a clean string (no whitespace, proper UUID format)
+    final cleanProductId = productId.trim();
+    if (cleanProductId.isEmpty) {
+      throw Exception('Product ID cannot be empty');
+    }
+    return {
+      'product_id': cleanProductId,
+      'quantity': quantity,
+    };
   }
 }
 

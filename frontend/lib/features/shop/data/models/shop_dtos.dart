@@ -34,8 +34,24 @@ class ShopProductDTO {
   });
 
   factory ShopProductDTO.fromJson(Map<String, dynamic> json) {
+    // Ensure ID is properly converted to string (UUIDs from Go backend are strings)
+    final idValue = json['id'];
+    final idString = idValue is String 
+        ? idValue 
+        : idValue?.toString() ?? '';
+    
+    final vendorIdValue = json['vendor_id'];
+    final vendorIdString = vendorIdValue is String 
+        ? vendorIdValue 
+        : vendorIdValue?.toString() ?? '';
+    
+    final categoryIdValue = json['category_id'];
+    final categoryIdString = categoryIdValue is String 
+        ? categoryIdValue 
+        : categoryIdValue?.toString() ?? '';
+    
     return ShopProductDTO(
-      id: json['id'] as String,
+      id: idString,
       name: json['name'] as String,
       price: (json['price'] as num).toDouble(),
       description: json['description'] as String,
@@ -44,9 +60,9 @@ class ShopProductDTO {
       isActive: json['is_active'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      vendorId: json['vendor_id'] as String,
+      vendorId: vendorIdString,
       vendorName: json['vendor_name'] as String,
-      categoryId: json['category_id'] as String,
+      categoryId: categoryIdString,
       categoryName: json['category_name'] as String,
       stockQuantity: json['stock_quantity'] as int,
       isInStock: json['is_in_stock'] as bool,

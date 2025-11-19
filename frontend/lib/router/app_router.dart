@@ -11,6 +11,7 @@ import 'package:frontend/features/checkout/presentation/pages/payment_page.dart'
 import 'package:frontend/features/checkout/presentation/pages/review_page.dart';
 import 'package:frontend/features/plans/presentation/pages/plan_detail_page.dart';
 import 'package:frontend/features/plans/presentation/pages/plans_page.dart';
+import 'package:frontend/features/plans/data/models/bundle_dtos.dart';
 import 'package:frontend/features/progress/presentation/pages/progress_page.dart';
 import 'package:frontend/features/shop/domain/product.dart';
 import 'package:frontend/features/account/domain/entities/user_profile.dart';
@@ -138,8 +139,13 @@ GoRouter buildRouter() {
                   GoRoute(
                     path: ':id',
                     builder: (context, state) {
-                      final plan = state.extra as Map<String, dynamic>;
-                      return PlanDetailPage(plan: plan);
+                      final bundleId = state.pathParameters['id']!;
+                      // Try to get bundle from extra, otherwise fetch by ID
+                      final bundle = state.extra as BundleDTO?;
+                      return PlanDetailPage(
+                        bundle: bundle,
+                        bundleId: bundle == null ? bundleId : null,
+                      );
                     },
                   ),
                 ],

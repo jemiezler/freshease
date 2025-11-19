@@ -8,7 +8,7 @@ import (
 // RegisterModuleWithEnt wires Ent repo -> service -> controller and mounts routes.
 func RegisterModuleWithEnt(api fiber.Router, client *ent.Client) {
 	repo := NewEntRepo(client)
-	svc  := NewService(repo)
+	svc  := NewServiceWithClient(repo, client)
 	ctl  := NewController(svc)
 	Routes(api, ctl)
 }

@@ -12,4 +12,7 @@ type Repository interface {
 	Create(ctx context.Context, u *CreateCartDTO) (*GetCartDTO, error)
 	Update(ctx context.Context, u *UpdateCartDTO) (*GetCartDTO, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	// New methods for cart operations
+	FindByUserID(ctx context.Context, userID uuid.UUID) (*GetCartDTO, error)
+	GetOrCreateCartForUser(ctx context.Context, userID uuid.UUID) (*GetCartDTO, error)
 }
