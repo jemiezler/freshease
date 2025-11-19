@@ -30,12 +30,20 @@ class CartController extends ChangeNotifier {
     return _cart!.items
         .map(
           (item) => CartLine(
-            product: Product.fromLegacy(
-              id: int.parse(item.productId),
+            product: Product(
+              id: item.productId,
               name: item.productName,
               price: item.productPrice,
               image: item.productImage,
               category: 'Unknown',
+              description: '',
+              unitLabel: 'kg',
+              vendorId: '',
+              vendorName: '',
+              categoryId: '',
+              categoryName: 'Unknown',
+              stockQuantity: 100,
+              isInStock: true,
             ),
             qty: item.quantity,
           ),
@@ -79,8 +87,10 @@ class CartController extends ChangeNotifier {
     try {
       _cart = await _repository.addToCart(p, quantity: qty);
       _error = null;
+      notifyListeners(); // Explicitly notify after cart update
     } catch (e) {
       _error = e.toString();
+      notifyListeners(); // Notify even on error so UI can show error state
     } finally {
       _setLoading(false);
     }

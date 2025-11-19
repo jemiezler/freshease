@@ -61,11 +61,21 @@ class ProductDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
-                onPressed: () {
-                  cart.add(product);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${product.name} added to cart')),
-                  );
+                onPressed: () async {
+                  await cart.add(product);
+                  if (cart.error != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to add to cart: ${cart.error}'),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${product.name} added to cart')),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.add_shopping_cart),
                 label: const Text('Add to Cart'),

@@ -170,7 +170,18 @@ class _CartList extends StatelessWidget {
                           icon: Icons.add,
                           onTap: cart.isLoading
                               ? () {}
-                              : () => cart.add(line.product),
+                              : () async {
+                                  await cart.add(line.product);
+                                  if (cart.error != null && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Failed to update: ${cart.error}'),
+                                        backgroundColor: Colors.red,
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                },
                         ),
                         const Spacer(),
                         Text(

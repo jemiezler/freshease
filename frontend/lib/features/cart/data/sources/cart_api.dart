@@ -30,7 +30,8 @@ class CartApiService {
 
   Future<CartDTO> addToCart(AddToCartRequest request) async {
     try {
-      final response = await _dio.post(
+      // Use PATCH since the endpoint allows PATCH (not POST)
+      final response = await _dio.patch(
         '/api/carts/add-item',
         data: request.toJson(),
       );

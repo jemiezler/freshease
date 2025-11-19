@@ -37,8 +37,10 @@ class ApiCartRepository implements CartRepository {
       );
       return await _apiService.addToCart(request);
     } catch (e) {
-      // Return current cart state on error
-      return await getCart();
+      // Log error for debugging
+      print('Error adding to cart: $e');
+      // Rethrow so controller can handle the error and show it to user
+      rethrow;
     }
   }
 

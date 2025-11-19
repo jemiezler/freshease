@@ -241,14 +241,24 @@ class _ShopPageState extends State<ShopPage> {
                           product: p,
                           onTap: () =>
                               context.go('/shop/product/${p.id}', extra: p),
-                          onAdd: () {
-                            cart.add(p);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${p.name} added to cart'),
-                                duration: const Duration(milliseconds: 900),
-                              ),
-                            );
+                          onAdd: () async {
+                            await cart.add(p);
+                            if (cart.error != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to add ${p.name}: ${cart.error}'),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${p.name} added to cart'),
+                                  duration: const Duration(milliseconds: 900),
+                                ),
+                              );
+                            }
                           },
                         );
                       }, childCount: _items.length),
